@@ -9,7 +9,7 @@ This is a [Stage 1](https://github.com/w3c-fedid/Administration/blob/main/propos
 ## Champions
 
 - @samuelgoto
-- @@aaronpk
+- @aaronpk
 - @anderspitman
 
 ## Participate
