@@ -39,10 +39,6 @@ The API is largely TBD, but here is where we starting from:
 IdentityProvider.register("https://idp.example/config.json")
 ``` 
 
-This leads to the following permission prompt:
-
-<img width="624" alt="323806323-6a235d49-f73b-4638-984b-0b07e7fe8018" src="https://github.com/fedidcg/FedCM/assets/693738/62e95d20-c02e-4dff-b9ee-afa8b45c8430">
-
 The second stage is also not much different from the current construction in FedCM, except that the relying party is now able to ask for "any" IdP rather than enumerate them:
 
 ```javascript
@@ -57,9 +53,6 @@ navigator.credentials.get({
   }
 });
 ```
-
-<img width="1166" alt="331718574-fcaa470c-a0a2-4f80-936e-7d79c58683ab" src="https://github.com/fedidcg/FedCM/assets/693738/370dc395-732b-446a-a20a-3e3102fe7dcc">
-
 
 # Where are things at?
 
