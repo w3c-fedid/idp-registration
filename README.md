@@ -1,171 +1,80 @@
-# Example Federated Identity CG explainer and spec source files
+# IdP Registration API
 
-This repository contains explainer and spec templates that can be used
-by folks working on proposals and work items in the Federated Identity CG.
+A proposal to extend FedCM to allow RPs to ask for "any" registered IdP, as opposed to (or, in addition to) enumerating them.
 
-This file is the sample explainer, which begins after this section. The
-sample explainer text itself comes from the
-[TAG](https://w3ctag.github.io/)'s excellent
-[explainer explainer](https://w3ctag.github.io/explainers).
+## Stage
 
-There is also **[sample work item spec source](work-item.bs)** (in
-Bikeshed), and a [Makefile](Makefile) that can be used for testing
-explainer and spec changes locally. Don't forget to rename
-`work-item.bs` to `shortname.bs`!
+This is a [Stage 1](https://github.com/w3c-fedid/Administration/blob/main/proposals-CG-WG.md) proposal.
 
-<!-- When creating a new explainer, delete everything above the following line -->
-# [Title]
+## Champions
 
-[Keep one of these sentences:]
-
-A [Proposal](https://fedidcg.github.io/charter#proposals)
-of the [Federated Identity Community Group](https://fedidcg.github.io/).
-
-A [Work Item](https://fedidcg.github.io/charter#work-items)
-of the [Federated Identity Community Group](https://fedidcg.github.io/).
-
-## Authors:
-
-- [Author 1]
-- [Author 2]
-- [etc.]
+- @samuelgoto
+- @@aaronpk
+- @anderspitman
 
 ## Participate
-- https://github.com/fedidcg/deliverable/issues
+- https://github.com/w3c-fedid/idp-registration
 
-## Table of Contents [if the explainer is longer than one printed page]
+# The Problem
 
-[You can generate a Table of Contents for markdown documents using a tool like [doctoc](https://github.com/thlorenz/doctoc).]
+One of the problems on the web is that users are currently constrained by a small set of social login providers to login to Websites. Websites, in turn, are constrained by finite space in login flows, so they typically have to pick 2-5 large social login providers (e.g. facebook, google, twitter, linkedin, github, etc) that can represent a large fraction of their users, but, by construction, not all of them.
 
-<!-- START doctoc generated TOC please keep comment here to allow auto update -->
-<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+One of the most popular alternative to federation in login flows is email verification (or phone number). In as much as email verification is orders of magnitudes more cumbersome, it excels at giving users choice in a much healthier ecosystem: users can join large services (e.g. gmail, gmx, outlook), use large services as hosts (e.g. custom domains) or even run their own operation (e.g. spinning up SMTP and POP servers), and websites accept any email address without having to register or allow-list servers (e.g. as long as the server speaks SMTP/POP they are welcomed in).
 
+This isn't particularly a new problem, nor the first time a community tried to tackle it. In fact, [OpenID 1.0](https://x.com/samuelgoto/status/1745147272055390295), [IndieAuth](https://indieweb.org/IndieAuth) and [Solid](https://solid.github.io/webid-profile/) all allowed users to identity themselves as URIs.
 
-- [Introduction](#introduction)
-- [Goals [or Motivating Use Cases, or Scenarios]](#goals-or-motivating-use-cases-or-scenarios)
-- [Non-goals](#non-goals)
-- [[API 1]](#api-1)
-- [[API 2]](#api-2)
-- [Key scenarios](#key-scenarios)
-  - [Scenario 1](#scenario-1)
-  - [Scenario 2](#scenario-2)
-- [Detailed design discussion](#detailed-design-discussion)
-  - [[Tricky design choice #1]](#tricky-design-choice-1)
-  - [[Tricky design choice 2]](#tricky-design-choice-2)
-- [Considered alternatives](#considered-alternatives)
-  - [[Alternative 1]](#alternative-1)
-  - [[Alternative 2]](#alternative-2)
-- [Stakeholder Feedback / Opposition](#stakeholder-feedback--opposition)
-- [References & acknowledgements](#references--acknowledgements)
+ Different people will give different answers, but one common thread that's clear from prior art (e.g. Dick Hardt's account of ["[...] it became clear average users did not know what to do with the OpenID prompt [...]"](https://x.com/DickHardt/status/1735056737844220279) and Justin Richer's account for [Why We Fail](https://x.com/justin__richer/status/1778681191693947078)) is that users struggle to accept the UX that were constructed: typically, an input box to invite the user to enter their domain name.
 
-<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+# The Proposal
 
-## Introduction
+Let me start by saying that it is currently far from clear that this proposal is sufficient to make an effect in this ecosystem, but it does seem to introduce a new dimension to it: the browser.
 
-[The "executive summary" or "abstract".
-Explain in a few sentences what the goals of the project are,
-and a brief overview of how the solution works.
-This should be no more than 1-2 paragraphs.]
+In this proposal, the browser acts as an intermediator between relying parties and identity providers, allowing (a) the latter to register with the browser so that (b) the former can request for any previously registered identity provider.
 
-## Goals [or Motivating Use Cases, or Scenarios]
+The first stage isn't much different from (the largely unsuccessful) `navigator.registerProtocolHandler()`, allowing any website to prompt the user for a permission to use it as a login provider. 
 
-[What is the **end-user need** which this project aims to address?]
+The API is largely TBD, but here is where we starting from:
 
-## Non-goals
+```javascript
+IdentityProvider.register("https://idp.example/config.json")
+``` 
 
-[If there are "adjacent" goals which may appear to be in scope but aren't,
-enumerate them here. This section may be fleshed out as your design progresses and you encounter necessary technical and other trade-offs.]
+This leads to the following permission prompt:
 
-## [API 1]
+<img width="624" alt="323806323-6a235d49-f73b-4638-984b-0b07e7fe8018" src="https://github.com/fedidcg/FedCM/assets/693738/62e95d20-c02e-4dff-b9ee-afa8b45c8430">
 
-[For each related element of the proposed solution - be it an additional JS method, a new object, a new element, a new concept etc., create a section which briefly describes it.]
+The second stage is also not much different from the current construction in FedCM, except that the relying party is now able to ask for "any" IdP rather than enumerate them:
 
-```js
-// Provide example code - not IDL - demonstrating the design of the feature.
-
-// If this API can be used on its own to address a user need,
-// link it back to one of the scenarios in the goals section.
-
-// If you need to show how to get the feature set up
-// (initialized, or using permissions, etc.), include that too.
+```javascript
+navigator.credentials.get({
+  identity: {
+    providers: [{
+      configURL: "any",
+      clientId: "https://rp.example",
+      nonce: "123",
+      type: "indieauth",
+    }]
+  }
+});
 ```
 
-[Where necessary, provide links to longer explanations of the relevant pre-existing concepts and API.
-If there is no suitable external documentation, you might like to provide supplementary information as an appendix in this document, and provide an internal link where appropriate.]
+<img width="1166" alt="331718574-fcaa470c-a0a2-4f80-936e-7d79c58683ab" src="https://github.com/fedidcg/FedCM/assets/693738/370dc395-732b-446a-a20a-3e3102fe7dcc">
 
-[If this is already specced, link to the relevant section of the spec.]
 
-[If spec work is in progress, link to the PR or draft of the spec.]
+# Where are things at?
 
-## [API 2]
+If you follow this thread you'll find a massive amount of engagement from all parts of the Web.
 
-[etc.]
+* Chrome and Firefox have bee largely supportive ([example](https://github.com/fedidcg/FedCM/issues/240#issuecomment-1335421460)). Chrome has [a prototype behind a flag](https://github.com/fedidcg/FedCM/issues/240#issuecomment-2004650817) that it is actively developing based on the feedback here
+* The IndieWeb and Solid community have been actively participating and built prototypes of IdPs, RPs (https://webmention.io/) and profiles of protocols (e.g. [FedCM for IndieAuth](https://indieweb.org/FedCM_for_IndieAuth) and [OAuth Profile](https://github.com/fedidcg/FedCM/issues/599), largely thanks to @aaronpk ).
+* A series of people have used @aaronpk 's work to spin up their own IdP (including myself, [Mark Foster](https://x.com/mfosterio/status/1793354610477785179), [Paul Kinlan](https://x.com/Paul_Kinlan/status/1793947618831114685) and many others) and services and frameworks (such as @anderspitman 's [Last Login](https://github.com/fedidcg/FedCM/issues/240#issuecomment-2156057182) and @sebadob 's [reathy](https://github.com/fedidcg/FedCM/issues/240#issuecomment-2136023482)).
 
-## Key scenarios
+# Open Questions
 
-[If there are a suite of interacting APIs, show how they work together to solve the key scenarios described.]
+I think at this point, it is clear to me that there is something special here that is worth trying: this extension to FedCM seems to represent a diverse and rich set of communities. This API depends on w3c-fedid/FedCM#319, but it is something that we should be actively working on.
 
-### Scenario 1
+I think that what's yet to be seen is whether Relying Parties are going to find sufficient value in this construction. Based on the engagement in this thread, I think we arrived at something that browser vendors and users (as identity providers) are going to be excited about, but this is a three sided market, and Relying Parties are yet to join the party. 
 
-[Description of the end-user scenario]
+There is much to believe that, due to FedCM's construction, this scheme is going to be a net-positive for Relying Parties, because calling the FedCM API without any registered Identity Provider has no negative effect (nothing is displayed, no real estate is taken), whereas it has a positive effect with a registered Identity Provider (something that the user has deliberately chosen). If that proves to be true, then it becomes an ergonomics and cost-benefit problem: are there going to be enough users that want to bring their own IdP that outweigh the cost paid by the RP to call the FedCM API?
 
-```js
-// Sample code demonstrating how to use these APIs to address that scenario.
-```
-
-### Scenario 2
-
-[etc.]
-
-## Detailed design discussion
-
-### [Tricky design choice #1]
-
-[Talk through the tradeoffs in coming to the specific design point you want to make.]
-
-```js
-// Illustrated with example code.
-```
-
-[This may be an open question,
-in which case you should link to any active discussion threads.]
-
-### [Tricky design choice 2]
-
-[etc.]
-
-## Considered alternatives
-
-[This should include as many alternatives as you can,
-from high level architectural decisions down to alternative naming choices.]
-
-### [Alternative 1]
-
-[Describe an alternative which was considered,
-and why you decided against it.]
-
-### [Alternative 2]
-
-[etc.]
-
-## Stakeholder Feedback / Opposition
-
-[Implementors and other stakeholders may already have publicly stated positions on this work. If you can, list them here with links to evidence as appropriate.]
-
-- [Implementor A] : Positive
-- [Stakeholder B] : No signals
-- [Implementor C] : Negative
-
-[If appropriate, explain the reasons given by other implementors for their concerns.]
-
-## References & acknowledgements
-
-[Your design will change and be informed by many people; acknowledge them in an ongoing way! It helps build community and, as we only get by through the contributions of many, is only fair.]
-
-[Unless you have a specific reason not to, these should be in alphabetical order.]
-
-Many thanks for valuable feedback and advice from:
-
-- [Person 1]
-- [Person 2]
-- [etc.]
+All in all, this is an extension that is still early, and has as much potential as it has open questions, but seems so far worth taking a few leaps of faith.
