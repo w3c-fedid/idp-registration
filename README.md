@@ -41,6 +41,8 @@ The API is largely TBD, but here is where we starting from:
 IdentityProvider.register("https://idp.example/config.json")
 ``` 
 
+<img width="1089" alt="Screenshot 2024-09-10 at 11 24 16" src="https://github.com/user-attachments/assets/0d8805dd-5206-4baf-94b9-5701219910e8">
+
 The second stage is also not much different from the current construction in FedCM, except that the relying party is now able to ask for "any" IdP rather than enumerate them:
 
 ```javascript
