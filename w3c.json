@@ -1,5 +1,5 @@
  {
-    "group":      "cg/fedid",   
+    "group":      "cg/fed-id",   
     "contacts":   ["simoneonofri", "hlflanagan", "achimschloss", "timcappalli", "wseltzer"],
     "repo-type":  "cg-report"
 }
