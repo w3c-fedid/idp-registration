@@ -68,9 +68,6 @@ The second stage consists of the RP performing a FedCM call. It's not much diffe
 navigator.credentials.get({
   identity: {
     providers: [{
-      configURL: "any",
-      clientId: "https://rp.example",
-      nonce: "123",
       type: "indieauth",
     }]
   }
@@ -78,6 +75,7 @@ navigator.credentials.get({
 ```
 
 A few things to note:
+* configURL is not required (and in fact ignored) when `type` is passed. `clientId` is unlikely to be passed since it would vary by IdP. And `nonce` would be passed in `params`.
 * IdP registration would only be supported in passive mode at the moment, since it presuposes multi IdP, which is not specified or implemented in active mode.
 * The RP may also request non-registered IdPs in the same call. In case an IdP happens to be both registered and explicitly requested, the registration is 'ignored' to avoid duplication.
 
