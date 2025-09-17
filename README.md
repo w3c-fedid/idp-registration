@@ -85,7 +85,7 @@ When registered IdP are requested:
 1. The user agent looks up the list of IdPs which are registered AND have currently logged in accounts per the accounts push model.
 2. For all of those IdPs, the user agent fetches the IdP's config file where it should contain at the very least a list of `types` that the IdP supports.
 3. The user agent will show the stored accounts for IdPs which contain the `type` that was requested by the RP.
-4. If the user selects an account from a registered IdP, the ID assertion endpoint is requested, if one is specified (as it is [optional](https://github.com/fedidcg/LightweightFedCM?tab=readme-ov-file#id-assertion-endpoint)).
+4. If the user selects an account from a registered IdP, the ID assertion endpoint is requested.
 
 Notice that this in particular means that there is no requirement for there to be only one registered IdP per eTLD+1 since the well-known file is never queried for a registered IdP. In addition, in a FedCM login flow, an IdP that is purely registered only needs to worry about the manifest/config file and the ID assertion endpoint.
 
