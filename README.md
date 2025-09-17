@@ -13,6 +13,7 @@ This is a [Stage 1](https://github.com/w3c-fedid/Administration/blob/main/propos
 - @samuelgoto
 - @aaronpk
 - @anderspitman
+- @npm1
 
 ## Participate
 - https://github.com/w3c-fedid/idp-registration
@@ -29,21 +30,39 @@ This isn't particularly a new problem, nor the first time a community tried to t
 
 # The Proposal
 
-Let me start by saying that it is currently far from clear that this proposal is sufficient to make an effect in this ecosystem, but it does seem to introduce a new dimension to it: the browser.
+It is currently far from clear that this proposal is sufficient to make an effect in this ecosystem, but it does seem to introduce a new dimension to it: the browser.
 
 In this proposal, the browser acts as an intermediator between relying parties and identity providers, allowing (a) the latter to register with the browser so that (b) the former can request for any previously registered identity provider.
 
-The first stage isn't much different from (the largely unsuccessful) `navigator.registerProtocolHandler()`, allowing any website to prompt the user for a permission to use it as a login provider. 
+## Registration
 
-The API is largely TBD, but here is where we starting from:
+The first stage isn't much different from (the largely unsuccessful) `navigator.registerProtocolHandler()`, allowing any website to prompt the user for a permission to use it as a login provider. In this stage, an IdP must explicitly make itself available as a registered IdP by invoking the API:
 
 ```javascript
 IdentityProvider.register("https://idp.example/config.json")
-``` 
+```
 
-<img width="1089" alt="Screenshot 2024-09-10 at 11 24 16" src="https://github.com/user-attachments/assets/0d8805dd-5206-4baf-94b9-5701219910e8">
+They may also choose to make themselves unavailable at a later point in time:
+```javascript
+IdentityProvider.unregister("https://idp.example/config.json")
+```
 
-The second stage is also not much different from the current construction in FedCM, except that the relying party is now able to ask for "any" IdP rather than enumerate them:
+When an IdP registers itself, it is attesting that it will use the [accounts push](https://github.com/fedidcg/LightweightFedCM?tab=readme-ov-file#fedcm-accounts-push) mechanism to store accounts in the user agent. These stored accounts may later be surfaced in an RP which requests a registered IdP. While the IdP may also have an accounts endpoint, only the stored accounts are surfaced when the IdP is being used as a registered IdP, e.g. when the RP does not explicitly request this IdP. This has some advantages:
+
+* Improved privacy: no credentialed fetches are performed when a registered IdP is used. This means there is no silent timing attack problem, for instance. In particular, this means the user agent never has to show mismatch UI for registered IdPs! 
+* Improved performance: the fetches required when using a registered IdP are greatly reduced (and could potentially be entirely removed) with this proposal, since the user agent knows the registered IdP and it also knows the accounts that it may show to the user when they visit the RP.
+
+We initially thought it is required to promp the user during registration. That said, after some UX discussions, we believe it is acceptable to not prompt at this time for the following reasons:
+
+* Registration happens when the user is visiting the IdP, which is not when the user gains any benefit from the registration. Asking the user to accept a registration for some potential future benefit seems off.
+* It is hard to convey the meaning of registration to the user, especially in the IdP setting. Instead, the user agent can point the user to unregistration settings when surfacing registered accounts, in case the user finds them a nuisance.
+* With the proposal we have, a registered IdP does not really gain anything privacy-wise solely from the registration (keep reading for details).
+
+That being said, Chrome may add a prompt in the future. In general, this API should work with or without prompting when `register` is invoked. It is also encouraged for the user agent to check that the IdP has some pushed some accounts to the user agent at the time it attempts to register itself. This is a sanity check that the IdP has indeed implemented FedCM and that the user is logged in to the IdP.
+
+## RP Invocation
+
+The second stage consists of the RP performing a FedCM call. It's not much different from the current construction in FedCM, except that the relying party is now able to ask for "any" IdP rather than enumerate them, and it may specify a 'type' in order to only get registered IdPs that are compatible with the RP expectations (e.g. a type could be the protocol used):
 
 ```javascript
 navigator.credentials.get({
@@ -58,6 +77,28 @@ navigator.credentials.get({
 });
 ```
 
+A few things to note:
+* IdP registration would only be supported in passive mode at the moment, since it presuposes multi IdP, which is not specified or implemented in active mode.
+* The RP may also request non-registered IdPs in the same call. In case an IdP happens to be both registered and explicitly requested, the registration is 'ignored' to avoid duplication.
+
+When registered IdP are requested:
+1. The user agent looks up the list of IdPs which are registered AND have currently logged in accounts per the accounts push model.
+2. For all of those IdPs, the user agent fetches the IdP's config file where it should contain at the very least a list of `types` that the IdP supports.
+3. The user agent will show the stored accounts for IdPs which contain the `type` that was requested by the RP.
+4. If the user selects an account from a registered IdP, the ID assertion endpoint is requested, if one is specified (as it is [optional](https://github.com/fedidcg/LightweightFedCM?tab=readme-ov-file#id-assertion-endpoint)).
+
+Notice that this in particular means that there is no requirement for there to be only one registered IdP per eTLD+1 since the well-known file is never queried for a registered IdP. In addition, in a FedCM login flow, an IdP that is purely registered only needs to worry about the manifest/config file and the ID assertion endpoint.
+
+# Alternatives considered
+
+For the IdP registration part, which is invoked from an IdP context, it is natural to consider bundling it into `navigator.login.setStatus`. This was not chosen for a few reasons:
+* It would overload a method that is already somewhat: not only would it be now to set the login status AND store accounts, but ALSO to register an IdP. It is preferable for methods to have clear, distinct semantics, and the new `register` method does that.
+* It would raise the question whether the header version would also have the capability to register. However, adding that would in turn be somewhat problematic because it is possible for a user agent to show UI as a result of that invocation, and having a header surface UI seems like a poor design choice.
+
+For the `type`, it would be feasible to instead allow an array of `types` if an RP supports multiple kinds of registered IdPs. The `type` is just considered as a string for simplicity of the initial proposal.
+
+Lastly, the `types` could be sent by the IdP in the registration call, but this has the drawback that the IdP would need to register itself again every time the list changes. By passing it via the config file, it does not need to register itself again when it changes the types it supports, which provides more flexibility to the IdP. Of course, the drawback is that this makes the construction of the account chooser from IdP registration to require one fetch instead of zero.
+
 # Where are things at?
 
 If you follow this thread you'll find a massive amount of engagement from all parts of the Web.
@@ -68,9 +109,9 @@ If you follow this thread you'll find a massive amount of engagement from all pa
 
 # Open Questions
 
-I think at this point, it is clear to me that there is something special here that is worth trying: this extension to FedCM seems to represent a diverse and rich set of communities. This API depends on w3c-fedid/FedCM#319, but it is something that we should be actively working on.
+This extension to FedCM seems to represent a diverse and rich set of communities. This API depends on w3c-fedid/FedCM#319, but it is something that we should be actively working on.
 
-I think that what's yet to be seen is whether Relying Parties are going to find sufficient value in this construction. Based on the engagement in this thread, I think we arrived at something that browser vendors and users (as identity providers) are going to be excited about, but this is a three sided market, and Relying Parties are yet to join the party. 
+What's yet to be seen is whether Relying Parties are going to find sufficient value in this construction. Based on the engagement in this thread, we think we arrived at something that browser vendors and users (as identity providers) are going to be excited about, but this is a three sided market, and Relying Parties are yet to join the party. 
 
 There is much to believe that, due to FedCM's construction, this scheme is going to be a net-positive for Relying Parties, because calling the FedCM API without any registered Identity Provider has no negative effect (nothing is displayed, no real estate is taken), whereas it has a positive effect with a registered Identity Provider (something that the user has deliberately chosen). If that proves to be true, then it becomes an ergonomics and cost-benefit problem: are there going to be enough users that want to bring their own IdP that outweigh the cost paid by the RP to call the FedCM API?
 
