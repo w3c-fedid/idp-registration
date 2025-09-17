@@ -36,7 +36,7 @@ In this proposal, the browser acts as an intermediator between relying parties a
 
 ## Registration
 
-The first stage isn't much different from (the largely unsuccessful) `navigator.registerProtocolHandler()`, allowing any website to prompt the user for a permission to use it as a login provider. In this stage, an IdP must explicitly make itself available as a registered IdP by invoking the API:
+The first stage isn't much different from `navigator.registerProtocolHandler()`, allowing any website to prompt the user for a permission to use it as a login provider. In this stage, an IdP must explicitly make itself available as a registered IdP by invoking the API:
 
 ```javascript
 IdentityProvider.register("https://idp.example/config.json")
