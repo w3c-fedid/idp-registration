@@ -47,7 +47,20 @@ They may also choose to make themselves unavailable at a later point in time:
 IdentityProvider.unregister("https://idp.example/config.json")
 ```
 
-When an IdP registers itself, it is attesting that it will use the [accounts push](https://github.com/fedidcg/LightweightFedCM?tab=readme-ov-file#fedcm-accounts-push) mechanism to store accounts in the user agent. These stored accounts may later be surfaced in an RP which requests a registered IdP. While the IdP may also have an accounts endpoint, only the stored accounts are surfaced when the IdP is being used as a registered IdP, e.g. when the RP does not explicitly request this IdP. This has some advantages:
+When an IdP registers itself, it is attesting that it will use the [accounts push](https://github.com/fedidcg/LightweightFedCM?tab=readme-ov-file#fedcm-accounts-push) mechanism to store accounts in the user agent. These stored accounts may later be surfaced in an RP which requests a registered IdP. While the IdP may also have an accounts endpoint, only the stored accounts are surfaced when the IdP is being used as a registered IdP, e.g. when the RP does not explicitly request this IdP. 
+
+```javascript
+navigator.login.setStatus("logged-in", {
+  accounts: [{
+    id: "1234",
+    name: "John Doe",
+    email: "foobar@example.com",
+    picture: "https://example.com/users/foobar.jpg",
+  }],
+});
+```
+
+This has some advantages:
 
 * Improved privacy: no credentialed fetches are performed when a registered IdP is used. This means there is no silent timing attack problem, for instance. In particular, this means the user agent never has to show mismatch UI for registered IdPs! 
 * Improved performance: the fetches required when using a registered IdP are greatly reduced (and could potentially be entirely removed) with this proposal, since the user agent knows the registered IdP and it also knows the accounts that it may show to the user when they visit the RP.
