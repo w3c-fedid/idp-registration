@@ -91,8 +91,9 @@ The second stage consists of the RP performing a FedCM call. It's not much diffe
 navigator.credentials.get({
   identity: {
     providers: [{
-      configURL: 'any',
       type: "indieauth",
+      // TODO(issues/26): remove the need to declare `configURL` when `type` is used
+      configURL: 'any',
     }]
   }
 });
