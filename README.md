@@ -42,6 +42,16 @@ The first stage isn't much different from `navigator.registerProtocolHandler()`,
 IdentityProvider.register("https://idp.example/config.json")
 ```
 
+The browser fetches the `config.json` file and expect that a `type` attribute is now found in the `configURL`:
+
+```json
+{
+  "id_assertion_endpoint":"...",
+  "login_url":"...",
+  "types":["indieauth"] // <- needs to be defined
+}
+```
+
 They may also choose to make themselves unavailable at a later point in time:
 ```javascript
 IdentityProvider.unregister("https://idp.example/config.json")
