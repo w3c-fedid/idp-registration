@@ -2,7 +2,7 @@
 
 A proposal to extend FedCM to allow RPs to ask for "any" registered IdP, as opposed to (or, in addition to) enumerating them.
 
-<img width="784" height="745" alt="IdP" src="https://github.com/user-attachments/assets/ba59a12e-8576-4463-9116-a8f04b68b607" />
+<img width="784" height="745" alt="IdP-3" src="https://github.com/user-attachments/assets/2aa4f45e-ea27-44df-a435-94ca092fce66" />
 
 
 ## Stage
