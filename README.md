@@ -53,7 +53,7 @@ The browser fetches the `.well-known/web-identity` file and is able to find the 
 {
   "id_assertion_endpoint":"...",
   "login_url":"...",
-  "types":["indieauth"] // <- needs to be defined
+  "types":["https://www.w3.org/TR/indieauth"]
 }
 ```
 
