@@ -2,7 +2,8 @@
 
 A proposal to extend FedCM to allow RPs to ask for "any" registered IdP, as opposed to (or, in addition to) enumerating them.
 
-<img width="1089" alt="Screenshot 2024-09-10 at 11 23 26" src="https://github.com/user-attachments/assets/9cf6a1e0-cfbe-4773-8ee5-7b638e6899b9">
+<img width="784" height="745" alt="IdP" src="https://github.com/user-attachments/assets/ba59a12e-8576-4463-9116-a8f04b68b607" />
+
 
 ## Stage
 
@@ -13,7 +14,7 @@ This is a [Stage 1](https://github.com/w3c-fedid/Administration/blob/main/propos
 - @samuelgoto
 - @aaronpk
 - @anderspitman
-- @npm1
+- @ThisIsMissEm
 
 ## Participate
 - https://github.com/w3c-fedid/idp-registration
@@ -22,7 +23,7 @@ This is a [Stage 1](https://github.com/w3c-fedid/Administration/blob/main/propos
 
 One of the problems on the web is that users are currently constrained by a small set of social login providers to login to Websites. Websites, in turn, are constrained by finite space in login flows, so they typically have to pick 2-5 large social login providers (e.g. facebook, google, twitter, linkedin, github, etc) that can represent a large fraction of their users, but, by construction, not all of them.
 
-One of the most popular alternative to federation in login flows is email verification (or phone number). In as much as email verification is orders of magnitudes more cumbersome, it excels at giving users choice in a much healthier ecosystem: users can join large services (e.g. gmail, gmx, outlook), use large services as hosts (e.g. custom domains) or even run their own operation (e.g. spinning up SMTP and POP servers), and websites accept any email address without having to register or allow-list servers (e.g. as long as the server speaks SMTP/POP they are welcomed in).
+One of the most popular alternative to federation in login flows is email verification (or phone number). In as much as email verification is orders of magnitudes more cumbersome (but getting [increasingly better](https://github.com/WICG/email-verification)), it excels at giving users choice in a much healthier ecosystem: users can join large services (e.g. gmail, gmx, outlook), use large services as hosts (e.g. custom domains) or even run their own operation (e.g. spinning up SMTP and POP servers), and websites accept any email address without having to register or allow-list servers (e.g. as long as the server speaks SMTP/POP they are welcomed in).
 
 This isn't particularly a new problem, nor the first time a community tried to tackle it. In fact, [OpenID 1.0](https://x.com/samuelgoto/status/1745147272055390295), [IndieAuth](https://indieweb.org/IndieAuth) and [Solid](https://solid.github.io/webid-profile/) all allowed users to identity themselves as URIs.
 
@@ -39,10 +40,14 @@ In this proposal, the browser acts as an intermediator between relying parties a
 The first stage isn't much different from `navigator.registerProtocolHandler()`, allowing any website to prompt the user for a permission to use it as a login provider. In this stage, an IdP must explicitly make itself available as a registered IdP by invoking the API:
 
 ```javascript
-IdentityProvider.register("https://idp.example/config.json")
+IdentityProvider.register("https://idp.example")
 ```
 
-The browser fetches the `config.json` file and expect that a `type` attribute is now found in the `configURL`:
+Exactly how this materializes in browser UI is still an ongoing exploration, but just as an approximation, here is more or less what it could look like:
+
+<img width="784" height="745" alt="IdP" src="https://github.com/user-attachments/assets/18dc0958-65f6-4222-bf77-c9d10eb1e9b8" />
+
+The browser fetches the `.well-known/web-identity` file and is able to find the `config.json` file and expect that a `type` attribute is now found in the `configURL`:
 
 ```json
 {
@@ -54,7 +59,7 @@ The browser fetches the `config.json` file and expect that a `type` attribute is
 
 They may also choose to make themselves unavailable at a later point in time:
 ```javascript
-IdentityProvider.unregister("https://idp.example/config.json")
+IdentityProvider.unregister("https://idp.example")
 ```
 
 When an IdP registers itself, it is attesting that it will use the [accounts push](https://github.com/fedidcg/LightweightFedCM?tab=readme-ov-file#fedcm-accounts-push) mechanism to store accounts in the user agent. These stored accounts may later be surfaced in an RP which requests a registered IdP. While the IdP may also have an accounts endpoint, only the stored accounts are surfaced when the IdP is being used as a registered IdP, e.g. when the RP does not explicitly request this IdP. 
@@ -75,25 +80,19 @@ This has some advantages:
 * Improved privacy: no credentialed fetches are performed when a registered IdP is used. This means there is no silent timing attack problem, for instance. In particular, this means the user agent never has to show mismatch UI for registered IdPs! 
 * Improved performance: the fetches required when using a registered IdP are greatly reduced (and could potentially be entirely removed) with this proposal, since the user agent knows the registered IdP and it also knows the accounts that it may show to the user when they visit the RP.
 
-We initially thought it is required to promp the user during registration. That said, after some UX discussions, we believe it is acceptable to not prompt at this time for the following reasons:
-
-* Registration happens when the user is visiting the IdP, which is not when the user gains any benefit from the registration. Asking the user to accept a registration for some potential future benefit seems off.
-* It is hard to convey the meaning of registration to the user, especially in the IdP setting. Instead, the user agent can point the user to unregistration settings when surfacing registered accounts, in case the user finds them a nuisance.
-* With the proposal we have, a registered IdP does not really gain anything privacy-wise solely from the registration (keep reading for details).
-
-That being said, Chrome may add a prompt in the future. In general, this API should work with or without prompting when `register` is invoked. It is also encouraged for the user agent to check that the IdP has some pushed some accounts to the user agent at the time it attempts to register itself. This is a sanity check that the IdP has indeed implemented FedCM and that the user is logged in to the IdP.
-
 ## RP Invocation
 
-The second stage consists of the RP performing a FedCM call. It's not much different from the current construction in FedCM, except that the relying party is now able to ask for "any" IdP rather than enumerate them, and it may specify a 'type' in order to only get registered IdPs that are compatible with the RP expectations (e.g. a type could be the protocol used):
+The second stage consists of the RP performing a FedCM call. It's not much different from the current construction in FedCM, except that the relying party is now able to ask for "any" IdP rather (or in addition to) than enumerate them, and it may specify a `type` (which [is a URL](https://github.com/w3c-fedid/idp-registration/issues/29#issue-5092748516)) in order to only get registered IdPs that are compatible with the RP expectations (e.g. a type could be the protocol used):
 
 ```javascript
 navigator.credentials.get({
   identity: {
     providers: [{
-      type: "indieauth",
-      // TODO(issues/26): remove the need to declare `configURL` when `type` is used
-      configURL: 'any',
+      type: "https://www.w3.org/TR/indieauth",
+    }, {
+      configURL: "https://idp1.example",
+    }, {
+      configURL: "https://idp2.example",
     }]
   }
 });
@@ -101,7 +100,7 @@ navigator.credentials.get({
 
 A few things to note:
 * configURL is not required (and in fact ignored) when `type` is passed. `clientId` is unlikely to be passed since it would vary by IdP. And `nonce` would be passed in `params`.
-* IdP registration would only be supported in passive mode at the moment, since it presuposes multi IdP, which is not specified or implemented in active mode.
+* IdP registration is supported in passive mode and active mode.
 * The RP may also request non-registered IdPs in the same call. In case an IdP happens to be both registered and explicitly requested, the registration is 'ignored' to avoid duplication.
 
 When registered IdP are requested:
@@ -111,6 +110,23 @@ When registered IdP are requested:
 4. If the user selects an account from a registered IdP, the ID assertion endpoint is requested.
 
 Notice that this in particular means that there is no requirement for there to be only one registered IdP per eTLD+1 since the well-known file is never queried for a registered IdP. In addition, in a FedCM login flow, an IdP that is purely registered only needs to worry about the manifest/config file and the ID assertion endpoint.
+
+The UX of what an active call would look like is an active investigation, but as an approximation here is what we think it could look like:
+
+<img width="784" height="745" alt="IdP" src="https://github.com/user-attachments/assets/c4b9050d-95cd-439e-a7a5-013d0621d1a1" />
+
+The user always have a choice to add more accounts from registered IdPs as well as listed ones:
+
+<img width="784" height="745" alt="IdP-1" src="https://github.com/user-attachments/assets/99260e89-4e32-417d-96a7-45cb60b6dd8a" />
+
+For example, typing their handles:
+
+<img width="784" height="745" alt="IdP-2" src="https://github.com/user-attachments/assets/6ad59a1d-5b7b-497b-bc38-3100daa515b3" />
+
+Which then later becomes part of the accounts that are available to them:
+
+<img width="784" height="745" alt="IdP-3" src="https://github.com/user-attachments/assets/2aa4f45e-ea27-44df-a435-94ca092fce66" />
+
 
 # Alternatives considered
 
