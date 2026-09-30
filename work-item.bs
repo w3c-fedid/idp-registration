@@ -194,6 +194,10 @@ that is produced by [=parse a handle=], and that is resolvable by
 [=resolve a handle|Resolution=]. A handle isn't necessarily permanent: a user can change it, or
 move it to another [=IDP=].
 
+An <dfn>issuer</dfn> is an [=IDP=] that is the authority for a [=/handle=]. The user agent identifies an
+issuer by its [=site of a host|site=], where it serves its [=well-known file=]. Each [=/handle=] has
+exactly one issuer at a time, which [=resolve a handle|Resolution=] finds.
+
 This section defines how the user agent parses a [=/handle=], resolves it to an [=IDP=], and
 stores the [=/handle|handles=] the user uses. None of this requires the user agent to understand
 any identity protocol. It only needs a small set of handle notations ([[#parsing]]) and a single,
@@ -287,25 +291,23 @@ Issue: URL handles need more normalization (fragments such as `#me`, trailing sl
 
 ## Resolution ## {#resolution}
 
-<dfn lt="resolve a handle">Resolution</dfn> turns a [=/handle=] into the URL of the [=config file=]
-of the [=IDP=] that serves it. It is based on one rule: **a handle is served by an [=IDP=] on the
-handle's own [=site of a host|site=], unless the handle's [=handle/domain=] delegates to another site in
-DNS.**
+<dfn lt="resolve a handle">Resolution</dfn> turns a [=/handle=] into the
+[=config file|config URL=] of its [=issuer=].
 
 <div algorithm="resolve a handle">
 To [=resolve a handle=] given a [=/handle=] |handle| and a |globalObject|, run the following steps.
 This returns a [=/URL=] or failure.
 
-1. Let |site| be the result of [=determine the IdP site=] with |handle|'s [=handle/domain=]. If
-    |site| is failure, return failure.
-1. Let |wellKnown| be the result of [=fetch the well-known file=] with |site| and |globalObject|.
+1. Let |issuer| be the result of [=resolve the issuer=] of |handle|. If |issuer| is failure,
+    return failure.
+1. Let |wellKnown| be the result of [=fetch the well-known file=] with |issuer| and |globalObject|.
     If |wellKnown| is failure, return failure.
 1. If |wellKnown|["{{IdentityProviderWellKnown/provider_urls}}"] doesn't [=map/exist=] or its
     [=list/size=] is not 1, return failure.
 1. Let |url| be the result of running the [=URL parser=] on
     |wellKnown|["{{IdentityProviderWellKnown/provider_urls}}"][0].
 1. If |url| is failure, or |url|'s [=url/scheme=] is not "`https`", or |url|'s [=url/host=]'s
-    [=host/registrable domain=] is not |site|, return failure.
+    [=host/registrable domain=] is not |issuer|, return failure.
 1. Return |url|.
 
 </div>
@@ -321,35 +323,62 @@ fetch the [=config file=] or check its {{IdentityProviderAPIConfig/types}}, beca
 [=type request=] ([=group registered handles by IdP=]). The following subsections define its
 steps.
 
-### Determine the IdP site ### {#determine-idp-site}
+### Resolve the issuer ### {#resolve-issuer}
+
+The first step of [=resolve a handle|resolution=] finds a [=/handle=]'s [=issuer=]. It is based on
+one rule: **a handle is served by an [=IDP=] on the handle's own [=site of a host|site=], unless the
+handle's [=handle/domain=] delegates to another site in DNS.** There are three cases:
+
+:   The handle's own site hosts it
+::  `@alice.example` is served by an [=IDP=] on `alice.example`. Alice runs her own [=IDP=], or
+    has a provider serve the [=well-known file=] on her site for her. No DNS record is needed.
+:   The handle's domain delegates to another issuer site
+::  `@alice.example` is served by an [=IDP=] on `social.example`. Alice keeps her domain as her
+    handle but uses a provider's [=IDP=], so she publishes a [[#dns-record|delegation record]] on
+    `alice.example` naming `social.example`.
+:   The provider assigned the handle under its own domain
+::  `@alice.social.example` and `alice@social.example` are served by an [=IDP=] on
+    `social.example`. This is really the first case: the handle's own site is `social.example`,
+    because a site is a [=host/registrable domain=]. No DNS record is needed.
+
+In every case, the user agent first looks for a [[#dns-record|delegation record]] on the
+handle's [=handle/domain=]. If there is one, its `iss=` value names the [=issuer=]'s site. If
+there isn't, the [=issuer=] is on the handle's own site.
 
 <div algorithm>
-To <dfn>determine the IdP site</dfn> given a [=/domain=] |host|, run the following steps. This
-returns a [=site host=] or failure.
+To <dfn>resolve the issuer</dfn> of a [=/handle=] |handle|, run the following steps. This returns
+the [=site host=] of |handle|'s [=issuer=], or failure.
 
-1. Let |default| be |host|'s [=host/registrable domain=].
-1. Let |records| be the result of [=look up the delegation records=] for |host|.
-1. If |records| is failure or [=list/is empty=], return |default|.
+1. Let |domain| be |handle|'s [=handle/domain=].
+1. Let |records| be the result of [=look up the delegation records=] for |domain|.
+1. If |records| is failure or [=list/is empty=], return |domain|'s [=host/registrable domain=].
 1. If |records|'s [=list/size=] is greater than 1, return failure.
-1. Let |site| be the result of running the [=host parser=] on the
+1. Let |issuer| be the result of running the [=host parser=] on the
     [=ASCII lowercase|ASCII lowercased=] |records|[0].
-1. If |site| is failure or is not a [=site host=], return failure.
-1. Return |site|.
+1. If |issuer| is failure or is not a [=site host=], return failure.
+1. Return |issuer|.
 
 </div>
 
-Issue: Should a failed DNS query (e.g. `SERVFAIL`) fail closed instead of falling back to
-<var ignore>default</var>?
+Note: When the provider's domain is a [=host/public suffix=] (for example, `hosting.example`, where each
+user gets their own subdomain), each subdomain is its own site. `@alice.hosting.example` falls
+under the first case, and is served by an [=IDP=] on `alice.hosting.example`, not on
+`hosting.example`.
 
-<div class="example" id="example-determine-idp-site">
+Issue: Should a failed DNS query (e.g. `SERVFAIL`) fail closed instead of falling back to the
+handle's own site?
+
+<div class="example" id="example-resolve-issuer">
 <table class="data">
-<thead><tr><th>Host<th>Delegation record<th>IdP site
+<thead><tr><th>Handle<th>Delegation record<th>[=Issuer=]
 <tbody>
-<tr><td>`alice.example`<td>none<td>`alice.example`
-<tr><td>`alice.example`<td>`iss=social.example`<td>`social.example`
-<tr><td>`alice.social.example`<td>none<td>`social.example`
-<tr><td>`alice.hosting.example` (`hosting.example` is a public suffix)<td>none<td>`alice.hosting.example`
-<tr><td>`alice.example`<td>`iss=pds.social.example`<td>failure (not a site)
+<tr><td>`@alice.example`<td>none<td>`alice.example`
+<tr><td>`@alice.example`<td>`iss=social.example`<td>`social.example`
+<tr><td>`@alice.social.example`<td>none<td>`social.example`
+<tr><td>`alice@social.example`<td>none<td>`social.example`
+<tr><td>`https://alice.example/`<td>none<td>`alice.example`
+<tr><td>`@alice.hosting.example` (`hosting.example` is a public suffix)<td>none<td>`alice.hosting.example`
+<tr><td>`@alice.example`<td>`iss=pds.social.example`<td>failure (not a site)
 </table>
 </div>
 
@@ -1104,7 +1133,7 @@ To <dfn>sign in with a handle</dfn> given a [=/handle=] |handle|, a [=registered
     [=RP=] accept a token for someone else's handle, as long as the [=RP=] verifies the token using
     its protocol (for example, atproto's two-way check between handle and DID). This is the same
     reasoning as the Email Verification Protocol's analysis of DNS delegation.
-* **A site speaks for its subdomains.** [=Determine the IdP site=] falls back to the
+* **A site speaks for its subdomains.** [=Resolve the issuer=] falls back to the
     [=host/registrable domain=], just as cookies and the FedCM [=well-known file=] do. Hosts that
     give independent users their own subdomains need to be on the Public Suffix List to keep them
     separate.
@@ -1139,8 +1168,8 @@ To <dfn>sign in with a handle</dfn> given a [=/handle=] |handle|, a [=registered
 **The handle and the [=IDP=] are on the same site.** Alice runs her own atproto server at
 `pds.alice.example`, and her handle is `@alice.example`.
 
-1. [=Parse a handle=] gives (`@alice.example`, `alice.example`).
-1. There's no delegation record, so [=determine the IdP site=] returns `alice.example`.
+1. [=Parse a handle=] gives `@alice.example`, whose [=handle/domain=] is `alice.example`.
+1. There's no delegation record, so [=resolve the issuer=] returns `alice.example`.
 1. `https://alice.example/.well-known/web-identity` returns
     `{"provider_urls": ["https://pds.alice.example/config.json"]}`, which is on the same site.
 1. The [=config file=] lists `https://atproto.com` in {{IdentityProviderAPIConfig/types}}.
@@ -1156,7 +1185,7 @@ To <dfn>sign in with a handle</dfn> given a [=/handle=] |handle|, a [=registered
 account is hosted by `social.example`.
 
 1. Bob publishes `_web-identity.bob.example TXT "iss=social.example"`.
-1. [=Determine the IdP site=] returns `social.example`. The user agent fetches
+1. [=Resolve the issuer=] returns `social.example`. The user agent fetches
     `https://social.example/.well-known/web-identity` and then its [=config file=].
 1. The user agent shows Bob's pushed account with `username: "@bob.example"`, or a
     [=handle chip=].
@@ -1170,7 +1199,7 @@ Because `@bob.example` resolves to `social.example`, `social.example` can also c
 <div class="example" id="example-subdomain">
 **The handle is a subdomain of the provider.** Carol's handle is `@carol.social.example`.
 
-1. There's no record at `_web-identity.carol.social.example`, so [=determine the IdP site=]
+1. There's no record at `_web-identity.carol.social.example`, so [=resolve the issuer=]
     returns `social.example`, the [=host/registrable domain=].
 1. Discovery continues as in the previous example.
 
