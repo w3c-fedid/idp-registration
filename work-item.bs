@@ -103,15 +103,15 @@ allow-listing:
     calling {{IdentityProvider/register()}}, with the user's permission. Separately, it uses
     accounts push to tell the user agent which of its accounts the user is currently signed in to
     (see [[#accounts]]).
-1. An [=RP=] **requests** any registered [=IDP=] that supports a protocol it accepts, by passing a
-    {{IdentityProviderConfig/type}} instead of a {{IdentityProviderConfig/configURL}}:
+1. An [=RP=] **requests** any registered [=IDP=] that supports a federation it accepts, by passing a
+    {{IdentityProviderConfig/federation}} instead of a {{IdentityProviderConfig/configURL}}:
 
     <div class="example" id="example-rp-request">
     ```js
     const credential = await navigator.credentials.get({
       identity: {
         providers: [{
-          type: "https://www.w3.org/TR/indieauth/",
+          federation: "https://www.w3.org/TR/indieauth/",
           params: { nonce: "..." }
         }, {
           configURL: "https://idp.example/fedcm.json",
@@ -148,13 +148,13 @@ await IdentityProvider.register("@alice.idp.example");
 ```
 
 The user agent resolves `@alice.idp.example` to `idp.example`'s [=config file=], which lists the
-protocols it supports:
+federations it supports:
 
 ```json
 {
   "id_assertion_endpoint": "/assertion",
   "login_url": "/login",
-  "types": ["https://www.w3.org/TR/indieauth/", "https://atproto.com"]
+  "federations": ["https://www.w3.org/TR/indieauth/", "https://atproto.com"]
 }
 ```
 
@@ -315,12 +315,12 @@ This returns a [=/URL=] or failure.
 Resolution takes a [=/handle=], not arbitrary input. Callers that start from user or script input
 first run [=parse a handle=], which also normalizes it (for example, `Alice.Example` becomes
 `@alice.example`), and then resolve the result. Resolution stops at the config URL: it doesn't
-fetch the [=config file=] or check its {{IdentityProviderAPIConfig/types}}, because each caller needs a different check.
+fetch the [=config file=] or check its {{IdentityProviderAPIConfig/federations}}, because each caller needs a different check.
 
 [=Resolve a handle|Resolution=] is used when an [=IDP=] calls {{IdentityProvider/register()}} or
 {{IdentityProvider/unregister()}} ([=resolve a handle for a caller=]), when the user types a
 [=/handle=] ([=look up a typed handle=]), and for each registered [=/handle=] on a
-[=type request=] ([=group registered handles by IdP=]). The following subsections define its
+[=federation request=] ([=group registered handles by IdP=]). The following subsections define its
 steps.
 
 ### Resolve the issuer ### {#resolve-issuer}
@@ -408,7 +408,7 @@ Unlike that record, the value here names a site rather than a host, so that both
 end at a site's [=well-known file=].
 
 Issue: Should the record name be `_web-identity` or something more specific (e.g. `_web-handle`)?
-Should it carry a `type`, so that one domain can delegate different protocols to different
+Should it carry a `federation`, so that one domain can delegate different protocols to different
 [=IDPs=]?
 
 <div algorithm>
@@ -435,7 +435,7 @@ the [=IDP=] from the [=/handle=] by [=resolve a handle|resolving=] it whenever i
 from the [=account registry=].
 
 Note: A user agent can cache the results of [=resolve a handle|resolution=] and [=fetch the config file=],
-for example to avoid DNS lookups and fetches on every [=type request=]. That's an implementation
+for example to avoid DNS lookups and fetches on every [=federation request=]. That's an implementation
 choice, as long as the cache respects DNS TTLs and HTTP caching, and is cleared along with the
 [=handle registry=]. See also [[#privacy]] and [[#security]].
 
@@ -542,11 +542,11 @@ The user agent MUST clear [=account registry=] entries whenever it clears the co
 # IDL changes # {#idl}
 <!-- ============================================================ -->
 
-## Requesting by type ## {#idl-type}
+## Requesting by federation ## {#idl-federation}
 
 <xmp class="idl">
 partial dictionary IdentityProviderConfig {
-  USVString type;
+  USVString federation;
 };
 </xmp>
 
@@ -562,28 +562,31 @@ modified in [[#requesting]].
 </div>
 
 <dl dfn-type="dict-member" dfn-for="IdentityProviderConfig">
-    :   <dfn>type</dfn>
-    ::  A URL that identifies a protocol or profile the [=RP=] accepts, for example
+    :   <dfn>federation</dfn>
+    ::  A URL that points to the definition of a federation the [=RP=] accepts: the protocol or
+        profile that its [=IDPs=] and [=RPs=] follow, for example
         `"https://www.w3.org/TR/indieauth/"` or `"https://atproto.com"`. The authority behind the
-        URL decides what it means. When present, {{IdentityProviderConfig/configURL}} is ignored,
-        and the entry stands for every registered [=IDP=] whose [=config file=] lists this type.
+        URL defines the federation. When present, {{IdentityProviderConfig/configURL}} is ignored,
+        and the entry stands for every registered [=IDP=] whose [=config file=] lists this
+        federation.
 </dl>
 
-An {{IdentityProviderRequestOptions}} whose {{IdentityProviderConfig/type}} [=map/exists=] is a
-<dfn>type request</dfn>.
+An {{IdentityProviderRequestOptions}} whose {{IdentityProviderConfig/federation}} [=map/exists=] is a
+<dfn>federation request</dfn>.
 
-## Declaring supported types ## {#idl-types}
+## Declaring supported federations ## {#idl-federations}
 
 <xmp class="idl">
 partial dictionary IdentityProviderAPIConfig {
-  sequence<USVString> types;
+  sequence<USVString> federations;
 };
 </xmp>
 
 <dl dfn-type="dict-member" dfn-for="IdentityProviderAPIConfig">
-    :   <dfn>types</dfn>
-    ::  The {{IdentityProviderConfig/type}} URLs that the [=IDP=] supports. An [=IDP=] that doesn't
-        list a type is never returned for a [=type request=] with that type.
+    :   <dfn>federations</dfn>
+    ::  The {{IdentityProviderConfig/federation}} URLs that the [=IDP=] supports. An [=IDP=] that
+        doesn't list a federation is never returned for a [=federation request=] for that
+        federation.
 </dl>
 
 <div class="monkeypatch">
@@ -645,7 +648,7 @@ the following steps:
     1. Let (|canonical|, |configUrl|) be |result|.
     1. Let |provider| be the result of [=create a registered provider=] with |configUrl| and null.
     1. Let |config| be the result of [=fetch the config file=] with |provider| and |globalObject|.
-    1. If |config| is failure, or |config|.{{IdentityProviderAPIConfig/types}} doesn't
+    1. If |config| is failure, or |config|.{{IdentityProviderAPIConfig/federations}} doesn't
         [=map/exist=] or [=list/is empty=], [=queue to reject=] |promise| with "{{NetworkError}}"
         and return.
     1. If the [=handle registry=] doesn't already contain a [=/handle=] that
@@ -737,17 +740,17 @@ user agent keeps the following associated with it:
 
 <div algorithm>
 To <dfn>create a registered provider</dfn> given a [=/URL=] |configUrl| and an
-{{IdentityProviderRequestOptions}} or null |typeRequest|, run the following steps. This returns an
+{{IdentityProviderRequestOptions}} or null |federationRequest|, run the following steps. This returns an
 {{IdentityProviderRequestOptions}}.
 
 1. Let |provider| be a new {{IdentityProviderRequestOptions}}.
 1. Set |provider|.{{IdentityProviderConfig/configURL}} to the [=URL serializer|serialization=]
     of |configUrl|.
-1. If |typeRequest| is not null, then for each member name |m| of «
+1. If |federationRequest| is not null, then for each member name |m| of «
     {{IdentityProviderConfig/clientId}}, {{IdentityProviderRequestOptions/params}},
     {{IdentityProviderRequestOptions/fields}}, {{IdentityProviderRequestOptions/loginHint}},
-    {{IdentityProviderRequestOptions/domainHint}} »: if |typeRequest|[|m|] [=map/exists=], set
-    |provider|[|m|] to |typeRequest|[|m|].
+    {{IdentityProviderRequestOptions/domainHint}} »: if |federationRequest|[|m|] [=map/exists=], set
+    |provider|[|m|] to |federationRequest|[|m|].
 1. Mark |provider| as a [=registered provider=].
 1. Return |provider|.
 
@@ -770,7 +773,7 @@ To <dfn>get the registered accounts</dfn> given a [=/URL=] |configUrl| and a [=l
 Note: Only accounts whose {{IdentityProviderAccount/username}} is a registered [=/handle=] are shown
 to other [=RPs=], because those are the accounts the user agreed to (with
 {{IdentityProvider/register()}}, or by typing the [=/handle=]). An [=IDP=] can push other accounts,
-but they aren't shown on a [=type request=] until their [=/handle|handles=] are registered.
+but they aren't shown on a [=federation request=] until their [=/handle|handles=] are registered.
 
 Issue: Should other pushed accounts from a registered [=IDP=] also be shown, once the user has
 registered at least one [=/handle=] with it?
@@ -797,10 +800,10 @@ the same [=IDP=] share a user agent. Grouping them means the user agent fetches 
 
 <div algorithm>
 To <dfn>gather registered providers</dfn> given an {{IdentityProviderRequestOptions}}
-|typeRequest|, a [=list=] of {{IdentityProviderRequestOptions}} |explicitProviders|, and a
+|federationRequest|, a [=list=] of {{IdentityProviderRequestOptions}} |explicitProviders|, and a
 |globalObject|, run the following steps. This returns a [=list=] of [=registered providers=].
 
-1. Let |type| be |typeRequest|.{{IdentityProviderConfig/type}}.
+1. Let |federation| be |federationRequest|.{{IdentityProviderConfig/federation}}.
 1. Let |seenOrigins| be the [=ordered set=] of the [=url/origins=] of the
     {{IdentityProviderConfig/configURL}}s of |explicitProviders|.
 1. Let |result| be an empty [=list=].
@@ -812,11 +815,11 @@ To <dfn>gather registered providers</dfn> given an {{IdentityProviderRequestOpti
         Note: If the [=RP=] also lists this [=IDP=] explicitly, the explicit entry is used and
         the registration is ignored, so that the same [=IDP=] doesn't appear twice.
     1. Let |provider| be the result of [=create a registered provider=] with |configUrl| and
-        |typeRequest|.
+        |federationRequest|.
     1. Let |config| be the result of [=fetch the config file=] with |provider| and |globalObject|.
     1. If |config| is failure, [=iteration/continue=].
-    1. If |config|.{{IdentityProviderAPIConfig/types}} doesn't [=map/exist=] or doesn't
-        [=list/contain=] |type|, [=iteration/continue=].
+    1. If |config|.{{IdentityProviderAPIConfig/federations}} doesn't [=map/exist=] or doesn't
+        [=list/contain=] |federation|, [=iteration/continue=].
     1. Let |accounts| be the result of [=get the registered accounts=] with |configUrl| and
         |handles|.
     1. For each |account| of |accounts| where |account|["{{IdentityProviderAccount/picture}}"]
@@ -835,12 +838,12 @@ To <dfn>gather registered providers</dfn> given an {{IdentityProviderRequestOpti
 In [=create an IdentityCredential=], insert the following steps immediately after the step
 "Let <var ignore>mediation</var> be |options|'s {{CredentialRequestOptions/mediation}}":
 
-1. Let |typeRequests| be the [=list/items=] of |providerList| that are [=type requests=].
-1. If |typeRequests|'s [=list/size=] is greater than 1, return (failure, true).
-1. [=list/Remove=] the [=list/items=] of |typeRequests| from |providerList|.
-1. Let |typeRequest| be |typeRequests|[0] if it exists, and null otherwise.
-1. If |typeRequest| is not null:
-    1. Let |registered| be the result of [=gather registered providers=] with |typeRequest|,
+1. Let |federationRequests| be the [=list/items=] of |providerList| that are [=federation requests=].
+1. If |federationRequests|'s [=list/size=] is greater than 1, return (failure, true).
+1. [=list/Remove=] the [=list/items=] of |federationRequests| from |providerList|.
+1. Let |federationRequest| be |federationRequests|[0] if it exists, and null otherwise.
+1. If |federationRequest| is not null:
+    1. Let |registered| be the result of [=gather registered providers=] with |federationRequest|,
         |providerList|, and |globalObject|.
     1. [=list/Extend=] |providerList| with |registered|.
 
@@ -858,7 +861,7 @@ sub-step:
 Change the step "If |providerMap| [=map/is empty=], return (failure, false)" to:
 
 1. If |providerMap| [=map/is empty=]:
-    1. If |typeRequest| is null, or <var ignore>mode</var> is not
+    1. If |federationRequest| is null, or <var ignore>mode</var> is not
         {{IdentityCredentialRequestOptionsMode/active}}, return (failure, false).
     1. Otherwise, the user agent MAY continue, showing only the
         [=find your account affordance=].
@@ -878,9 +881,9 @@ In the "Build UI" step, add the following for each [=registered provider=] |prov
 
 After the "Build UI" step, add the following step:
 
-1. If |typeRequest| is not null, the user agent SHOULD add a
+1. If |federationRequest| is not null, the user agent SHOULD add a
     <dfn>find your account affordance</dfn>. If the user triggers it:
-    1. Let |result| be the result of [=find your account=] with |typeRequest| and |globalObject|.
+    1. Let |result| be the result of [=find your account=] with |federationRequest| and |globalObject|.
     1. If |result| is not null, let (|account|, |resolvedProvider|) be |result|. Set
         |selectedAccount| to |account| and |permission| to true, set the relevant provider to
         |resolvedProvider| and the relevant config to |resolvedProvider|'s
@@ -953,7 +956,7 @@ Issue: Is the [=RP=]'s origin the right default `client_id` for registered [=IDP
 how IndieAuth identifies clients by URL, but other protocols may expect something else.
 
 Note: {{IdentityCredential/configURL}} tells the [=RP=] which [=IDP=] issued the token, so it can
-verify the token using the protocol named by {{IdentityProviderConfig/type}}.
+verify the token using the protocol named by {{IdentityProviderConfig/federation}}.
 
 <!-- ============================================================ -->
 # Account selection # {#account-selection}
@@ -961,7 +964,7 @@ verify the token using the protocol named by {{IdentityProviderConfig/type}}.
 
 <div algorithm>
 To <dfn>look up a typed handle</dfn> given a [=string=] |input|, an
-{{IdentityProviderRequestOptions}} |typeRequest|, and a |globalObject|, run the following steps.
+{{IdentityProviderRequestOptions}} |federationRequest|, and a |globalObject|, run the following steps.
 This returns a [=registered provider=] or failure.
 
 1. Let |handle| be the result of [=parse a handle=] with |input|. If |handle| is failure, return
@@ -969,11 +972,11 @@ This returns a [=registered provider=] or failure.
 1. Let |configUrl| be the result of [=resolve a handle=] with |handle| and |globalObject|. If
     |configUrl| is failure, return failure.
 1. Let |provider| be the result of [=create a registered provider=] with |configUrl| and
-    |typeRequest|.
+    |federationRequest|.
 1. Let |config| be the result of [=fetch the config file=] with |provider| and |globalObject|.
     If |config| is failure, return failure.
-1. If |config|.{{IdentityProviderAPIConfig/types}} doesn't [=map/exist=] or doesn't
-    [=list/contain=] |typeRequest|.{{IdentityProviderConfig/type}}, return failure.
+1. If |config|.{{IdentityProviderAPIConfig/federations}} doesn't [=map/exist=] or doesn't
+    [=list/contain=] |federationRequest|.{{IdentityProviderConfig/federation}}, return failure.
 1. Set |provider|'s [=registered provider/config=] to |config|, its
     [=registered provider/handles=] to « |handle| », and its [=registered provider/accounts=] to
     the result of [=get the registered accounts=] with |configUrl| and « |handle| ».
@@ -992,7 +995,7 @@ A <dfn>handle chip</dfn> for a [=/handle=] |handle| and a [=registered provider=
 user agent UI element that represents an account the user hasn't signed in to yet:
 
 * Its primary label is |handle|.
-* It SHOULD show the [=federation branding=] for the {{IdentityProviderConfig/type}} requested.
+* It SHOULD show the [=federation branding=] for the {{IdentityProviderConfig/federation}} requested.
     If there isn't any, it uses a generic icon.
 * It MAY show the [=url/host=] of |provider|'s {{IdentityProviderConfig/configURL}} as secondary
     text, so that the user knows where they'll sign in.
@@ -1001,16 +1004,16 @@ An account from [=find matching accounts=] is shown the same way FedCM shows acc
 agent MAY add the [=federation branding=] as a badge.
 
 <div algorithm>
-The <dfn>federation branding</dfn> for a {{IdentityProviderConfig/type}} |type| is a name and an
-icon published by the authority behind |type|, or null. The user agent obtains it without
+The <dfn>federation branding</dfn> for a {{IdentityProviderConfig/federation}} |federation| is a name and an
+icon published by the authority behind |federation|, or null. The user agent obtains it without
 credentials and MAY cache it.
 
 </div>
 
-Issue(29): Define where the type authority publishes its branding, and in which format.
+Issue(29): Define where the federation authority publishes its branding, and in which format.
 
 <div algorithm>
-To <dfn>find your account</dfn> given an {{IdentityProviderRequestOptions}} |typeRequest| and a
+To <dfn>find your account</dfn> given an {{IdentityProviderRequestOptions}} |federationRequest| and a
 |globalObject|, run the following steps. This returns a pair (an {{IdentityProviderAccount}}, a
 [=registered provider=]), or null.
 
@@ -1019,7 +1022,7 @@ To <dfn>find your account</dfn> given an {{IdentityProviderRequestOptions}} |typ
     send network requests while the user types.
 1. Wait for the user to submit a [=string=] |input|, or to cancel. If the user cancels, return
     null.
-1. Let |provider| be the result of [=look up a typed handle=] with |input|, |typeRequest|, and
+1. Let |provider| be the result of [=look up a typed handle=] with |input|, |federationRequest|, and
     |globalObject|.
 1. If |provider| is failure, tell the user that no account provider was found for |input|, and go
     back to the first step.
@@ -1070,7 +1073,7 @@ To <dfn>sign in with a handle</dfn> given a [=/handle=] |handle|, a [=registered
 <thead><tr><th>Party<th>What it does
 <tbody>
 <tr><td>[=IDP=]<td>
-    Lists the {{IdentityProviderConfig/type}}s it supports in {{IdentityProviderAPIConfig/types}}.
+    Lists the federations it supports in {{IdentityProviderAPIConfig/federations}}.
     Serves a [=well-known file=] at its [=site of a host|site=] with a single
     {{IdentityProviderWellKnown/provider_urls}} entry. Pushes accounts with
     {{NavigatorLogin/setStatus()}}, setting {{IdentityProviderAccount/username}} to the user's
@@ -1082,11 +1085,11 @@ To <dfn>sign in with a handle</dfn> given a [=/handle=] |handle|, a [=registered
     Publishes a [[#dns-record|delegation record]].
 <tr><td>Owner of a handle's domain, when the [=IDP=] is on the same site<td>
     Serves the [=well-known file=] at the site. The [=config file=] can be on any same-site host.
-<tr><td>Type authority<td>
-    Publishes [=federation branding=] for its {{IdentityProviderConfig/type}}.
+<tr><td>Federation authority<td>
+    Publishes [=federation branding=] for its {{IdentityProviderConfig/federation}}.
 <tr><td>[=RP=]<td>
-    Passes a {{IdentityProviderConfig/type}}, and verifies the returned token according to that
-    type, including checking that it was issued for the handle and by the
+    Passes a {{IdentityProviderConfig/federation}}, and verifies the returned token according to that
+    federation, including checking that it was issued for the handle and by the
     {{IdentityCredential/configURL}}'s [=IDP=].
 </table>
 
@@ -1097,9 +1100,9 @@ To <dfn>sign in with a handle</dfn> given a [=/handle=] |handle|, a [=registered
 <table class="data">
 <thead><tr><th>Request<th>When<th>Credentials<th>Reveals the RP?
 <tbody>
-<tr><td>[=Config file=] of registered [=IDPs=]<td>On a [=type request=]<td>No<td>No
+<tr><td>[=Config file=] of registered [=IDPs=]<td>On a [=federation request=]<td>No<td>No
 <tr><td>DNS `TXT` lookup and [=well-known file=], for each registered [=/handle=]<td>On a
-    [=type request=], unless cached<td>No<td>No
+    [=federation request=], unless cached<td>No<td>No
 <tr><td>DNS `TXT` lookup, [=well-known file=] and [=config file=] of the resolved [=IDP=]<td>After
     the user submits a handle, or when an [=IDP=] calls {{IdentityProvider/register()}} or
     {{IdentityProvider/unregister()}}<td>No<td>No
@@ -1114,7 +1117,7 @@ To <dfn>sign in with a handle</dfn> given a [=/handle=] |handle|, a [=registered
     {{IdentityProviderAPIConfig/accounts_endpoint}}, and the need for mismatch UI.
 * Typing a handle reveals it to the DNS resolver and the resolved [=IDP=]'s servers, but not to
     the [=RP=] until the user finishes signing in.
-* Because the [=handle registry=] stores only [=/handle|handles=], a [=type request=] can cause
+* Because the [=handle registry=] stores only [=/handle|handles=], a [=federation request=] can cause
     DNS lookups for the domains of the user's registered [=/handle|handles=], which the DNS
     resolver can observe. The requests don't carry credentials or reveal the [=RP=]. User agents
     can reduce this by caching discovery results (see [[#registry]]).
@@ -1172,7 +1175,7 @@ To <dfn>sign in with a handle</dfn> given a [=/handle=] |handle|, a [=registered
 1. There's no delegation record, so [=resolve the issuer=] returns `alice.example`.
 1. `https://alice.example/.well-known/web-identity` returns
     `{"provider_urls": ["https://pds.alice.example/config.json"]}`, which is on the same site.
-1. The [=config file=] lists `https://atproto.com` in {{IdentityProviderAPIConfig/types}}.
+1. The [=config file=] lists `https://atproto.com` in {{IdentityProviderAPIConfig/federations}}.
 1. No account has been pushed yet, so the user agent shows a [=handle chip=] for `@alice.example`.
 1. When Alice selects it, the user agent stores the registration and opens
     `login_url?login_hint=%40alice.example`. Her server pushes
@@ -1208,7 +1211,7 @@ Because `@bob.example` resolves to `social.example`, `social.example` can also c
 <div class="example" id="example-shared-host">
 **Many users share a host.** Dave (`dave@social.example`) and Erin (`@erin.social.example`) both
 resolve to the same [=config file=]. The [=handle registry=] has both [=/handle|handles=], and
-[=group registered handles by IdP=] groups them together. On a [=type request=], the user agent fetches that
+[=group registered handles by IdP=] groups them together. On a [=federation request=], the user agent fetches that
 [=config file=] once, and shows the pushed accounts that match `dave@social.example` or
 `@erin.social.example`, plus a [=handle chip=] for either handle that doesn't have a matching
 pushed account.
@@ -1221,7 +1224,7 @@ pushed account.
 
 1. Erin signs out of `social.example`, which calls `navigator.login.setStatus("logged-out")`. Her
     pushed account is cleared, but `@erin.social.example` stays in the [=handle registry=]. On the next
-    [=type request=], the user agent shows a [=handle chip=] for `@erin.social.example`. Selecting
+    [=federation request=], the user agent shows a [=handle chip=] for `@erin.social.example`. Selecting
     it opens `social.example`'s {{IdentityProviderAPIConfig/login_url}} with
     `login_hint=%40erin.social.example`.
 1. Later, Erin deletes her account. `social.example` calls
