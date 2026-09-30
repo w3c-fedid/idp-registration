@@ -8,11 +8,12 @@ Repository: w3c-fedid/idp-registration
 URL: https://w3c-fedid.github.io/idp-registration/
 Editor: Sam Goto, w3cid 50308, Google Inc. https://google.com, goto@google.com
 Abstract: This specification extends the Federated Credential Management API [[FEDCM]] so that
-    identity providers can register themselves with the user agent, and relying parties can
-    request <em>any</em> registered identity provider that speaks a protocol they accept, instead
-    of enumerating identity providers. It also defines how the user agent resolves a handle typed by
-    the user (e.g. <code>@alice.example</code>, <code>alice@social.example</code> or
-    <code>https://alice.example</code>) into a registered identity provider.
+    the user agent can remember the user's handles (e.g. <code>@alice.example</code>,
+    <code>alice@social.example</code> or <code>https://alice.example</code>) and the identity
+    providers they resolve to, and so that relying parties can request <em>any</em> of them that
+    speaks a protocol they accept, instead of enumerating identity providers. A handle is
+    registered either by the identity provider, with the user's permission, or by the user typing
+    it.
 Markup Shorthands: markdown yes, css no
 Default Biblio Display: inline
 Text Macro: RP Relying Party
@@ -98,10 +99,10 @@ allow-listing it.
 This specification lets the [=user agent=] act as an intermediary that removes the need for
 allow-listing:
 
-1. An [=IDP=] **registers** itself with the user agent by calling
-    {{IdentityProvider/register()}}, with the user's permission. It then uses accounts push to
-    tell the user agent which of its accounts the user is signed in to (see
-    [[#pushed-accounts]]).
+1. After the user signs in, an [=IDP=] **registers** the user's [=/handle=] with the user agent by
+    calling {{IdentityProvider/register()}}, with the user's permission. Separately, it uses
+    accounts push to tell the user agent which of its accounts the user is currently signed in to
+    (see [[#accounts]]).
 1. An [=RP=] **requests** any registered [=IDP=] that supports a protocol it accepts, by passing a
     {{IdentityProviderConfig/type}} instead of a {{IdentityProviderConfig/configURL}}:
 
@@ -122,27 +123,32 @@ allow-listing:
 
     </div>
 
-1. A user whose [=IDP=] isn't registered yet can **type a handle** they already know, such as
-    `@alice.example`, `alice@social.example` or `https://alice.example`. The user agent
+1. A user whose [=/handle=] isn't registered yet can **type it**, for example `@alice.example`,
+    `alice@social.example` or `https://alice.example`. The user agent
     [=resolve a handle|resolves it=] to an [=IDP=] and registers it (see [[#handle-resolution]]).
 
+Both ways of registering a [=/handle=] run the same [[#discovery|discovery]] and add the same
+[=/handle=] to the [=handle registry=].
+
 <div class="example" id="example-idp-register">
-An [=IDP=] registers itself, then pushes the signed-in account:
+After Alice signs in on `https://idp.example`, the [=IDP=] pushes her account and registers her
+handle:
 
 ```js
-await IdentityProvider.register("https://idp.example/fedcm.json");
-
 await navigator.login.setStatus("logged-in", {
   accounts: [{
     id: "1234",
     name: "Alice",
-    username: "@alice.example",
+    username: "@alice.idp.example",
     picture: "https://idp.example/alice.jpg"
   }]
 });
+
+await IdentityProvider.register("@alice.idp.example");
 ```
 
-Its [=config file=] lists the protocols it supports:
+The user agent resolves `@alice.idp.example` to `idp.example`'s [=config file=], which lists the
+protocols it supports:
 
 ```json
 {
@@ -180,67 +186,60 @@ The [=site of a host|site=] of `alice.social.example` is `social.example`, as lo
 </div>
 
 <!-- ============================================================ -->
-# The IdP registry # {#registry}
+# The handle registry # {#registry}
 <!-- ============================================================ -->
 
-Each [=user agent=] has a global, persistent <dfn>IdP registry</dfn>, an initially empty
-[=ordered set=] of [=registration entries=].
+Each [=user agent=] has a global, persistent <dfn>handle registry</dfn>, an initially empty
+[=ordered set=] of [=/handle|handles=] that the user uses to sign in. No two
+[=/handle|handles=] in the [=handle registry=] [=handles match|match=].
 
-A <dfn>registration entry</dfn> is a [=struct=] with the following [=struct/items=]:
+A [=/handle=] is added to the [=handle registry=] in the same way whether the [=IDP=] registered it
+with {{IdentityProvider/register()}} or the user typed it ([=find your account=]). The user agent
+doesn't record which one did.
 
-<dl dfn-for="registration entry">
-    :   <dfn>config URL</dfn>
-    ::  A [=/URL=]. The [=IdP registry=] contains at most one entry per [=registration entry/config
-        URL=].
-    :   <dfn>registered by the IdP</dfn>
-    ::  A boolean, initially false. True if the entry was created or confirmed by
-        {{IdentityProvider/register()}}.
-    :   <dfn>handles</dfn>
-    ::  An [=ordered set=] of [=handle|handles=] the user typed that resolved to this
-        [=registration entry/config URL=]. Initially empty.
-</dl>
+The [=handle registry=] stores only [=/handle|handles=]. It doesn't store which [=IDP=] a
+[=/handle=] resolves to, that [=IDP=]'s [=config file=], or any accounts. The user agent computes
+the [=IDP=] from the [=/handle=] with [=discover the IdP=] whenever it needs it, and accounts come
+from the [=account registry=].
 
-The [=IdP registry=] doesn't store accounts. Accounts are stored in the [=pushed accounts map=].
+Note: A user agent can cache the results of [=discover the IdP=] and [=fetch the config file=],
+for example to avoid DNS lookups and fetches on every [=type request=]. That's an implementation
+choice, as long as the cache respects DNS TTLs and HTTP caching, and is cleared along with the
+[=handle registry=]. See also [[#privacy]] and [[#security]].
 
 When the user clears browsing data or site settings for an [=/origin=] |origin|, the user agent
-MUST [=list/remove=] every [=registration entry=] whose [=registration entry/config URL=]'s
-[=url/origin=] is [=same origin=] with |origin|.
+MUST [=list/remove=] from the [=handle registry=] every [=/handle=] whose [=IDP=], as determined by
+[=discover the IdP=] (or by the user agent's cached result of it), has a [=config file=] that is
+[=same site=] with |origin|.
 
 <div algorithm>
-To <dfn>add to the IdP registry</dfn> given a [=/URL=] |configUrl|, a boolean |byIdP|, and a
-[=handle=] or null |handle|, run the following steps:
+To <dfn>add to the handle registry</dfn> given a [=/handle=] |handle|, run the following steps:
 
-1. Let |entry| be the [=registration entry=] in the [=IdP registry=] whose
-    [=registration entry/config URL=] [=url/equals=] |configUrl|, if any.
-1. If there is no such entry, set |entry| to a new [=registration entry=] with
-    [=registration entry/config URL=] |configUrl|, and [=set/append=] it to the [=IdP registry=].
-1. If |byIdP| is true, set |entry|'s [=registration entry/registered by the IdP=] to true.
-1. If |handle| is not null, and no [=list/item=] of |entry|'s [=registration entry/handles=]
-    [=handles match|matches=] |handle|, [=set/append=] |handle| to |entry|'s
-    [=registration entry/handles=].
+1. If the [=handle registry=] contains a [=/handle=] that [=handles match|matches=] |handle|,
+    return.
+1. [=set/Append=] |handle| to the [=handle registry=].
 
 </div>
 
 <div algorithm>
-To <dfn>remove a handle from the IdP registry</dfn> given a [=/URL=] |configUrl| and a
-[=handle=] |handle|, run the following steps:
-
-1. Let |entry| be the [=registration entry=] in the [=IdP registry=] whose
-    [=registration entry/config URL=] [=url/equals=] |configUrl|. If there is none, return.
-1. [=list/Remove=] from |entry|'s [=registration entry/handles=] every [=list/item=] that
-    [=handles match|matches=] |handle|.
-1. If |entry|'s [=registration entry/handles=] [=list/is empty=] and |entry|'s
-    [=registration entry/registered by the IdP=] is false, [=list/remove=] |entry| from the
-    [=IdP registry=].
+To <dfn>remove from the handle registry</dfn> given a [=/handle=] |handle|, [=list/remove=] from
+the [=handle registry=] every [=/handle=] that [=handles match|matches=] |handle|.
 
 </div>
 
-The user agent SHOULD let the user see and remove [=registration entries=] and individual
-[=registration entry/handles=] (by running [=remove a handle from the IdP registry=]), for
-example to remove a mistyped handle.
+The user agent SHOULD let the user see the [=handle registry=] and remove [=/handle|handles=] from
+it (by running [=remove from the handle registry=]), for example to remove a mistyped handle.
+
+Note: The [=handle registry=] is deliberately separate from the [=account registry=] and the
+[[LOGIN-STATUS|login status]]. Those record whether the user is signed in right now, which changes
+silently, while the [=handle registry=] records which [=/handle|handles=] the user uses, which the
+user approved and which outlives their session. After the user signs out, a registered [=/handle=]
+is still offered as a [=handle chip=] that signs the user back in. So an [=IDP=] calls
+`setStatus("logged-out")` when the user signs out, and {{IdentityProvider/unregister()}} only when
+the [=/handle=] should no longer be offered, for example when the account is deleted.
 
 <!-- ============================================================ -->
-# Pushed accounts # {#pushed-accounts}
+# The account registry # {#accounts}
 <!-- ============================================================ -->
 
 Issue: Accounts push is described in
@@ -248,11 +247,13 @@ Issue: Accounts push is described in
 specified yet. This section defines the minimum this specification needs, and should move to
 [[LOGIN-STATUS]] or [[FEDCM]] once accounts push is specified there.
 
-Each [=user agent=] has a global, persistent <dfn>pushed accounts map</dfn>, an initially empty
-[=map=]. Its [=map/keys=] are [=/origins=] of [=IDPs=], and its [=map/values=] are [=structs=]
-with the following [=struct/items=]:
+Each [=user agent=] has a global, persistent <dfn>account registry</dfn>, which stores the accounts
+that [=IDPs=] push with {{NavigatorLogin/setStatus()}}. It is an initially empty [=map=]. Its
+[=map/keys=] are [=/origins=] of [=IDPs=], and its [=map/values=] are
+<dfn lt="account registry entry">account registry entries</dfn>. An [=account registry entry=] is
+a [=struct=] with the following [=struct/items=]:
 
-<dl dfn-for="pushed accounts">
+<dl dfn-for="account registry entry">
     :   <dfn>accounts</dfn>
     ::  A [=list=] of {{IdentityProviderAccount}}s.
     :   <dfn>expiration</dfn>
@@ -271,7 +272,7 @@ In [[LOGIN-STATUS]], change the {{NavigatorLogin/setStatus()}} method so that it
 second argument, `optional LoginStatusOptions options = {}`, and add the following steps at the
 end of its algorithm:
 
-1. If <var ignore>status</var> is `"logged-out"`, [=map/remove=] [=pushed accounts map=][|origin|] and return.
+1. If <var ignore>status</var> is `"logged-out"`, [=map/remove=] [=account registry=][|origin|] and return.
 1. If |options|["{{LoginStatusOptions/accounts}}"] does not [=map/exist=], return.
 1. For each |account| of |options|["{{LoginStatusOptions/accounts}}"]: if |account| has none of
     {{IdentityProviderAccount/name}}, {{IdentityProviderAccount/email}},
@@ -280,12 +281,12 @@ end of its algorithm:
 1. Let |expiration| be null.
 1. If |options|["{{LoginStatusOptions/expiration}}"] [=map/exists=], set |expiration| to the
     current time plus |options|["{{LoginStatusOptions/expiration}}"] milliseconds.
-1. [=map/Set=] [=pushed accounts map=][|origin|] to a new struct with
-    [=pushed accounts/accounts=] |options|["{{LoginStatusOptions/accounts}}"] and
-    [=pushed accounts/expiration=] |expiration|.
+1. [=map/Set=] [=account registry=][|origin|] to a new struct with
+    [=account registry entry/accounts=] |options|["{{LoginStatusOptions/accounts}}"] and
+    [=account registry entry/expiration=] |expiration|.
 
 Also, in the algorithm that processes the <code>Set-Login</code> header, when the token is
-`"logged-out"`, [=map/remove=] [=pushed accounts map=][|origin|].
+`"logged-out"`, [=map/remove=] [=account registry=][|origin|].
 
 </div>
 
@@ -293,16 +294,16 @@ Also, in the algorithm that processes the <code>Set-Login</code> header, when th
 To <dfn>get the pushed accounts</dfn> for an [=/origin=] |origin|, run the following steps. This
 returns a [=list=] of {{IdentityProviderAccount}}s.
 
-1. If [=pushed accounts map=][|origin|] does not [=map/exist=], return an empty [=list=].
-1. Let |entry| be [=pushed accounts map=][|origin|].
-1. If |entry|'s [=pushed accounts/expiration=] is not null and is in the past,
-    [=map/remove=] [=pushed accounts map=][|origin|] and return an empty [=list=].
+1. If [=account registry=][|origin|] does not [=map/exist=], return an empty [=list=].
+1. Let |entry| be [=account registry=][|origin|].
+1. If |entry|'s [=account registry entry/expiration=] is not null and is in the past,
+    [=map/remove=] [=account registry=][|origin|] and return an empty [=list=].
 1. If [=get the login status=] for |origin| is not [=logged-in=], return an empty [=list=].
-1. Return |entry|'s [=pushed accounts/accounts=].
+1. Return |entry|'s [=account registry entry/accounts=].
 
 </div>
 
-The user agent MUST clear [=pushed accounts map=] entries whenever it clears the corresponding
+The user agent MUST clear [=account registry=] entries whenever it clears the corresponding
 [=Login Status map=] entries.
 
 <!-- ============================================================ -->
@@ -369,109 +370,202 @@ Note: Registered [=IDPs=] only need a [=config file=] and an
 
 <xmp class="idl">
 partial interface IdentityProvider {
-  static Promise<undefined> register(USVString configURL);
-  static Promise<undefined> unregister(USVString configURL);
+  static Promise<undefined> register(USVString handle);
+  static Promise<undefined> unregister(USVString handle);
 };
 </xmp>
 
+An [=IDP=] registers a [=/handle=], not a [=config file=]. This way, an [=IDP=] registering a
+[=/handle=] and the user typing it follow the same path: both use [=discover the IdP=], and both
+add the same [=/handle=] to the [=handle registry=]. The [=config file=]'s URL is always discovered
+and never passed in.
+
+<div algorithm>
+To <dfn>resolve a handle for a caller</dfn> given a [=string=] |input| and a |globalObject|, run
+the following steps. This returns a tuple (|handle|, |configUrl|), or a {{DOMException}} name.
+
+1. Let |parsed| be the result of [=parse a handle=] with |input|. If |parsed| is failure, return
+    "{{SyntaxError}}".
+1. Let (|handle|, |host|) be |parsed|.
+1. Let |configUrl| be the result of [=discover the IdP=] with |host| and |globalObject|. If
+    |configUrl| is failure, return "{{NetworkError}}".
+1. If |configUrl|'s [=url/origin=] is not [=same site=] with |globalObject|'s
+    [=associated Document=]'s [=Document/origin=], return "{{NotAllowedError}}".
+1. Return (|handle|, |configUrl|).
+
+</div>
+
+Note: An [=IDP=] can only register and unregister [=/handle|handles=] that resolve to it. An
+[=IDP=] on another [=site of a host|site=] serves a [=/handle=] only if the handle's domain
+delegates to it with a [[#dns-record|delegation record]].
+
 <div algorithm="register">
-When the static <dfn method for="IdentityProvider">register(|configURL|)</dfn> method is invoked,
-run the following steps:
+When the static <dfn method for="IdentityProvider">register(|handle|)</dfn> method is invoked, run
+the following steps:
 
 1. Let |globalObject| be the [=current global object=].
-1. Let |document| be |globalObject|'s [=associated Document=].
 1. Let |promise| be a [=new=] {{Promise}} in |globalObject|'s [=relevant realm=].
 1. If |globalObject|'s [=Window/navigable=] is not a [=top-level traversable=], [=reject=] |promise|
     with a "{{NotAllowedError}}" {{DOMException}} and return |promise|.
 1. [=In parallel=], run the following steps:
-    1. Let |configUrl| be the result of [=parse url=] with |configURL| and |globalObject|.
-    1. If |configUrl| is failure, [=queue to reject=] |promise| with "{{SyntaxError}}" and return.
-    1. If |configUrl|'s [=url/origin=] is not [=same origin=] with |document|'s
-        [=Document/origin=], [=queue to reject=] |promise| with "{{NotAllowedError}}" and return.
-    1. Let |provider| be a new {{IdentityProviderRequestOptions}} with
-        {{IdentityProviderConfig/configURL}} set to |configURL|, and mark it as a
-        [=registered provider=].
+    1. Let |result| be the result of [=resolve a handle for a caller=] with |handle| and
+        |globalObject|. If |result| is a {{DOMException}} name, [=queue to reject=] |promise|
+        with |result| and return.
+    1. Let (|canonical|, |configUrl|) be |result|.
+    1. Let |provider| be the result of [=create a registered provider=] with |configUrl| and null.
     1. Let |config| be the result of [=fetch the config file=] with |provider| and |globalObject|.
     1. If |config| is failure, or |config|.{{IdentityProviderAPIConfig/types}} doesn't
         [=map/exist=] or [=list/is empty=], [=queue to reject=] |promise| with "{{NetworkError}}"
         and return.
-    1. Unless the [=IdP registry=] already has a [=registration entry=] for |configUrl| whose
-        [=registration entry/registered by the IdP=] is true, the user agent MUST get the user's
-        permission. For example, it can show a prompt naming |configUrl|'s [=url/origin=] and
-        the [=IDP=]'s {{IdentityProviderAPIConfig/branding}}. The user agent MAY require
-        [=transient activation=] before showing the prompt. If the user denies permission,
-        [=queue to reject=] |promise| with "{{NotAllowedError}}" and return.
-    1. [=Add to the IdP registry=] with |configUrl|, true, and null.
+    1. If the [=handle registry=] doesn't already contain a [=/handle=] that
+        [=handles match|matches=] |canonical|, the user agent MUST
+        [=ask to save a handle|ask the user to save=] |canonical| with |configUrl| and |config|.
+        If the user declines, [=queue to reject=] |promise| with "{{NotAllowedError}}" and return.
+    1. [=Add to the handle registry=] with |canonical|.
     1. [=Queue a global task=] on the [=DOM manipulation task source=] given |globalObject| to
         [=resolve=] |promise|.
 1. Return |promise|.
 
 </div>
 
+<div algorithm>
+To <dfn>ask to save a handle</dfn> given a [=/handle=] |handle|, a [=/URL=] |configUrl|, and an
+{{IdentityProviderAPIConfig}} |config|, the user agent shows a prompt that asks the user whether
+to save |handle| so that it's offered when websites ask them to sign in. It returns whether the
+user agreed.
+
+* The prompt SHOULD show |handle| as the account's identifier.
+* If [=find matching accounts=] with the result of [=get the pushed accounts=] for |configUrl|'s
+    [=url/origin=] and |handle| returns any accounts, the prompt SHOULD show the
+    {{IdentityProviderAccount/name}} and {{IdentityProviderAccount/picture}} of the first one.
+* The prompt SHOULD show |config|'s {{IdentityProviderAPIConfig/branding}}, for example as a badge
+    on the account's picture.
+* The user agent MAY require [=transient activation=] before showing the prompt, MAY rate-limit
+    it, and MAY remember that the user declined and not ask again.
+
+</div>
+
+Note: An [=IDP=] that wants the prompt to show the user's name and picture pushes the account with
+{{NavigatorLogin/setStatus()}} before calling {{IdentityProvider/register()}}, as in the
+<a href="#example-idp-register">introduction's example</a>.
+
+Note: {{IdentityProvider/register()}} is separate from {{NavigatorLogin/setStatus()}} because a
+registered [=/handle=] needs to outlive the user's session. See [[#registry]].
+
 Note: By calling {{IdentityProvider/register()}}, the [=IDP=] commits to using accounts push
-([[#pushed-accounts]]). The user agent never fetches the
+([[#accounts]]). The user agent never fetches the
 {{IdentityProviderAPIConfig/accounts_endpoint}} of an [=IDP=] that it is using as a registered
 [=IDP=].
 
 <div algorithm="unregister">
-When the static <dfn method for="IdentityProvider">unregister(|configURL|)</dfn> method is
-invoked, run the following steps:
+When the static <dfn method for="IdentityProvider">unregister(|handle|)</dfn> method is invoked,
+run the following steps:
 
 1. Let |globalObject| be the [=current global object=].
-1. Let |document| be |globalObject|'s [=associated Document=].
 1. Let |promise| be a [=new=] {{Promise}} in |globalObject|'s [=relevant realm=].
 1. [=In parallel=], run the following steps:
-    1. Let |configUrl| be the result of [=parse url=] with |configURL| and |globalObject|.
-    1. If |configUrl| is failure, [=queue to reject=] |promise| with "{{SyntaxError}}" and return.
-    1. If |configUrl|'s [=url/origin=] is not [=same origin=] with |document|'s
-        [=Document/origin=], [=queue to reject=] |promise| with "{{NotAllowedError}}" and return.
-    1. [=list/Remove=] the [=registration entry=] whose [=registration entry/config URL=]
-        [=url/equals=] |configUrl| from the [=IdP registry=], if any. This also removes its
-        [=registration entry/handles=].
+    1. Let |result| be the result of [=resolve a handle for a caller=] with |handle| and
+        |globalObject|. If |result| is a {{DOMException}} name, [=queue to reject=] |promise|
+        with |result| and return.
+    1. Let (|canonical|, <var ignore>configUrl</var>) be |result|.
+    1. [=Remove from the handle registry=] with |canonical|.
     1. [=Queue a global task=] on the [=DOM manipulation task source=] given |globalObject| to
         [=resolve=] |promise|.
 1. Return |promise|.
 
 </div>
 
-Issue: Should {{IdentityProvider/unregister()}} keep handles the user typed, since the user asked
-for them? This draft removes them, because the [=IDP=] has said it no longer serves this
-configuration.
+{{IdentityProvider/unregister()}} removes the [=/handle=] whether the [=IDP=] registered it or the
+user typed it: either way, the [=IDP=] has said it no longer serves the [=/handle=]. It resolves
+the same way whether or not the [=/handle=] was in the [=handle registry=], so that it doesn't
+reveal whether the user had registered it.
+
+Note: If a [=/handle=] no longer resolves to the caller, for example because its
+[[#dns-record|delegation record]] was removed, the caller can't unregister it. It doesn't need to,
+because the [=/handle=] is no longer offered with the caller as its [=IDP=] either
+([=gather registered providers=] resolves it again).
 
 <!-- ============================================================ -->
 # Requesting registered IdPs # {#requesting}
 <!-- ============================================================ -->
 
 A <dfn>registered provider</dfn> is an {{IdentityProviderRequestOptions}} that the user agent
-creates for a [=registration entry=], or for a resolved [=handle=], rather than one the [=RP=]
-passed. The user agent keeps the following associated with it:
+creates for the [=IDP=] of one or more [=/handle|handles=], rather than one the [=RP=] passed. The
+user agent keeps the following associated with it:
 
 <dl dfn-for="registered provider">
     :   <dfn>config</dfn>
     ::  The {{IdentityProviderAPIConfig}} from [=fetch the config file=].
-    :   <dfn>accounts</dfn>
-    ::  A [=list=] of {{IdentityProviderAccount}}s from [=get the pushed accounts=].
     :   <dfn>handles</dfn>
-    ::  A [=list=] of [=handle|handles=]: the [=registration entry/handles=] of its
-        [=registration entry=], or the single [=handle=] it was resolved from.
+    ::  A [=list=] of [=/handle|handles=] that [=discover the IdP|resolve=] to this [=IDP=]: the
+        ones in the [=handle registry=], or the single [=/handle=] the user typed.
+    :   <dfn>accounts</dfn>
+    ::  A [=list=] of {{IdentityProviderAccount}}s: the [=get the pushed accounts|pushed accounts=]
+        that [=handles match|match=] one of its [=registered provider/handles=].
 </dl>
 
 <div algorithm>
 To <dfn>create a registered provider</dfn> given a [=/URL=] |configUrl| and an
-{{IdentityProviderRequestOptions}} |typeRequest|, run the following steps. This returns an
+{{IdentityProviderRequestOptions}} or null |typeRequest|, run the following steps. This returns an
 {{IdentityProviderRequestOptions}}.
 
 1. Let |provider| be a new {{IdentityProviderRequestOptions}}.
 1. Set |provider|.{{IdentityProviderConfig/configURL}} to the [=URL serializer|serialization=]
     of |configUrl|.
-1. For each member name |m| of « {{IdentityProviderConfig/clientId}},
-    {{IdentityProviderRequestOptions/params}}, {{IdentityProviderRequestOptions/fields}},
-    {{IdentityProviderRequestOptions/loginHint}}, {{IdentityProviderRequestOptions/domainHint}} »:
-    if |typeRequest|[|m|] [=map/exists=], set |provider|[|m|] to |typeRequest|[|m|].
+1. If |typeRequest| is not null, then for each member name |m| of «
+    {{IdentityProviderConfig/clientId}}, {{IdentityProviderRequestOptions/params}},
+    {{IdentityProviderRequestOptions/fields}}, {{IdentityProviderRequestOptions/loginHint}},
+    {{IdentityProviderRequestOptions/domainHint}} »: if |typeRequest|[|m|] [=map/exists=], set
+    |provider|[|m|] to |typeRequest|[|m|].
 1. Mark |provider| as a [=registered provider=].
 1. Return |provider|.
 
 </div>
+
+<div algorithm>
+To <dfn>get the registered accounts</dfn> given a [=/URL=] |configUrl| and a [=list=] of
+[=/handle|handles=] |handles|, run the following steps. This returns a [=list=] of
+{{IdentityProviderAccount}}s.
+
+1. Let |pushed| be the result of [=get the pushed accounts=] for |configUrl|'s [=url/origin=].
+1. Let |result| be an empty [=list=].
+1. For each |handle| of |handles|: [=list/extend=] |result| with the [=list/items=] of the result
+    of [=find matching accounts=] with |pushed| and |handle| that |result| doesn't already
+    [=list/contain=].
+1. Return |result|.
+
+</div>
+
+Note: Only accounts whose {{IdentityProviderAccount/username}} is a registered [=/handle=] are shown
+to other [=RPs=], because those are the accounts the user agreed to (with
+{{IdentityProvider/register()}}, or by typing the [=/handle=]). An [=IDP=] can push other accounts,
+but they aren't shown on a [=type request=] until their [=/handle|handles=] are registered.
+
+Issue: Should other pushed accounts from a registered [=IDP=] also be shown, once the user has
+registered at least one [=/handle=] with it?
+
+<div algorithm>
+To <dfn>group registered handles by IdP</dfn> given a |globalObject|, run the following steps.
+This returns an [=ordered map=] from [=/URL|URLs=] of [=config files=] to [=lists=] of
+[=/handle|handles=].
+
+1. Let |groups| be an empty [=ordered map=].
+1. For each |handle| of the [=handle registry=]:
+    1. Let |parsed| be the result of [=parse a handle=] with |handle|. If |parsed| is failure,
+        [=iteration/continue=].
+    1. Let (<var ignore>canonical</var>, |host|) be |parsed|.
+    1. Let |configUrl| be the result of [=discover the IdP=] with |host| and |globalObject|. If
+        |configUrl| is failure, [=iteration/continue=].
+    1. If |groups|[|configUrl|] doesn't [=map/exist=], [=map/set=] |groups|[|configUrl|] to an
+        empty [=list=].
+    1. [=list/Append=] |handle| to |groups|[|configUrl|].
+1. Return |groups|.
+
+</div>
+
+Note: Several [=/handle|handles=] can resolve to the same [=IDP=], for example when two users of
+the same [=IDP=] share a user agent. Grouping them means the user agent fetches that [=IDP=]'s
+[=config file=] once.
 
 <div algorithm>
 To <dfn>gather registered providers</dfn> given an {{IdentityProviderRequestOptions}}
@@ -482,29 +576,26 @@ To <dfn>gather registered providers</dfn> given an {{IdentityProviderRequestOpti
 1. Let |seenOrigins| be the [=ordered set=] of the [=url/origins=] of the
     {{IdentityProviderConfig/configURL}}s of |explicitProviders|.
 1. Let |result| be an empty [=list=].
-1. For each |entry| of the [=IdP registry=]:
-    1. Let |origin| be |entry|'s [=registration entry/config URL=]'s [=url/origin=].
+1. For each |configUrl| → |handles| of the result of [=group registered handles by IdP=] with
+    |globalObject|:
+    1. Let |origin| be |configUrl|'s [=url/origin=].
     1. If |seenOrigins| [=list/contains=] |origin|, [=iteration/continue=].
 
         Note: If the [=RP=] also lists this [=IDP=] explicitly, the explicit entry is used and
         the registration is ignored, so that the same [=IDP=] doesn't appear twice.
-    1. Let |accounts| be the result of [=get the pushed accounts=] for |origin|.
-    1. If |accounts| [=list/is empty=] and |entry|'s [=registration entry/handles=]
-        [=list/is empty=], [=iteration/continue=].
-
-        Note: This check comes first so that the user agent doesn't fetch config files for
-        [=IDPs=] that have nothing to show.
-    1. Let |provider| be the result of [=create a registered provider=] with |entry|'s
-        [=registration entry/config URL=] and |typeRequest|.
+    1. Let |provider| be the result of [=create a registered provider=] with |configUrl| and
+        |typeRequest|.
     1. Let |config| be the result of [=fetch the config file=] with |provider| and |globalObject|.
     1. If |config| is failure, [=iteration/continue=].
     1. If |config|.{{IdentityProviderAPIConfig/types}} doesn't [=map/exist=] or doesn't
         [=list/contain=] |type|, [=iteration/continue=].
+    1. Let |accounts| be the result of [=get the registered accounts=] with |configUrl| and
+        |handles|.
     1. For each |account| of |accounts| where |account|["{{IdentityProviderAccount/picture}}"]
         [=map/exists=], [=fetch the account picture=] with |account| and |globalObject|.
     1. Set |provider|'s [=registered provider/config=] to |config|, its
-        [=registered provider/accounts=] to |accounts|, and its [=registered provider/handles=] to
-        |entry|'s [=registration entry/handles=].
+        [=registered provider/handles=] to |handles|, and its [=registered provider/accounts=] to
+        |accounts|.
     1. [=set/Append=] |origin| to |seenOrigins|, and [=list/append=] |provider| to |result|.
 1. Return |result|.
 
@@ -547,7 +638,7 @@ Change the step "If |providerMap| [=map/is empty=], return (failure, false)" to:
 In the "Build UI" step, add the following for each [=registered provider=] |provider| in
 |providerList|:
 
-1. For each [=handle=] |handle| of |provider|'s [=registered provider/handles=] for which
+1. For each [=/handle=] |handle| of |provider|'s [=registered provider/handles=] for which
     [=find matching accounts=] with |provider|'s [=registered provider/accounts=] and |handle|
     returns an empty [=list=], add a [=handle chip=] for |handle| and |provider|. If the user
     selects it:
@@ -576,17 +667,23 @@ is not an [=opaque origin=], and ...":
 1. If |provider| is a [=registered provider=], set <var ignore>skipWellKnown</var> to true.
 
 Note: The [=well-known file=] exists to stop an [=RP=] from encoding tracking information in the
-config URL it passes. A [=registered provider=]'s config URL comes from the [=IdP registry=], not
-from the [=RP=]. As a result, the [=well-known file=] isn't needed, and one [=site of a host|site=]
-can have more than one registered [=IDP=].
+config URL it passes. A [=registered provider=]'s config URL doesn't come from the [=RP=]. The user
+agent obtained it from the [=well-known file=] itself, by running [=discover the IdP=] on a
+[=/handle=].
 
 </div>
+
+Issue: Because [=fetch the IdP's config URL=] requires exactly one
+{{IdentityProviderWellKnown/provider_urls}} entry, a [=site of a host|site=] can register
+[=/handle|handles=] for only one [=config file=]. Is that acceptable for [=IDPs=] that have several
+configurations (e.g. one per product)?
 
 <div class="monkeypatch">
 In [=show an IDP login dialog=], insert the following step immediately after the step that
 appends `login_hint`:
 
-1. If |provider| is a [=registered provider=] resolved from a [=handle=] |handle|, and
+1. If |provider| is a [=registered provider=] with an
+    [=registered provider/associated handle=] |handle|, and
     |provider|'s {{IdentityProviderRequestOptions/loginHint}} is empty, [=list/append=]
     ("login_hint", |handle|) to <var ignore>queryList</var>.
 
@@ -638,7 +735,7 @@ The user agent accepts the following notations:
 
 <div algorithm>
 To <dfn>parse a handle</dfn> given a [=string=] |input|, run the following steps. This returns
-a pair (|handle|, |host|) of a [=handle=] and a [=domain=], or failure.
+a pair (|handle|, |host|) of a [=/handle=] and a [=domain=], or failure.
 
 1. Let |s| be |input| with leading and trailing [=ASCII whitespace=] [=strip leading and
     trailing ASCII whitespace|stripped=].
@@ -818,6 +915,22 @@ the following steps. This returns a [=/URL=] or failure.
 
 </div>
 
+### Discover the IdP ### {#discover}
+
+<div algorithm>
+To <dfn>discover the IdP</dfn> given a [=domain=] |host| and a |globalObject|, run the following
+steps. This returns a [=/URL=] or failure.
+
+1. Let |site| be the result of [=determine the IdP site=] with |host|. If |site| is failure,
+    return failure.
+1. Return the result of [=fetch the IdP's config URL=] with |site| and |globalObject|.
+
+</div>
+
+This algorithm is used when an [=IDP=] calls {{IdentityProvider/register()}} or
+{{IdentityProvider/unregister()}}, when the user types a [=/handle=] ([=resolve a handle=]), and
+for each registered [=/handle=] on a [=type request=] ([=group registered handles by IdP=]).
+
 ### Resolve a handle ### {#resolve}
 
 <div algorithm>
@@ -828,10 +941,8 @@ To <dfn>resolve a handle</dfn> given a [=string=] |input|, an {{IdentityProvider
 1. Let |parsed| be the result of [=parse a handle=] with |input|. If |parsed| is failure, return
     failure.
 1. Let (|handle|, |host|) be |parsed|.
-1. Let |site| be the result of [=determine the IdP site=] with |host|. If |site| is failure,
-    return failure.
-1. Let |configUrl| be the result of [=fetch the IdP's config URL=] with |site| and
-    |globalObject|. If |configUrl| is failure, return failure.
+1. Let |configUrl| be the result of [=discover the IdP=] with |host| and |globalObject|. If
+    |configUrl| is failure, return failure.
 1. Let |provider| be the result of [=create a registered provider=] with |configUrl| and
     |typeRequest|.
 1. Let |config| be the result of [=fetch the config file=] with |provider| and |globalObject|.
@@ -839,8 +950,8 @@ To <dfn>resolve a handle</dfn> given a [=string=] |input|, an {{IdentityProvider
 1. If |config|.{{IdentityProviderAPIConfig/types}} doesn't [=map/exist=] or doesn't
     [=list/contain=] |typeRequest|.{{IdentityProviderConfig/type}}, return failure.
 1. Set |provider|'s [=registered provider/config=] to |config|, its
-    [=registered provider/accounts=] to the result of [=get the pushed accounts=] for
-    |configUrl|'s [=url/origin=], and its [=registered provider/handles=] to « |handle| ».
+    [=registered provider/handles=] to « |handle| », and its [=registered provider/accounts=] to
+    the result of [=get the registered accounts=] with |configUrl| and « |handle| ».
 1. Return |provider|.
 
 </div>
@@ -849,12 +960,12 @@ To <dfn>resolve a handle</dfn> given a [=string=] |input|, an {{IdentityProvider
 
 <div algorithm>
 To <dfn>find matching accounts</dfn> given a [=list=] of {{IdentityProviderAccount}}s |accounts|
-and a [=handle=] |handle|, return the [=list/items=] of |accounts| whose
+and a [=/handle=] |handle|, return the [=list/items=] of |accounts| whose
 {{IdentityProviderAccount/username}} [=map/exists=] and [=handles match|matches=] |handle|.
 
 </div>
 
-A <dfn>handle chip</dfn> for a [=handle=] |handle| and a [=registered provider=] |provider| is a
+A <dfn>handle chip</dfn> for a [=/handle=] |handle| and a [=registered provider=] |provider| is a
 user agent UI element that represents an account the user hasn't signed in to yet:
 
 * Its primary label is |handle|.
@@ -881,8 +992,8 @@ To <dfn>find your account</dfn> given an {{IdentityProviderRequestOptions}} |typ
 [=registered provider=]), or null.
 
 1. Show UI that asks the user to type a handle. The user agent MAY offer suggestions from its own
-    local data (such as [=registration entry/handles=] in the [=IdP registry=]). It MUST NOT send
-    network requests while the user types.
+    local data (such as the [=/handle|handles=] in the [=handle registry=]). It MUST NOT
+    send network requests while the user types.
 1. Wait for the user to submit a [=string=] |input|, or to cancel. If the user cancels, return
     null.
 1. Let |provider| be the result of [=resolve a handle=] with |input|, |typeRequest|, and
@@ -890,16 +1001,15 @@ To <dfn>find your account</dfn> given an {{IdentityProviderRequestOptions}} |typ
 1. If |provider| is failure, tell the user that no account provider was found for |input|, and go
     back to the first step.
 1. Let |handle| be |provider|'s [=registered provider/handles=][0].
-1. Let |matches| be the result of [=find matching accounts=] with |provider|'s
-    [=registered provider/accounts=] and |handle|.
-1. If |matches| is not empty, show each of them. Otherwise, show a [=handle chip=] for |handle| and
-    |provider|.
+1. If |provider|'s [=registered provider/accounts=] is not empty, show each of them. Otherwise,
+    show a [=handle chip=] for |handle| and |provider|.
 1. Wait for the user to select one of them, or to cancel. If the user cancels, return null.
-1. [=Add to the IdP registry=] with the result of running the [=URL parser=] on |provider|'s
-    {{IdentityProviderConfig/configURL}}, false, and |handle|.
+1. [=Add to the handle registry=] with |handle|.
 
-    Note: The choice is stored as soon as the user selects it, before sign-in, so that it's
-    remembered even if sign-in fails or the user abandons it.
+    Note: Selecting the [=/handle=] has the same effect as agreeing to
+    [=ask to save a handle|save it=] after {{IdentityProvider/register()}}. The choice is stored
+    as soon as the user selects it, before sign-in, so that it's remembered even if sign-in fails
+    or the user abandons it.
 1. If the user selected an account |account|, return (|account|, |provider|).
 1. Let |account| be the result of [=sign in with a handle=] with |handle|, |provider|, and
     |globalObject|.
@@ -908,20 +1018,18 @@ To <dfn>find your account</dfn> given an {{IdentityProviderRequestOptions}} |typ
 
 </div>
 
-<div algorithm>
-To <dfn>sign in with a handle</dfn> given a [=handle=] |handle|, a [=registered provider=]
+<div algorithm="sign in with a handle">
+To <dfn>sign in with a handle</dfn> given a [=/handle=] |handle|, a [=registered provider=]
 |provider|, and a |globalObject|, run the following steps. This returns an
 {{IdentityProviderAccount}} or failure.
 
-1. Associate |handle| with |provider|, so that [=show an IDP login dialog=] appends it as
-    `login_hint`.
+1. Set |provider|'s <dfn for="registered provider" lt="associated handle">associated
+    handle</dfn> to |handle|, so that [=show an IDP login dialog=] appends it as `login_hint`.
 1. Let |result| be the result of [=show an IDP login dialog=] with |provider|'s
     [=registered provider/config=], |provider|, and |globalObject|.
 1. If |result| is failure, return failure.
-1. Set |provider|'s [=registered provider/accounts=] to the result of [=get the pushed accounts=]
-    for the [=url/origin=] of |provider|'s {{IdentityProviderConfig/configURL}}.
-1. Let |matches| be the result of [=find matching accounts=] with |provider|'s
-    [=registered provider/accounts=] and |handle|.
+1. Let |matches| be the result of [=get the registered accounts=] with the result of running the
+    [=URL parser=] on |provider|'s {{IdentityProviderConfig/configURL}}, and « |handle| ».
 1. If |matches|'s [=list/size=] is 1, return |matches|[0].
 1. If |matches|'s [=list/size=] is greater than 1, let the user choose one of |matches| and
     return it. If the user cancels, return failure.
@@ -940,11 +1048,13 @@ To <dfn>sign in with a handle</dfn> given a [=handle=] |handle|, a [=registered 
 <tbody>
 <tr><td>[=IDP=]<td>
     Lists the {{IdentityProviderConfig/type}}s it supports in {{IdentityProviderAPIConfig/types}}.
-    Calls {{IdentityProvider/register()}}. Pushes accounts with
+    Serves a [=well-known file=] at its [=site of a host|site=] with a single
+    {{IdentityProviderWellKnown/provider_urls}} entry. Pushes accounts with
     {{NavigatorLogin/setStatus()}}, setting {{IdentityProviderAccount/username}} to the user's
-    canonical handle. Accepts `login_hint` on its {{IdentityProviderAPIConfig/login_url}}. To be
-    found from a handle, serves a [=well-known file=] at its [=site of a host|site=] with a single
-    {{IdentityProviderWellKnown/provider_urls}} entry.
+    canonical handle. After the user signs in, calls {{IdentityProvider/register()}} with that
+    handle. Calls {{IdentityProvider/unregister()}} when the handle stops existing (e.g. the account
+    is deleted or renamed), and `setStatus("logged-out")` when the user merely signs out. Accepts
+    `login_hint` on its {{IdentityProviderAPIConfig/login_url}}.
 <tr><td>Owner of a handle's domain, when the [=IDP=] is on another site<td>
     Publishes a [[#dns-record|delegation record]].
 <tr><td>Owner of a handle's domain, when the [=IDP=] is on the same site<td>
@@ -964,11 +1074,12 @@ To <dfn>sign in with a handle</dfn> given a [=handle=] |handle|, a [=registered 
 <table class="data">
 <thead><tr><th>Request<th>When<th>Credentials<th>Reveals the RP?
 <tbody>
-<tr><td>[=Config file=] of registered [=IDPs=]<td>On a [=type request=], only for [=IDPs=] with
-    pushed accounts or stored handles<td>No<td>No
-<tr><td>DNS `TXT` lookup<td>After the user submits a handle<td>n/a<td>No
-<tr><td>[=Well-known file=] and [=config file=] of the resolved [=IDP=]<td>After the user submits a
-    handle<td>No<td>No
+<tr><td>[=Config file=] of registered [=IDPs=]<td>On a [=type request=]<td>No<td>No
+<tr><td>DNS `TXT` lookup and [=well-known file=], for each registered [=/handle=]<td>On a
+    [=type request=], unless cached<td>No<td>No
+<tr><td>DNS `TXT` lookup, [=well-known file=] and [=config file=] of the resolved [=IDP=]<td>After
+    the user submits a handle, or when an [=IDP=] calls {{IdentityProvider/register()}} or
+    {{IdentityProvider/unregister()}}<td>No<td>No
 <tr><td>{{IdentityProviderAPIConfig/login_url}}<td>After the user selects a [=handle chip=]<td>Yes
     (a top-level navigation)<td>No
 <tr><td>{{IdentityProviderAPIConfig/id_assertion_endpoint}}<td>After the user selects an
@@ -980,7 +1091,11 @@ To <dfn>sign in with a handle</dfn> given a [=handle=] |handle|, a [=registered 
     {{IdentityProviderAPIConfig/accounts_endpoint}}, and the need for mismatch UI.
 * Typing a handle reveals it to the DNS resolver and the resolved [=IDP=]'s servers, but not to
     the [=RP=] until the user finishes signing in.
-* The [=IdP registry=] and [=pushed accounts map=] are global. They are used only in user agent UI,
+* Because the [=handle registry=] stores only [=/handle|handles=], a [=type request=] can cause
+    DNS lookups for the domains of the user's registered [=/handle|handles=], which the DNS
+    resolver can observe. The requests don't carry credentials or reveal the [=RP=]. User agents
+    can reduce this by caching discovery results (see [[#registry]]).
+* The [=handle registry=] and [=account registry=] are global. They are used only in user agent UI,
     and are never exposed to the [=RP=] until the user selects an account.
 * The [=promise rejection delay|delay before rejection=] defined in [[FEDCM]] still applies, so an
     [=RP=] can't tell whether the user has any registered [=IDPs=].
@@ -1005,7 +1120,20 @@ To <dfn>sign in with a handle</dfn> given a [=handle=] |handle|, a [=registered 
 * **An account that doesn't match** isn't used: [=sign in with a handle=] fails if the account the
     user signs in with doesn't match the handle.
 * **Registration prompts** can be abused for spam. User agents can rate-limit
-    {{IdentityProvider/register()}} and require [=transient activation=].
+    {{IdentityProvider/register()}}, require [=transient activation=], and remember when the user
+    declines.
+* **A [=/handle=]'s [=IDP=] can change.** Because the [=handle registry=] stores only
+    [=/handle|handles=], a registered [=/handle=] follows its domain: if the domain's
+    [[#dns-record|delegation record]] or [=well-known file=] changes, the [=/handle=] is offered
+    with the new [=IDP=]. That is how a user moves a [=/handle=] to another [=IDP=], but it also
+    means that whoever controls the domain later (for example, after it expires) controls which
+    [=IDP=] the [=/handle=] is offered with. A user agent that caches discovery results MAY
+    notice such a change and ask the user to confirm it.
+* **An [=IDP=] can only register [=/handle|handles=] that resolve to it.** {{IdentityProvider/register()}}
+    requires the [=discover the IdP|discovered=] [=config file=] to be [=same site=] with the
+    caller, so a site can't register handles served by another [=IDP=]. Similarly,
+    {{IdentityProvider/unregister()}} only removes [=/handle|handles=] that resolve to the caller's
+    [=site of a host|site=].
 
 <!-- ============================================================ -->
 # Examples # {#examples}
@@ -1039,6 +1167,10 @@ account is hosted by `social.example`.
 1. The user agent shows Bob's pushed account with `username: "@bob.example"`, or a
     [=handle chip=].
 
+Because `@bob.example` resolves to `social.example`, `social.example` can also call
+`IdentityProvider.register("@bob.example")` after Bob signs in there. Another site, such as
+`evil.example`, can't: the handle doesn't resolve to it.
+
 </div>
 
 <div class="example" id="example-subdomain">
@@ -1052,10 +1184,26 @@ account is hosted by `social.example`.
 
 <div class="example" id="example-shared-host">
 **Many users share a host.** Dave (`dave@social.example`) and Erin (`@erin.social.example`) both
-resolve to the same [=config file=]. The [=IdP registry=] has one [=registration entry=] with both
-[=registration entry/handles=]. On later visits, the user agent shows every account that
-`social.example` has pushed, plus a [=handle chip=] for any stored handle that doesn't have a
-matching pushed account.
+resolve to the same [=config file=]. The [=handle registry=] has both [=/handle|handles=], and
+[=group registered handles by IdP=] groups them together. On a [=type request=], the user agent fetches that
+[=config file=] once, and shows the pushed accounts that match `dave@social.example` or
+`@erin.social.example`, plus a [=handle chip=] for either handle that doesn't have a matching
+pushed account.
+
+</div>
+
+<div class="example" id="example-lifecycle">
+**Signing out versus deleting an account.** Erin registered `@erin.social.example` from
+`social.example`.
+
+1. Erin signs out of `social.example`, which calls `navigator.login.setStatus("logged-out")`. Her
+    pushed account is cleared, but `@erin.social.example` stays in the [=handle registry=]. On the next
+    [=type request=], the user agent shows a [=handle chip=] for `@erin.social.example`. Selecting
+    it opens `social.example`'s {{IdentityProviderAPIConfig/login_url}} with
+    `login_hint=%40erin.social.example`.
+1. Later, Erin deletes her account. `social.example` calls
+    `IdentityProvider.unregister("@erin.social.example")`, and the [=/handle=] is removed from the
+    [=handle registry=], so the handle is no longer offered to any [=RP=].
 
 </div>
 
