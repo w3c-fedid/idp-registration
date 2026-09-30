@@ -541,87 +541,13 @@ The user agent MUST clear [=account registry=] entries whenever it clears the co
 [=Login Status map=] entries.
 
 <!-- ============================================================ -->
-# IDL changes # {#idl}
+# Registration # {#registration}
 <!-- ============================================================ -->
 
-## Requesting by federation ## {#idl-federation}
+This section defines how an [=IDP=] registers and unregisters a user's [=/handle=], and what it
+declares so that the user agent can present it to [=RPs=] later ([[#presentation]]).
 
-<xmp class="idl">
-partial dictionary IdentityProviderConfig {
-  USVString federation;
-};
-</xmp>
-
-<div class="monkeypatch">
-In [[FEDCM]], remove the `required` keyword from the {{IdentityProviderConfig/configURL}} and
-{{IdentityProviderConfig/clientId}} members of {{IdentityProviderConfig}}.
-
-Every algorithm in [[FEDCM]] that reads {{IdentityProviderConfig/configURL}} from an
-{{IdentityProviderConfig}} passed by the [=RP=] MUST first check that the member [=map/exists=],
-and treat its absence as failure. The one exception is [=create an IdentityCredential=], as
-modified in [[#requesting]].
-
-</div>
-
-<dl dfn-type="dict-member" dfn-for="IdentityProviderConfig">
-    :   <dfn>federation</dfn>
-    ::  A URL that points to the definition of a federation the [=RP=] accepts: the protocol or
-        profile that its [=IDPs=] and [=RPs=] follow, for example
-        `"https://www.w3.org/TR/indieauth/"` or `"https://atproto.com"`. The authority behind the
-        URL defines the federation. When present, {{IdentityProviderConfig/configURL}} is ignored,
-        and the entry stands for every registered [=IDP=] whose [=config file=] lists this
-        federation.
-</dl>
-
-An {{IdentityProviderRequestOptions}} whose {{IdentityProviderConfig/federation}} [=map/exists=] is a
-<dfn>federation request</dfn>.
-
-## Declaring supported federations ## {#idl-federations}
-
-<xmp class="idl">
-partial dictionary IdentityProviderAPIConfig {
-  sequence<USVString> federations;
-};
-</xmp>
-
-<dl dfn-type="dict-member" dfn-for="IdentityProviderAPIConfig">
-    :   <dfn>federations</dfn>
-    ::  The {{IdentityProviderConfig/federation}} URLs that the [=IDP=] supports. An [=IDP=] that
-        doesn't list a federation is never returned for a [=federation request=] for that
-        federation.
-</dl>
-
-<div class="monkeypatch">
-In [[FEDCM]], remove the `required` keyword from the
-{{IdentityProviderAPIConfig/accounts_endpoint}} member of {{IdentityProviderAPIConfig}}. In
-[=fetch the config file=], if <var ignore>config</var>.{{IdentityProviderAPIConfig/accounts_endpoint}} doesn't
-[=map/exist=], set |accounts_url| to null instead of computing it. Treat a null |accounts_url| as
-failure, except for [=registered providers=].
-
-Note: Registered [=IDPs=] only need a [=config file=] and an
-{{IdentityProviderAPIConfig/id_assertion_endpoint}}. Their accounts are always pushed.
-
-</div>
-
-## Account handles ## {#idl-account-handle}
-
-<xmp class="idl">
-partial dictionary IdentityProviderAccount {
-  USVString handle;
-};
-</xmp>
-
-<dl dfn-type="dict-member" dfn-for="IdentityProviderAccount">
-    :   <dfn>handle</dfn>
-    ::  The account's [=/handle=], in the canonical form that [=parse a handle=] produces. The user
-        agent uses it to match the account with registered and typed [=/handle|handles=]
-        ([=find matching accounts=]).
-</dl>
-
-Note: This is separate from {{IdentityProviderAccount/username}}, which an [=IDP=] can use for
-any display name it likes. An account can have both.
-
-## Registration ## {#idl-register}
+## Registering a handle ## {#register}
 
 <xmp class="idl">
 partial interface IdentityProvider {
@@ -737,120 +663,58 @@ Note: If a [=/handle=] no longer resolves to the caller, for example because its
 because the [=/handle=] is no longer offered with the caller as its [=IDP=] either
 ([=gather registered providers=] resolves it again).
 
-<!-- ============================================================ -->
-# Requesting registered IdPs # {#requesting}
-<!-- ============================================================ -->
+## Account handles ## {#account-handles}
 
-A <dfn>registered provider</dfn> is an {{IdentityProviderRequestOptions}} that the user agent
-creates for the [=IDP=] of one or more [=/handle|handles=], rather than one the [=RP=] passed. The
-user agent keeps the following associated with it:
+<xmp class="idl">
+partial dictionary IdentityProviderAccount {
+  USVString handle;
+};
+</xmp>
 
-<dl dfn-for="registered provider">
-    :   <dfn>config</dfn>
-    ::  The {{IdentityProviderAPIConfig}} from [=fetch the config file=].
-    :   <dfn>handles</dfn>
-    ::  A [=list=] of [=/handle|handles=] that [=resolve a handle|resolve=] to this [=IDP=]: the
-        ones in the [=handle registry=], or the single [=/handle=] the user typed.
-    :   <dfn>accounts</dfn>
-    ::  A [=list=] of {{IdentityProviderAccount}}s: the [=get the pushed accounts|pushed accounts=]
-        that [=handles match|match=] one of its [=registered provider/handles=].
+<dl dfn-type="dict-member" dfn-for="IdentityProviderAccount">
+    :   <dfn>handle</dfn>
+    ::  The account's [=/handle=], in the canonical form that [=parse a handle=] produces. The user
+        agent uses it to match the account with registered and typed [=/handle|handles=]
+        ([=find matching accounts=]).
 </dl>
 
-<div algorithm>
-To <dfn>create a registered provider</dfn> given a [=/URL=] |configUrl| and an
-{{IdentityProviderRequestOptions}} or null |federationRequest|, run the following steps. This returns an
-{{IdentityProviderRequestOptions}}.
+Note: This is separate from {{IdentityProviderAccount/username}}, which an [=IDP=] can use for
+any display name it likes. An account can have both.
 
-1. Let |provider| be a new {{IdentityProviderRequestOptions}}.
-1. Set |provider|.{{IdentityProviderConfig/configURL}} to the [=URL serializer|serialization=]
-    of |configUrl|.
-1. If |federationRequest| is not null, then for each member name |m| of «
-    {{IdentityProviderConfig/clientId}}, {{IdentityProviderRequestOptions/params}},
-    {{IdentityProviderRequestOptions/fields}}, {{IdentityProviderRequestOptions/loginHint}},
-    {{IdentityProviderRequestOptions/domainHint}} »: if |federationRequest|[|m|] [=map/exists=], set
-    |provider|[|m|] to |federationRequest|[|m|].
-1. Mark |provider| as a [=registered provider=].
-1. Return |provider|.
+## Declaring supported federations ## {#declaring-federations}
 
-</div>
+<xmp class="idl">
+partial dictionary IdentityProviderAPIConfig {
+  sequence<USVString> federations;
+};
+</xmp>
 
-<div algorithm>
-To <dfn>get the registered accounts</dfn> given a [=/URL=] |configUrl| and a [=list=] of
-[=/handle|handles=] |handles|, run the following steps. This returns a [=list=] of
-{{IdentityProviderAccount}}s.
+<dl dfn-type="dict-member" dfn-for="IdentityProviderAPIConfig">
+    :   <dfn>federations</dfn>
+    ::  The {{IdentityProviderConfig/federation}} URLs that the [=IDP=] supports. An [=IDP=] that
+        doesn't list a federation is never returned for a [=federation request=] for that
+        federation.
+</dl>
 
-1. Let |pushed| be the result of [=get the pushed accounts=] for |configUrl|'s [=url/origin=].
-1. Let |result| be an empty [=list=].
-1. For each |handle| of |handles|: [=list/extend=] |result| with the [=list/items=] of the result
-    of [=find matching accounts=] with |pushed| and |handle| that |result| doesn't already
-    [=list/contain=].
-1. Return |result|.
+<div class="monkeypatch">
+In [[FEDCM]], remove the `required` keyword from the
+{{IdentityProviderAPIConfig/accounts_endpoint}} member of {{IdentityProviderAPIConfig}}. In
+[=fetch the config file=], if <var ignore>config</var>.{{IdentityProviderAPIConfig/accounts_endpoint}} doesn't
+[=map/exist=], set |accounts_url| to null instead of computing it. Treat a null |accounts_url| as
+failure, except for [=registered providers=].
+
+Note: Registered [=IDPs=] only need a [=config file=] and an
+{{IdentityProviderAPIConfig/id_assertion_endpoint}}. Their accounts are always pushed.
 
 </div>
 
-Note: Only accounts whose {{IdentityProviderAccount/handle}} is a registered [=/handle=] are shown
-to other [=RPs=], because those are the accounts the user agreed to (with
-{{IdentityProvider/register()}}, or by typing the [=/handle=]). An [=IDP=] can push other accounts,
-but they aren't shown on a [=federation request=] until their [=/handle|handles=] are registered.
+<!-- ============================================================ -->
+# Presentation # {#presentation}
+<!-- ============================================================ -->
 
-Issue: Should other pushed accounts from a registered [=IDP=] also be shown, once the user has
-registered at least one [=/handle=] with it?
-
-<div algorithm>
-To <dfn>group registered handles by IdP</dfn> given a |globalObject|, run the following steps.
-This returns an [=ordered map=] from [=/URL|URLs=] of [=config files=] to [=lists=] of
-[=/handle|handles=].
-
-1. Let |groups| be an empty [=ordered map=].
-1. For each |handle| of the [=handle registry=]:
-    1. Let |configUrl| be the result of [=resolve a handle=] with |handle| and |globalObject|. If
-        |configUrl| is failure, [=iteration/continue=].
-    1. If |groups|[|configUrl|] doesn't [=map/exist=], [=map/set=] |groups|[|configUrl|] to an
-        empty [=list=].
-    1. [=list/Append=] |handle| to |groups|[|configUrl|].
-1. Return |groups|.
-
-</div>
-
-Note: Several [=/handle|handles=] can resolve to the same [=IDP=], for example when two users of
-the same [=IDP=] share a user agent. Grouping them means the user agent fetches that [=IDP=]'s
-[=config file=] once.
-
-<div algorithm>
-To <dfn>gather registered providers</dfn> given an {{IdentityProviderRequestOptions}}
-|federationRequest|, a [=list=] of {{IdentityProviderRequestOptions}} |explicitProviders|, and a
-|globalObject|, run the following steps. This returns a [=list=] of [=registered providers=].
-
-1. Let |federation| be |federationRequest|.{{IdentityProviderConfig/federation}}.
-1. Let |seenOrigins| be the [=ordered set=] of the [=url/origins=] of the
-    {{IdentityProviderConfig/configURL}}s of |explicitProviders|.
-1. Let |result| be an empty [=list=].
-1. For each |configUrl| → |handles| of the result of [=group registered handles by IdP=] with
-    |globalObject|:
-    1. Let |origin| be |configUrl|'s [=url/origin=].
-    1. If |seenOrigins| [=list/contains=] |origin|, [=iteration/continue=].
-
-        Note: If the [=RP=] also lists this [=IDP=] explicitly, the explicit entry is used and
-        the registration is ignored, so that the same [=IDP=] doesn't appear twice.
-    1. Let |provider| be the result of [=create a registered provider=] with |configUrl| and
-        |federationRequest|.
-    1. Let |config| be the result of [=fetch the config file=] with |provider| and |globalObject|.
-    1. If |config| is failure, [=iteration/continue=].
-    1. If |config|.{{IdentityProviderAPIConfig/federations}} doesn't [=map/exist=] or doesn't
-        [=list/contain=] |federation|, [=iteration/continue=].
-    1. Let |accounts| be the result of [=get the registered accounts=] with |configUrl| and
-        |handles|.
-    1. For each |account| of |accounts| where |account|["{{IdentityProviderAccount/picture}}"]
-        [=map/exists=], [=fetch the account picture=] with |account| and |globalObject|.
-    1. Set |provider|'s [=registered provider/config=] to |config|, its
-        [=registered provider/handles=] to |handles|, and its [=registered provider/accounts=] to
-        |accounts|.
-    1. [=set/Append=] |origin| to |seenOrigins|, and [=list/append=] |provider| to |result|.
-1. Return |result|.
-
-</div>
-
-## Changes to FedCM ## {#fedcm-changes}
+This section defines how the user agent presents registered [=IDPs=] to the user when an [=RP=]
+calls `navigator.credentials.get()` with a {{IdentityProviderConfig/federation}}. It changes
+[[FEDCM]] as follows, using the algorithms defined in the subsections below.
 
 <div class="monkeypatch">
 In [=create an IdentityCredential=], insert the following steps immediately after the step
@@ -976,9 +840,150 @@ how IndieAuth identifies clients by URL, but other protocols may expect somethin
 Note: {{IdentityCredential/configURL}} tells the [=RP=] which [=IDP=] issued the token, so it can
 verify the token using the protocol named by {{IdentityProviderConfig/federation}}.
 
-<!-- ============================================================ -->
-# Account selection # {#account-selection}
-<!-- ============================================================ -->
+## Requesting by federation ## {#request-by-federation}
+
+<xmp class="idl">
+partial dictionary IdentityProviderConfig {
+  USVString federation;
+};
+</xmp>
+
+<div class="monkeypatch">
+In [[FEDCM]], remove the `required` keyword from the {{IdentityProviderConfig/configURL}} and
+{{IdentityProviderConfig/clientId}} members of {{IdentityProviderConfig}}.
+
+Every algorithm in [[FEDCM]] that reads {{IdentityProviderConfig/configURL}} from an
+{{IdentityProviderConfig}} passed by the [=RP=] MUST first check that the member [=map/exists=],
+and treat its absence as failure. The one exception is [=create an IdentityCredential=], as
+modified in [[#presentation]].
+
+</div>
+
+<dl dfn-type="dict-member" dfn-for="IdentityProviderConfig">
+    :   <dfn>federation</dfn>
+    ::  A URL that points to the definition of a federation the [=RP=] accepts: the protocol or
+        profile that its [=IDPs=] and [=RPs=] follow, for example
+        `"https://www.w3.org/TR/indieauth/"` or `"https://atproto.com"`. The authority behind the
+        URL defines the federation. When present, {{IdentityProviderConfig/configURL}} is ignored,
+        and the entry stands for every registered [=IDP=] whose [=config file=] lists this
+        federation.
+</dl>
+
+An {{IdentityProviderRequestOptions}} whose {{IdentityProviderConfig/federation}} [=map/exists=] is a
+<dfn>federation request</dfn>.
+
+## Registered providers ## {#registered-providers}
+
+A <dfn>registered provider</dfn> is an {{IdentityProviderRequestOptions}} that the user agent
+creates for the [=IDP=] of one or more [=/handle|handles=], rather than one the [=RP=] passed. The
+user agent keeps the following associated with it:
+
+<dl dfn-for="registered provider">
+    :   <dfn>config</dfn>
+    ::  The {{IdentityProviderAPIConfig}} from [=fetch the config file=].
+    :   <dfn>handles</dfn>
+    ::  A [=list=] of [=/handle|handles=] that [=resolve a handle|resolve=] to this [=IDP=]: the
+        ones in the [=handle registry=], or the single [=/handle=] the user typed.
+    :   <dfn>accounts</dfn>
+    ::  A [=list=] of {{IdentityProviderAccount}}s: the [=get the pushed accounts|pushed accounts=]
+        that [=handles match|match=] one of its [=registered provider/handles=].
+</dl>
+
+<div algorithm>
+To <dfn>create a registered provider</dfn> given a [=/URL=] |configUrl| and an
+{{IdentityProviderRequestOptions}} or null |federationRequest|, run the following steps. This returns an
+{{IdentityProviderRequestOptions}}.
+
+1. Let |provider| be a new {{IdentityProviderRequestOptions}}.
+1. Set |provider|.{{IdentityProviderConfig/configURL}} to the [=URL serializer|serialization=]
+    of |configUrl|.
+1. If |federationRequest| is not null, then for each member name |m| of «
+    {{IdentityProviderConfig/clientId}}, {{IdentityProviderRequestOptions/params}},
+    {{IdentityProviderRequestOptions/fields}}, {{IdentityProviderRequestOptions/loginHint}},
+    {{IdentityProviderRequestOptions/domainHint}} »: if |federationRequest|[|m|] [=map/exists=], set
+    |provider|[|m|] to |federationRequest|[|m|].
+1. Mark |provider| as a [=registered provider=].
+1. Return |provider|.
+
+</div>
+
+<div algorithm>
+To <dfn>get the registered accounts</dfn> given a [=/URL=] |configUrl| and a [=list=] of
+[=/handle|handles=] |handles|, run the following steps. This returns a [=list=] of
+{{IdentityProviderAccount}}s.
+
+1. Let |pushed| be the result of [=get the pushed accounts=] for |configUrl|'s [=url/origin=].
+1. Let |result| be an empty [=list=].
+1. For each |handle| of |handles|: [=list/extend=] |result| with the [=list/items=] of the result
+    of [=find matching accounts=] with |pushed| and |handle| that |result| doesn't already
+    [=list/contain=].
+1. Return |result|.
+
+</div>
+
+Note: Only accounts whose {{IdentityProviderAccount/handle}} is a registered [=/handle=] are shown
+to other [=RPs=], because those are the accounts the user agreed to (with
+{{IdentityProvider/register()}}, or by typing the [=/handle=]). An [=IDP=] can push other accounts,
+but they aren't shown on a [=federation request=] until their [=/handle|handles=] are registered.
+
+Issue: Should other pushed accounts from a registered [=IDP=] also be shown, once the user has
+registered at least one [=/handle=] with it?
+
+<div algorithm>
+To <dfn>group registered handles by IdP</dfn> given a |globalObject|, run the following steps.
+This returns an [=ordered map=] from [=/URL|URLs=] of [=config files=] to [=lists=] of
+[=/handle|handles=].
+
+1. Let |groups| be an empty [=ordered map=].
+1. For each |handle| of the [=handle registry=]:
+    1. Let |configUrl| be the result of [=resolve a handle=] with |handle| and |globalObject|. If
+        |configUrl| is failure, [=iteration/continue=].
+    1. If |groups|[|configUrl|] doesn't [=map/exist=], [=map/set=] |groups|[|configUrl|] to an
+        empty [=list=].
+    1. [=list/Append=] |handle| to |groups|[|configUrl|].
+1. Return |groups|.
+
+</div>
+
+Note: Several [=/handle|handles=] can resolve to the same [=IDP=], for example when two users of
+the same [=IDP=] share a user agent. Grouping them means the user agent fetches that [=IDP=]'s
+[=config file=] once.
+
+<div algorithm>
+To <dfn>gather registered providers</dfn> given an {{IdentityProviderRequestOptions}}
+|federationRequest|, a [=list=] of {{IdentityProviderRequestOptions}} |explicitProviders|, and a
+|globalObject|, run the following steps. This returns a [=list=] of [=registered providers=].
+
+1. Let |federation| be |federationRequest|.{{IdentityProviderConfig/federation}}.
+1. Let |seenOrigins| be the [=ordered set=] of the [=url/origins=] of the
+    {{IdentityProviderConfig/configURL}}s of |explicitProviders|.
+1. Let |result| be an empty [=list=].
+1. For each |configUrl| → |handles| of the result of [=group registered handles by IdP=] with
+    |globalObject|:
+    1. Let |origin| be |configUrl|'s [=url/origin=].
+    1. If |seenOrigins| [=list/contains=] |origin|, [=iteration/continue=].
+
+        Note: If the [=RP=] also lists this [=IDP=] explicitly, the explicit entry is used and
+        the registration is ignored, so that the same [=IDP=] doesn't appear twice.
+    1. Let |provider| be the result of [=create a registered provider=] with |configUrl| and
+        |federationRequest|.
+    1. Let |config| be the result of [=fetch the config file=] with |provider| and |globalObject|.
+    1. If |config| is failure, [=iteration/continue=].
+    1. If |config|.{{IdentityProviderAPIConfig/federations}} doesn't [=map/exist=] or doesn't
+        [=list/contain=] |federation|, [=iteration/continue=].
+    1. Let |accounts| be the result of [=get the registered accounts=] with |configUrl| and
+        |handles|.
+    1. For each |account| of |accounts| where |account|["{{IdentityProviderAccount/picture}}"]
+        [=map/exists=], [=fetch the account picture=] with |account| and |globalObject|.
+    1. Set |provider|'s [=registered provider/config=] to |config|, its
+        [=registered provider/handles=] to |handles|, and its [=registered provider/accounts=] to
+        |accounts|.
+    1. [=set/Append=] |origin| to |seenOrigins|, and [=list/append=] |provider| to |result|.
+1. Return |result|.
+
+</div>
+
+## Account selection ## {#account-selection}
 
 <div algorithm>
 To <dfn>look up a typed handle</dfn> given a [=string=] |input|, an
