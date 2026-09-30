@@ -139,7 +139,7 @@ await navigator.login.setStatus("logged-in", {
   accounts: [{
     id: "1234",
     name: "Alice",
-    username: "@alice.idp.example",
+    handle: "@alice.idp.example",
     picture: "https://idp.example/alice.jpg"
   }]
 });
@@ -284,8 +284,9 @@ return true:
 </div>
 
 Note: This is the only comparison used on handles. It is applied to an account's
-{{IdentityProviderAccount/username}} and never to {{IdentityProviderAccount/email}}, so that this
-mechanism stays separate from email verification.
+{{IdentityProviderAccount/handle}}, and never to its {{IdentityProviderAccount/username}} or
+{{IdentityProviderAccount/email}}, so that this mechanism stays separate from how an [=IDP=]
+displays accounts and from email verification.
 
 Issue: URL handles need more normalization (fragments such as `#me`, trailing slashes).
 
@@ -318,7 +319,7 @@ first run [=parse a handle=], which also normalizes it (for example, `Alice.Exam
 fetch the [=config file=] or check its {{IdentityProviderAPIConfig/federations}}, because each caller needs a different check.
 
 [=Resolve a handle|Resolution=] is used when an [=IDP=] calls {{IdentityProvider/register()}} or
-{{IdentityProvider/unregister()}} ([=resolve a handle for a caller=]), when the user types a
+{{IdentityProvider/unregister()}}, when the user types a
 [=/handle=] ([=look up a typed handle=]), and for each registered [=/handle=] on a
 [=federation request=] ([=group registered handles by IdP=]). The following subsections define its
 steps.
@@ -508,7 +509,8 @@ end of its algorithm:
 1. If |options|["{{LoginStatusOptions/accounts}}"] does not [=map/exist=], return.
 1. For each |account| of |options|["{{LoginStatusOptions/accounts}}"]: if |account| has none of
     {{IdentityProviderAccount/name}}, {{IdentityProviderAccount/email}},
-    {{IdentityProviderAccount/tel}}, or {{IdentityProviderAccount/username}}, throw a
+    {{IdentityProviderAccount/tel}}, {{IdentityProviderAccount/username}}, or
+    {{IdentityProviderAccount/handle}}, throw a
     {{TypeError}}.
 1. Let |expiration| be null.
 1. If |options|["{{LoginStatusOptions/expiration}}"] [=map/exists=], set |expiration| to the
@@ -601,6 +603,24 @@ Note: Registered [=IDPs=] only need a [=config file=] and an
 
 </div>
 
+## Account handles ## {#idl-account-handle}
+
+<xmp class="idl">
+partial dictionary IdentityProviderAccount {
+  USVString handle;
+};
+</xmp>
+
+<dl dfn-type="dict-member" dfn-for="IdentityProviderAccount">
+    :   <dfn>handle</dfn>
+    ::  The account's [=/handle=], in the canonical form that [=parse a handle=] produces. The user
+        agent uses it to match the account with registered and typed [=/handle|handles=]
+        ([=find matching accounts=]).
+</dl>
+
+Note: This is separate from {{IdentityProviderAccount/username}}, which an [=IDP=] can use for
+any display name it likes. An account can have both.
+
 ## Registration ## {#idl-register}
 
 <xmp class="idl">
@@ -610,24 +630,8 @@ partial interface IdentityProvider {
 };
 </xmp>
 
-An [=IDP=] registers a [=/handle=], not a [=config file=]. This way, an [=IDP=] registering a
-[=/handle=] and the user typing it follow the same path: both [=resolve a handle|resolve=] it, and both
-add the same [=/handle=] to the [=handle registry=]. The [=config file=]'s URL is always discovered
-and never passed in.
-
-<div algorithm>
-To <dfn>resolve a handle for a caller</dfn> given a [=string=] |input| and a |globalObject|, run
-the following steps. This returns a tuple (|handle|, |configUrl|), or a {{DOMException}} name.
-
-1. Let |handle| be the result of [=parse a handle=] with |input|. If |handle| is failure, return
-    "{{SyntaxError}}".
-1. Let |configUrl| be the result of [=resolve a handle=] with |handle| and |globalObject|. If
-    |configUrl| is failure, return "{{NetworkError}}".
-1. If |configUrl|'s [=url/origin=] is not [=same site=] with |globalObject|'s
-    [=associated Document=]'s [=Document/origin=], return "{{NotAllowedError}}".
-1. Return (|handle|, |configUrl|).
-
-</div>
+An [=IDP=] registering a [=/handle=] and the user typing it follow the same path: both
+[=resolve a handle|resolve=] it, and both add the same [=/handle=] to the [=handle registry=].
 
 Note: An [=IDP=] can only register and unregister [=/handle|handles=] that resolve to it. An
 [=IDP=] on another [=site of a host|site=] serves a [=/handle=] only if the handle's domain
@@ -642,10 +646,21 @@ the following steps:
 1. If |globalObject|'s [=Window/navigable=] is not a [=top-level traversable=], [=reject=] |promise|
     with a "{{NotAllowedError}}" {{DOMException}} and return |promise|.
 1. [=In parallel=], run the following steps:
-    1. Let |result| be the result of [=resolve a handle for a caller=] with |handle| and
-        |globalObject|. If |result| is a {{DOMException}} name, [=queue to reject=] |promise|
-        with |result| and return.
-    1. Let (|canonical|, |configUrl|) be |result|.
+    1. Let |canonical| be the result of [=parse a handle=] with |handle|. If |canonical| is
+        failure, [=queue to reject=] |promise| with "{{SyntaxError}}" and return.
+    1. Let |configUrl| be the result of [=resolve a handle=] with |canonical| and |globalObject|.
+        If |configUrl| is failure, [=queue to reject=] |promise| with "{{NetworkError}}" and return.
+    1. If |configUrl|'s [=url/origin=] is not [=same site=] with |globalObject|'s
+        [=associated Document=]'s [=Document/origin=], [=queue to reject=] |promise| with
+        "{{NotAllowedError}}" and return.
+    1. Let |accounts| be the result of [=find matching accounts=] with the result of
+        [=get the pushed accounts=] for |configUrl|'s [=url/origin=], and |canonical|.
+    1. If |accounts| [=list/is empty=], [=queue to reject=] |promise| with "{{NotAllowedError}}"
+        and return.
+
+        Note: This fails if the user isn't [=logged-in=] to the [=IDP=], if the [=IDP=] hasn't
+        pushed any accounts, or if none of them has |canonical| as its
+        {{IdentityProviderAccount/handle}}.
     1. Let |provider| be the result of [=create a registered provider=] with |configUrl| and null.
     1. Let |config| be the result of [=fetch the config file=] with |provider| and |globalObject|.
     1. If |config| is failure, or |config|.{{IdentityProviderAPIConfig/federations}} doesn't
@@ -653,7 +668,7 @@ the following steps:
         and return.
     1. If the [=handle registry=] doesn't already contain a [=/handle=] that
         [=handles match|matches=] |canonical|, the user agent MUST
-        [=ask to save a handle|ask the user to save=] |canonical| with |configUrl| and |config|.
+        [=ask to save a handle|ask the user to save=] |canonical| with |accounts|[0] and |config|.
         If the user declines, [=queue to reject=] |promise| with "{{NotAllowedError}}" and return.
     1. [=Add to the handle registry=] with |canonical|.
     1. [=Queue a global task=] on the [=DOM manipulation task source=] given |globalObject| to
@@ -663,15 +678,14 @@ the following steps:
 </div>
 
 <div algorithm>
-To <dfn>ask to save a handle</dfn> given a [=/handle=] |handle|, a [=/URL=] |configUrl|, and an
-{{IdentityProviderAPIConfig}} |config|, the user agent shows a prompt that asks the user whether
+To <dfn>ask to save a handle</dfn> given a [=/handle=] |handle|, an {{IdentityProviderAccount}}
+|account|, and an {{IdentityProviderAPIConfig}} |config|, the user agent shows a prompt that asks the user whether
 to save |handle| so that it's offered when websites ask them to sign in. It returns whether the
 user agreed.
 
 * The prompt SHOULD show |handle| as the account's identifier.
-* If [=find matching accounts=] with the result of [=get the pushed accounts=] for |configUrl|'s
-    [=url/origin=] and |handle| returns any accounts, the prompt SHOULD show the
-    {{IdentityProviderAccount/name}} and {{IdentityProviderAccount/picture}} of the first one.
+* The prompt SHOULD show |account|'s {{IdentityProviderAccount/name}} and
+    {{IdentityProviderAccount/picture}}.
 * The prompt SHOULD show |config|'s {{IdentityProviderAPIConfig/branding}}, for example as a badge
     on the account's picture.
 * The user agent MAY require [=transient activation=] before showing the prompt, MAY rate-limit
@@ -679,9 +693,10 @@ user agreed.
 
 </div>
 
-Note: An [=IDP=] that wants the prompt to show the user's name and picture pushes the account with
-{{NavigatorLogin/setStatus()}} before calling {{IdentityProvider/register()}}, as in the
-<a href="#example-idp-register">introduction's example</a>.
+Note: An [=IDP=] pushes the user's account with {{NavigatorLogin/setStatus()}} before calling
+{{IdentityProvider/register()}}, as in the <a href="#example-idp-register">introduction's
+example</a>. This way, an [=IDP=] can only register a [=/handle=] for an account the user is
+signed in to, and the prompt can show that account's name and picture.
 
 Note: {{IdentityProvider/register()}} is separate from {{NavigatorLogin/setStatus()}} because a
 registered [=/handle=] needs to outlive the user's session. See [[#registry]].
@@ -698,10 +713,13 @@ run the following steps:
 1. Let |globalObject| be the [=current global object=].
 1. Let |promise| be a [=new=] {{Promise}} in |globalObject|'s [=relevant realm=].
 1. [=In parallel=], run the following steps:
-    1. Let |result| be the result of [=resolve a handle for a caller=] with |handle| and
-        |globalObject|. If |result| is a {{DOMException}} name, [=queue to reject=] |promise|
-        with |result| and return.
-    1. Let (|canonical|, <var ignore>configUrl</var>) be |result|.
+    1. Let |canonical| be the result of [=parse a handle=] with |handle|. If |canonical| is
+        failure, [=queue to reject=] |promise| with "{{SyntaxError}}" and return.
+    1. Let |configUrl| be the result of [=resolve a handle=] with |canonical| and |globalObject|.
+        If |configUrl| is failure, [=queue to reject=] |promise| with "{{NetworkError}}" and return.
+    1. If |configUrl|'s [=url/origin=] is not [=same site=] with |globalObject|'s
+        [=associated Document=]'s [=Document/origin=], [=queue to reject=] |promise| with
+        "{{NotAllowedError}}" and return.
     1. [=Remove from the handle registry=] with |canonical|.
     1. [=Queue a global task=] on the [=DOM manipulation task source=] given |globalObject| to
         [=resolve=] |promise|.
@@ -770,7 +788,7 @@ To <dfn>get the registered accounts</dfn> given a [=/URL=] |configUrl| and a [=l
 
 </div>
 
-Note: Only accounts whose {{IdentityProviderAccount/username}} is a registered [=/handle=] are shown
+Note: Only accounts whose {{IdentityProviderAccount/handle}} is a registered [=/handle=] are shown
 to other [=RPs=], because those are the accounts the user agreed to (with
 {{IdentityProvider/register()}}, or by typing the [=/handle=]). An [=IDP=] can push other accounts,
 but they aren't shown on a [=federation request=] until their [=/handle|handles=] are registered.
@@ -987,7 +1005,7 @@ This returns a [=registered provider=] or failure.
 <div algorithm>
 To <dfn>find matching accounts</dfn> given a [=list=] of {{IdentityProviderAccount}}s |accounts|
 and a [=/handle=] |handle|, return the [=list/items=] of |accounts| whose
-{{IdentityProviderAccount/username}} [=map/exists=] and [=handles match|matches=] |handle|.
+{{IdentityProviderAccount/handle}} [=map/exists=] and [=handles match|matches=] |handle|.
 
 </div>
 
@@ -1076,8 +1094,8 @@ To <dfn>sign in with a handle</dfn> given a [=/handle=] |handle|, a [=registered
     Lists the federations it supports in {{IdentityProviderAPIConfig/federations}}.
     Serves a [=well-known file=] at its [=site of a host|site=] with a single
     {{IdentityProviderWellKnown/provider_urls}} entry. Pushes accounts with
-    {{NavigatorLogin/setStatus()}}, setting {{IdentityProviderAccount/username}} to the user's
-    canonical handle. After the user signs in, calls {{IdentityProvider/register()}} with that
+    {{NavigatorLogin/setStatus()}}, setting each account's {{IdentityProviderAccount/handle}} to
+    the user's canonical handle. After the user signs in, calls {{IdentityProvider/register()}} with that
     handle. Calls {{IdentityProvider/unregister()}} when the handle stops existing (e.g. the account
     is deleted or renamed), and `setStatus("logged-out")` when the user merely signs out. Accepts
     `login_hint` on its {{IdentityProviderAPIConfig/login_url}}.
@@ -1179,7 +1197,7 @@ To <dfn>sign in with a handle</dfn> given a [=/handle=] |handle|, a [=registered
 1. No account has been pushed yet, so the user agent shows a [=handle chip=] for `@alice.example`.
 1. When Alice selects it, the user agent stores the registration and opens
     `login_url?login_hint=%40alice.example`. Her server pushes
-    `{username: "@alice.example"}`, and the user agent requests the token.
+    `{handle: "@alice.example"}`, and the user agent requests the token.
 
 </div>
 
@@ -1190,7 +1208,7 @@ account is hosted by `social.example`.
 1. Bob publishes `_web-identity.bob.example TXT "iss=social.example"`.
 1. [=Resolve the issuer=] returns `social.example`. The user agent fetches
     `https://social.example/.well-known/web-identity` and then its [=config file=].
-1. The user agent shows Bob's pushed account with `username: "@bob.example"`, or a
+1. The user agent shows Bob's pushed account with `handle: "@bob.example"`, or a
     [=handle chip=].
 
 Because `@bob.example` resolves to `social.example`, `social.example` can also call
