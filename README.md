@@ -36,37 +36,15 @@ In an **open federation**, any server that implements the federation's protocol 
 
 Email works as an open federation in the same sense: an RP accepts an address at any mail domain.
 
-FedCM does not support open federations. RPs in an open federation therefore have two options, and each has a problem: listing IdPs, and asking the user for an identifier.
-
-## Listing IdPs
-
-An RP can list IdPs of an open federation in FedCM, but only the ones it knows about. Each listed IdP also takes space in the sign-in UI (the ["NASCAR problem"](https://github.com/fedidcg/FedCM/blob/main/explorations/related_problems.md#the-nascar-flag-problem)), so in practice RPs list a small number of large IdPs.
-
-Users whose account is at any other IdP can't use FedCM with that RP. That includes a smaller provider, a custom domain, or a server the user runs. As the AT Protocol community puts it, the RP wants to ask for ["an account that supports this protocol"](https://atproto.com/blog/working-to-decentralize-fedcm) rather than an account at a specific IdP. FedCM has no way to express that request.
-
-## Asking for an identifier
-
 Open-federation protocols typically ask the user to type an identifier (a URL, handle or address), so that the RP can discover the user's IdP from it. This requires users to know their identifier and to understand what the prompt is asking for.
 
-OpenID 2.0 used this approach. According to one of its authors, [deployments declined by about half after their peak, as it became clear that average users did not know what to do with the OpenID prompt](https://x.com/DickHardt/status/1735056737844220279).
-
-## Scope
+OpenID 2.0 used this approach, which, according to one of its authors, [deployments declined by about half after their peak, as it became clear that average users did not know what to do with the OpenID prompt](https://x.com/DickHardt/status/1735056737844220279).
 
 This proposal extends FedCM so that:
 
 - an RP can request any IdP in an open federation, identified by a URL, without listing IdPs;
 - the user can select an existing account without typing an identifier.
 
-### Goals
-
-- Any IdP that implements a federation's protocol can take part, including IdPs the browser and the RP have no prior knowledge of.
-- The browser does not need to implement the federation's protocol.
-- IdPs don't learn which RPs the user visits before the user chooses to sign in, as in FedCM today.
-
-### Non-goals
-
-- Changing how closed federations work. An RP can request both kinds in the same call.
-- Defining the federations' protocols, or how RPs verify the tokens they receive.
 
 # The proposal
 
