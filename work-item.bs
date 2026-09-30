@@ -125,9 +125,9 @@ allow-listing:
 
 1. A user whose [=/handle=] isn't registered yet can **type it**, for example `@alice.example`,
     `alice@social.example` or `https://alice.example`. The user agent
-    [=resolve a handle|resolves it=] to an [=IDP=] and registers it (see [[#handle-resolution]]).
+    [=look up a typed handle|resolves it=] to an [=IDP=] and registers it (see [[#handles]]).
 
-Both ways of registering a [=/handle=] run the same [[#discovery|discovery]] and add the same
+Both ways of registering a [=/handle=] run the same [[#resolution|resolution]] and add the same
 [=/handle=] to the [=handle registry=].
 
 <div class="example" id="example-idp-register">
@@ -175,7 +175,7 @@ A change to an algorithm or definition in another specification.
 This specification depends on the Infra Standard. [[!INFRA]]
 
 The <dfn>site of a host</dfn> |host| is |host|'s [=host/registrable domain=]. A [=host=] |host| is
-a <dfn>site host</dfn> if |host| is a [=domain=], its [=host/registrable domain=] is non-null, and
+a <dfn>site host</dfn> if |host| is a [=/domain=], its [=host/registrable domain=] is non-null, and
 |host| equals its [=host/registrable domain=].
 
 <div class="example" id="example-site-of-host">
@@ -186,8 +186,211 @@ The [=site of a host|site=] of `alice.social.example` is `social.example`, as lo
 </div>
 
 <!-- ============================================================ -->
-# The handle registry # {#registry}
+# Handles # {#handles}
 <!-- ============================================================ -->
+
+A <dfn>handle</dfn> is a globally-unique and human-readable [=string=] that identifies the user,
+that is produced by [=parse a handle=], and that is resolvable by
+[=resolve a handle|Resolution=]. A handle isn't necessarily permanent: a user can change it, or
+move it to another [=IDP=].
+
+This section defines how the user agent parses a [=/handle=], resolves it to an [=IDP=], and
+stores the [=/handle|handles=] the user uses. None of this requires the user agent to understand
+any identity protocol. It only needs a small set of handle notations ([[#parsing]]) and a single,
+protocol-agnostic resolution procedure ([[#resolution]]).
+
+## Parsing ## {#parsing}
+
+[=Parse a handle=] accepts the following notations:
+
+<table class="data">
+<thead><tr><th>Notation<th>Examples<th>Used by
+<tbody>
+<tr><td>`@` + host<td>`@alice.example`, `@alice.social.example`<td>atproto
+<tr><td>local + `@` + host, optionally with a leading `@`<td>`alice@social.example`,
+    `@alice@social.example`<td>ActivityPub, Nostr (NIP-05)
+<tr><td>`https:` URL<td>`https://alice.example/`<td>IndieAuth, Solid, OpenID 2.0
+</table>
+
+<div algorithm>
+To <dfn>parse a handle</dfn> given a [=string=] |input|, run the following steps. This returns a
+[=/handle=] or failure.
+
+1. Let |s| be |input| with leading and trailing [=ASCII whitespace=] [=strip leading and
+    trailing ASCII whitespace|stripped=].
+1. If |s| starts with "`https://`":
+    1. Let |url| be the result of running the [=URL parser=] on |s|.
+    1. If |url| is failure, return failure.
+    1. Let |host| be |url|'s [=url/host=].
+    1. Let |handle| be the result of running the [=URL serializer=] on |url|.
+1. Otherwise:
+    1. If |s| starts with "`@`", remove the first code point from |s|.
+    1. If |s| contains "`@`":
+        1. Let |local| be the part of |s| before the last "`@`", and |hostString| the part after it.
+        1. If |local| is the empty string, return failure.
+    1. Otherwise, let |local| be null and |hostString| be |s|.
+    1. Let |host| be the result of running the [=host parser=] on |hostString|.
+    1. If |host| is failure, return failure.
+    1. If |local| is null, let |handle| be "`@`" followed by the [=host serializer|serialization=]
+        of |host|. Otherwise, let |handle| be |local|, followed by "`@`", followed by the
+        [=host serializer|serialization=] of |host|.
+1. If |host| is not a [=/domain=], return failure.
+1. If |host|'s [=host/registrable domain=] is null, return failure.
+1. Return |handle|.
+
+</div>
+
+<div algorithm>
+The <dfn for="handle">domain</dfn> of a [=/handle=] |handle| is the result of the following steps:
+
+1. If |handle| starts with "`https://`", return the [=url/host=] of the result of running the
+    [=URL parser=] on |handle|.
+1. Return the result of running the [=host parser=] on the part of |handle| after the last
+    "`@`".
+
+</div>
+
+Note: Because a [=/handle=] is always in the canonical form that [=parse a handle=] produces, its
+[=handle/domain=] can be read off directly, without validating it again.
+
+<div class="example" id="example-parse-a-handle">
+<table class="data">
+<thead><tr><th>Input<th>Handle<th>Its [=handle/domain=]
+<tbody>
+<tr><td>`@alice.example`, `alice.example`<td>`@alice.example`<td>`alice.example`
+<tr><td>`@alice.social.example`<td>`@alice.social.example`<td>`alice.social.example`
+<tr><td>`alice@social.example`, `@alice@social.example`<td>`alice@social.example`<td>`social.example`
+<tr><td>`https://alice.example`<td>`https://alice.example/`<td>`alice.example`
+<tr><td>`@192.0.2.1`, `@com`<td colspan=2>failure
+</table>
+</div>
+
+<div algorithm>
+Two [=strings=] |a| and |b| <dfn lt="handles match">match as handles</dfn> if the following steps
+return true:
+
+1. If |a| and |b| both start with "`https://`":
+    1. Let |urlA| and |urlB| be the results of running the [=URL parser=] on |a| and |b|.
+    1. If either is failure, return false.
+    1. Return whether |urlA| [=url/equals=] |urlB|.
+1. Let |a'| and |b'| be the [=ASCII lowercase|ASCII lowercased=] |a| and |b|.
+1. If |a'| starts with "`@`", remove its first code point. Do the same for |b'|.
+1. Return whether |a'| is |b'|.
+
+</div>
+
+Note: This is the only comparison used on handles. It is applied to an account's
+{{IdentityProviderAccount/username}} and never to {{IdentityProviderAccount/email}}, so that this
+mechanism stays separate from email verification.
+
+Issue: URL handles need more normalization (fragments such as `#me`, trailing slashes).
+
+## Resolution ## {#resolution}
+
+<dfn lt="resolve a handle">Resolution</dfn> turns a [=/handle=] into the URL of the [=config file=]
+of the [=IDP=] that serves it. It is based on one rule: **a handle is served by an [=IDP=] on the
+handle's own [=site of a host|site=], unless the handle's [=handle/domain=] delegates to another site in
+DNS.**
+
+<div algorithm="resolve a handle">
+To [=resolve a handle=] given a [=/handle=] |handle| and a |globalObject|, run the following steps.
+This returns a [=/URL=] or failure.
+
+1. Let |site| be the result of [=determine the IdP site=] with |handle|'s [=handle/domain=]. If
+    |site| is failure, return failure.
+1. Let |wellKnown| be the result of [=fetch the well-known file=] with |site| and |globalObject|.
+    If |wellKnown| is failure, return failure.
+1. If |wellKnown|["{{IdentityProviderWellKnown/provider_urls}}"] doesn't [=map/exist=] or its
+    [=list/size=] is not 1, return failure.
+1. Let |url| be the result of running the [=URL parser=] on
+    |wellKnown|["{{IdentityProviderWellKnown/provider_urls}}"][0].
+1. If |url| is failure, or |url|'s [=url/scheme=] is not "`https`", or |url|'s [=url/host=]'s
+    [=host/registrable domain=] is not |site|, return failure.
+1. Return |url|.
+
+</div>
+
+Resolution takes a [=/handle=], not arbitrary input. Callers that start from user or script input
+first run [=parse a handle=], which also normalizes it (for example, `Alice.Example` becomes
+`@alice.example`), and then resolve the result. Resolution stops at the config URL: it doesn't
+fetch the [=config file=] or check its {{IdentityProviderAPIConfig/types}}, because each caller needs a different check.
+
+[=Resolve a handle|Resolution=] is used when an [=IDP=] calls {{IdentityProvider/register()}} or
+{{IdentityProvider/unregister()}} ([=resolve a handle for a caller=]), when the user types a
+[=/handle=] ([=look up a typed handle=]), and for each registered [=/handle=] on a
+[=type request=] ([=group registered handles by IdP=]). The following subsections define its
+steps.
+
+### Determine the IdP site ### {#determine-idp-site}
+
+<div algorithm>
+To <dfn>determine the IdP site</dfn> given a [=/domain=] |host|, run the following steps. This
+returns a [=site host=] or failure.
+
+1. Let |default| be |host|'s [=host/registrable domain=].
+1. Let |records| be the result of [=look up the delegation records=] for |host|.
+1. If |records| is failure or [=list/is empty=], return |default|.
+1. If |records|'s [=list/size=] is greater than 1, return failure.
+1. Let |site| be the result of running the [=host parser=] on the
+    [=ASCII lowercase|ASCII lowercased=] |records|[0].
+1. If |site| is failure or is not a [=site host=], return failure.
+1. Return |site|.
+
+</div>
+
+Issue: Should a failed DNS query (e.g. `SERVFAIL`) fail closed instead of falling back to
+<var ignore>default</var>?
+
+<div class="example" id="example-determine-idp-site">
+<table class="data">
+<thead><tr><th>Host<th>Delegation record<th>IdP site
+<tbody>
+<tr><td>`alice.example`<td>none<td>`alice.example`
+<tr><td>`alice.example`<td>`iss=social.example`<td>`social.example`
+<tr><td>`alice.social.example`<td>none<td>`social.example`
+<tr><td>`alice.hosting.example` (`hosting.example` is a public suffix)<td>none<td>`alice.hosting.example`
+<tr><td>`alice.example`<td>`iss=pds.social.example`<td>failure (not a site)
+</table>
+</div>
+
+### DNS delegation record ### {#dns-record}
+
+The owner of a handle's domain can delegate to an [=IDP=] on another [=site of a host|site=] by
+publishing a DNS `TXT` record [[!RFC1035]] at the name `_web-identity.` followed by the handle's
+host:
+
+<div class="example" id="example-dns-record">
+```
+_web-identity.alice.example.   TXT   "iss=social.example"
+```
+
+This record says that handles on `alice.example` are served by the [=IDP=] on the
+[=site of a host|site=] `social.example`.
+
+</div>
+
+The record's value MUST be the string "`iss=`" followed by a [=site host=]. There MUST be at most
+one such record at a name. A record naming the handle's own [=site of a host|site=] has the same
+effect as having no record.
+
+Note: This is modeled on the DNS delegation in the
+[Email Verification Protocol](https://dickhardt.github.io/email-verification/draft-hardt-email-verification.html#name-dns-delegation).
+Unlike that record, the value here names a site rather than a host, so that both discovery paths
+end at a site's [=well-known file=].
+
+Issue: Should the record name be `_web-identity` or something more specific (e.g. `_web-handle`)?
+Should it carry a `type`, so that one domain can delegate different protocols to different
+[=IDPs=]?
+
+<div algorithm>
+To <dfn>look up the delegation records</dfn> for a [=/domain=] |host|, the user agent performs a
+DNS query for `TXT` records at the name `_web-identity.` followed by |host|, using its DNS
+resolver. This returns a [=list=] of [=strings=] (the records whose contents start with "`iss=`",
+with that prefix removed), or failure if the query failed.
+
+</div>
+
+## Registry ## {#registry}
 
 Each [=user agent=] has a global, persistent <dfn>handle registry</dfn>, an initially empty
 [=ordered set=] of [=/handle|handles=] that the user uses to sign in. No two
@@ -199,17 +402,17 @@ doesn't record which one did.
 
 The [=handle registry=] stores only [=/handle|handles=]. It doesn't store which [=IDP=] a
 [=/handle=] resolves to, that [=IDP=]'s [=config file=], or any accounts. The user agent computes
-the [=IDP=] from the [=/handle=] with [=discover the IdP=] whenever it needs it, and accounts come
+the [=IDP=] from the [=/handle=] by [=resolve a handle|resolving=] it whenever it needs it, and accounts come
 from the [=account registry=].
 
-Note: A user agent can cache the results of [=discover the IdP=] and [=fetch the config file=],
+Note: A user agent can cache the results of [=resolve a handle|resolution=] and [=fetch the config file=],
 for example to avoid DNS lookups and fetches on every [=type request=]. That's an implementation
 choice, as long as the cache respects DNS TTLs and HTTP caching, and is cleared along with the
 [=handle registry=]. See also [[#privacy]] and [[#security]].
 
 When the user clears browsing data or site settings for an [=/origin=] |origin|, the user agent
 MUST [=list/remove=] from the [=handle registry=] every [=/handle=] whose [=IDP=], as determined by
-[=discover the IdP=] (or by the user agent's cached result of it), has a [=config file=] that is
+[=resolve a handle|resolution=] (or by the user agent's cached result of it), has a [=config file=] that is
 [=same site=] with |origin|.
 
 <div algorithm>
@@ -239,7 +442,7 @@ is still offered as a [=handle chip=] that signs the user back in. So an [=IDP=]
 the [=/handle=] should no longer be offered, for example when the account is deleted.
 
 <!-- ============================================================ -->
-# The account registry # {#accounts}
+# The Account Registry # {#accounts}
 <!-- ============================================================ -->
 
 Issue: Accounts push is described in
@@ -376,7 +579,7 @@ partial interface IdentityProvider {
 </xmp>
 
 An [=IDP=] registers a [=/handle=], not a [=config file=]. This way, an [=IDP=] registering a
-[=/handle=] and the user typing it follow the same path: both use [=discover the IdP=], and both
+[=/handle=] and the user typing it follow the same path: both [=resolve a handle|resolve=] it, and both
 add the same [=/handle=] to the [=handle registry=]. The [=config file=]'s URL is always discovered
 and never passed in.
 
@@ -384,10 +587,9 @@ and never passed in.
 To <dfn>resolve a handle for a caller</dfn> given a [=string=] |input| and a |globalObject|, run
 the following steps. This returns a tuple (|handle|, |configUrl|), or a {{DOMException}} name.
 
-1. Let |parsed| be the result of [=parse a handle=] with |input|. If |parsed| is failure, return
+1. Let |handle| be the result of [=parse a handle=] with |input|. If |handle| is failure, return
     "{{SyntaxError}}".
-1. Let (|handle|, |host|) be |parsed|.
-1. Let |configUrl| be the result of [=discover the IdP=] with |host| and |globalObject|. If
+1. Let |configUrl| be the result of [=resolve a handle=] with |handle| and |globalObject|. If
     |configUrl| is failure, return "{{NetworkError}}".
 1. If |configUrl|'s [=url/origin=] is not [=same site=] with |globalObject|'s
     [=associated Document=]'s [=Document/origin=], return "{{NotAllowedError}}".
@@ -497,7 +699,7 @@ user agent keeps the following associated with it:
     :   <dfn>config</dfn>
     ::  The {{IdentityProviderAPIConfig}} from [=fetch the config file=].
     :   <dfn>handles</dfn>
-    ::  A [=list=] of [=/handle|handles=] that [=discover the IdP|resolve=] to this [=IDP=]: the
+    ::  A [=list=] of [=/handle|handles=] that [=resolve a handle|resolve=] to this [=IDP=]: the
         ones in the [=handle registry=], or the single [=/handle=] the user typed.
     :   <dfn>accounts</dfn>
     ::  A [=list=] of {{IdentityProviderAccount}}s: the [=get the pushed accounts|pushed accounts=]
@@ -551,10 +753,7 @@ This returns an [=ordered map=] from [=/URL|URLs=] of [=config files=] to [=list
 
 1. Let |groups| be an empty [=ordered map=].
 1. For each |handle| of the [=handle registry=]:
-    1. Let |parsed| be the result of [=parse a handle=] with |handle|. If |parsed| is failure,
-        [=iteration/continue=].
-    1. Let (<var ignore>canonical</var>, |host|) be |parsed|.
-    1. Let |configUrl| be the result of [=discover the IdP=] with |host| and |globalObject|. If
+    1. Let |configUrl| be the result of [=resolve a handle=] with |handle| and |globalObject|. If
         |configUrl| is failure, [=iteration/continue=].
     1. If |groups|[|configUrl|] doesn't [=map/exist=], [=map/set=] |groups|[|configUrl|] to an
         empty [=list=].
@@ -661,6 +860,27 @@ After the "Build UI" step, add the following step:
 </div>
 
 <div class="monkeypatch">
+Add the following algorithm:
+
+<div algorithm>
+To <dfn>fetch the well-known file</dfn> given a [=site host=] |site| and a |globalObject|, run the
+steps of [=fetch the config file=] that create <var ignore>wellKnownRequest</var> and
+[=fetch request|fetch=] it, with <var ignore>rootUrl</var> set to a new [=/URL=] with
+[=url/scheme=] "`https`", [=url/host=] |site|, and [=url/path=] « "`.well-known`",
+"`web-identity`" », and with |globalObject|. Return the resulting <var ignore>wellKnown</var>, an
+{{IdentityProviderWellKnown}} or failure.
+
+</div>
+
+Then, in [=fetch the config file=], replace those steps with a call to [=fetch the well-known file=]
+with <var ignore>rootUrl</var>'s [=url/host=] and |globalObject|.
+
+Note: This only moves existing steps, so that [=resolve a handle|resolution=] can reuse them. It
+doesn't change the behavior of [=fetch the config file=].
+
+</div>
+
+<div class="monkeypatch">
 In [=fetch the config file=], insert the following step immediately before the step "If <var ignore>rpOrigin</var>
 is not an [=opaque origin=], and ...":
 
@@ -668,12 +888,12 @@ is not an [=opaque origin=], and ...":
 
 Note: The [=well-known file=] exists to stop an [=RP=] from encoding tracking information in the
 config URL it passes. A [=registered provider=]'s config URL doesn't come from the [=RP=]. The user
-agent obtained it from the [=well-known file=] itself, by running [=discover the IdP=] on a
+agent obtained it from the [=well-known file=] itself, by [=resolve a handle|resolving=] a
 [=/handle=].
 
 </div>
 
-Issue: Because [=fetch the IdP's config URL=] requires exactly one
+Issue: Because [=resolve a handle|resolution=] requires exactly one
 {{IdentityProviderWellKnown/provider_urls}} entry, a [=site of a host|site=] can register
 [=/handle|handles=] for only one [=config file=]. Is that acceptable for [=IDPs=] that have several
 configurations (e.g. one per product)?
@@ -707,241 +927,17 @@ Note: {{IdentityCredential/configURL}} tells the [=RP=] which [=IDP=] issued the
 verify the token using the protocol named by {{IdentityProviderConfig/type}}.
 
 <!-- ============================================================ -->
-# Handle resolution # {#handle-resolution}
+# Account selection # {#account-selection}
 <!-- ============================================================ -->
 
-This section defines how the user agent turns a string the user types into a registered [=IDP=].
-It doesn't require the user agent to understand any identity protocol. It only needs a small set
-of handle notations ([[#parsing]]) and a single, protocol-agnostic discovery procedure
-([[#discovery]]).
-
-Discovery is based on one rule: **a handle is served by an [=IDP=] on the handle's own
-[=site of a host|site=], unless the handle's domain delegates to another site in DNS.**
-
-## Handle parsing ## {#parsing}
-
-A <dfn>handle</dfn> is a [=string=] produced by [=parse a handle=].
-
-The user agent accepts the following notations:
-
-<table class="data">
-<thead><tr><th>Notation<th>Examples<th>Used by
-<tbody>
-<tr><td>`@` + host<td>`@alice.example`, `@alice.social.example`<td>atproto
-<tr><td>local + `@` + host, optionally with a leading `@`<td>`alice@social.example`,
-    `@alice@social.example`<td>ActivityPub, Nostr (NIP-05)
-<tr><td>`https:` URL<td>`https://alice.example/`<td>IndieAuth, Solid, OpenID 2.0
-</table>
-
 <div algorithm>
-To <dfn>parse a handle</dfn> given a [=string=] |input|, run the following steps. This returns
-a pair (|handle|, |host|) of a [=/handle=] and a [=domain=], or failure.
+To <dfn>look up a typed handle</dfn> given a [=string=] |input|, an
+{{IdentityProviderRequestOptions}} |typeRequest|, and a |globalObject|, run the following steps.
+This returns a [=registered provider=] or failure.
 
-1. Let |s| be |input| with leading and trailing [=ASCII whitespace=] [=strip leading and
-    trailing ASCII whitespace|stripped=].
-1. If |s| starts with "`https://`":
-    1. Let |url| be the result of running the [=URL parser=] on |s|.
-    1. If |url| is failure, return failure.
-    1. Let |host| be |url|'s [=url/host=].
-    1. Let |handle| be the result of running the [=URL serializer=] on |url|.
-1. Otherwise:
-    1. If |s| starts with "`@`", remove the first code point from |s|.
-    1. If |s| contains "`@`":
-        1. Let |local| be the part of |s| before the last "`@`", and |hostString| the part after it.
-        1. If |local| is the empty string, return failure.
-    1. Otherwise, let |local| be null and |hostString| be |s|.
-    1. Let |host| be the result of running the [=host parser=] on |hostString|.
-    1. If |host| is failure, return failure.
-    1. If |local| is null, let |handle| be "`@`" followed by the [=host serializer|serialization=]
-        of |host|. Otherwise, let |handle| be |local|, followed by "`@`", followed by the
-        [=host serializer|serialization=] of |host|.
-1. If |host| is not a [=domain=], return failure.
-1. If |host|'s [=host/registrable domain=] is null, return failure.
-1. Return (|handle|, |host|).
-
-</div>
-
-<div class="example" id="example-parse-a-handle">
-<table class="data">
-<thead><tr><th>Input<th>Handle<th>Host
-<tbody>
-<tr><td>`@alice.example`, `alice.example`<td>`@alice.example`<td>`alice.example`
-<tr><td>`@alice.social.example`<td>`@alice.social.example`<td>`alice.social.example`
-<tr><td>`alice@social.example`, `@alice@social.example`<td>`alice@social.example`<td>`social.example`
-<tr><td>`https://alice.example`<td>`https://alice.example/`<td>`alice.example`
-<tr><td>`@192.0.2.1`, `@com`<td colspan=2>failure
-</table>
-</div>
-
-<div algorithm>
-Two [=strings=] |a| and |b| <dfn lt="handles match">match as handles</dfn> if the following steps
-return true:
-
-1. If |a| and |b| both start with "`https://`":
-    1. Let |urlA| and |urlB| be the results of running the [=URL parser=] on |a| and |b|.
-    1. If either is failure, return false.
-    1. Return whether |urlA| [=url/equals=] |urlB|.
-1. Let |a'| and |b'| be the [=ASCII lowercase|ASCII lowercased=] |a| and |b|.
-1. If |a'| starts with "`@`", remove its first code point. Do the same for |b'|.
-1. Return whether |a'| is |b'|.
-
-</div>
-
-Note: This is the only comparison used on handles. It is applied to an account's
-{{IdentityProviderAccount/username}} and never to {{IdentityProviderAccount/email}}, so that this
-mechanism stays separate from email verification.
-
-Issue: URL handles need more normalization (fragments such as `#me`, trailing slashes).
-
-## IdP discovery ## {#discovery}
-
-### DNS delegation record ### {#dns-record}
-
-The owner of a handle's domain can delegate to an [=IDP=] on another [=site of a host|site=] by
-publishing a DNS `TXT` record [[!RFC1035]] at the name `_web-identity.` followed by the handle's
-host:
-
-<div class="example" id="example-dns-record">
-```
-_web-identity.alice.example.   TXT   "iss=social.example"
-```
-
-This record says that handles on `alice.example` are served by the [=IDP=] on the
-[=site of a host|site=] `social.example`.
-
-</div>
-
-The record's value MUST be the string "`iss=`" followed by a [=site host=]. There MUST be at most
-one such record at a name. A record naming the handle's own [=site of a host|site=] has the same
-effect as having no record.
-
-Note: This is modeled on the DNS delegation in the
-[Email Verification Protocol](https://dickhardt.github.io/email-verification/draft-hardt-email-verification.html#name-dns-delegation).
-Unlike that record, the value here names a site rather than a host, so that both discovery paths
-end at a site's [=well-known file=].
-
-Issue: Should the record name be `_web-identity` or something more specific (e.g. `_web-handle`)?
-Should it carry a `type`, so that one domain can delegate different protocols to different
-[=IDPs=]?
-
-<div algorithm>
-To <dfn>look up the delegation records</dfn> for a [=domain=] |host|, the user agent performs a
-DNS query for `TXT` records at the name `_web-identity.` followed by |host|, using its DNS
-resolver. This returns a [=list=] of [=strings=] (the records whose contents start with "`iss=`",
-with that prefix removed), or failure if the query failed.
-
-</div>
-
-### Determine the IdP site ### {#determine-idp-site}
-
-<div algorithm>
-To <dfn>determine the IdP site</dfn> given a [=domain=] |host|, run the following steps. This
-returns a [=site host=] or failure.
-
-1. Let |default| be |host|'s [=host/registrable domain=].
-1. Let |records| be the result of [=look up the delegation records=] for |host|.
-1. If |records| is failure or [=list/is empty=], return |default|.
-1. If |records|'s [=list/size=] is greater than 1, return failure.
-1. Let |site| be the result of running the [=host parser=] on the
-    [=ASCII lowercase|ASCII lowercased=] |records|[0].
-1. If |site| is failure or is not a [=site host=], return failure.
-1. Return |site|.
-
-</div>
-
-Issue: Should a failed DNS query (e.g. `SERVFAIL`) fail closed instead of falling back to
-<var ignore>default</var>?
-
-<div class="example" id="example-determine-idp-site">
-<table class="data">
-<thead><tr><th>Host<th>Delegation record<th>IdP site
-<tbody>
-<tr><td>`alice.example`<td>none<td>`alice.example`
-<tr><td>`alice.example`<td>`iss=social.example`<td>`social.example`
-<tr><td>`alice.social.example`<td>none<td>`social.example`
-<tr><td>`alice.hosting.example` (`hosting.example` is a public suffix)<td>none<td>`alice.hosting.example`
-<tr><td>`alice.example`<td>`iss=pds.social.example`<td>failure (not a site)
-</table>
-</div>
-
-### Fetch the IdP's config URL ### {#fetch-config-url}
-
-<div algorithm>
-To <dfn>fetch the IdP's config URL</dfn> given a [=site host=] |site| and a |globalObject|, run
-the following steps. This returns a [=/URL=] or failure.
-
-1. Let |rootUrl| be a new [=/URL=] with [=url/scheme=] "`https`", [=url/host=] |site|, and
-    [=url/path=] « "`.well-known`", "`web-identity`" ».
-1. Let |request| be a new [=/request=] as follows:
-
-    :  [=request/URL=]
-    :: |rootUrl|
-    :  [=request/client=]
-    :: null
-    :  [=request/service-workers mode=]
-    :: "none"
-    :  [=request/destination=]
-    :: "webidentity"
-    :  [=request/origin=]
-    :: a unique [=opaque origin=]
-    :  [=request/header list=]
-    :: a [=list=] containing a single [=header=] with [=header/name=] set to `Accept` and
-        [=header/value=] set to `application/json`
-    :  [=request/referrer policy=]
-    :: "no-referrer"
-    :  [=request/credentials mode=]
-    :: "omit"
-    :  [=request/mode=]
-    :: "no-cors"
-
-1. Let |configUrl| be null.
-1. [=Fetch request=] with |request| and |globalObject|, and with
-    <var ignore>processResponseConsumeBody</var> set to the following steps given a
-    [=/response=] |response| and |responseBody|:
-    1. Let |json| be the result of [=extract the JSON fetch response=] from |response| and
-        |responseBody|.
-    1. [=converted to an IDL value|Convert=] |json| to an {{IdentityProviderWellKnown}},
-        |wellKnown|.
-    1. If either of the previous steps threw an exception, set |configUrl| to failure and return.
-    1. If |wellKnown|["{{IdentityProviderWellKnown/provider_urls}}"] doesn't [=map/exist=] or its
-        [=list/size=] is not 1, set |configUrl| to failure and return.
-    1. Let |url| be the result of running the [=URL parser=] on
-        |wellKnown|["{{IdentityProviderWellKnown/provider_urls}}"][0] with |rootUrl| as the base.
-    1. If |url| is failure, or |url|'s [=url/scheme=] is not "`https`", or |url|'s [=url/host=]'s
-        [=host/registrable domain=] is not |site|, set |configUrl| to failure and return.
-    1. Set |configUrl| to |url|.
-1. Wait for |configUrl| to be set.
-1. Return |configUrl|.
-
-</div>
-
-### Discover the IdP ### {#discover}
-
-<div algorithm>
-To <dfn>discover the IdP</dfn> given a [=domain=] |host| and a |globalObject|, run the following
-steps. This returns a [=/URL=] or failure.
-
-1. Let |site| be the result of [=determine the IdP site=] with |host|. If |site| is failure,
-    return failure.
-1. Return the result of [=fetch the IdP's config URL=] with |site| and |globalObject|.
-
-</div>
-
-This algorithm is used when an [=IDP=] calls {{IdentityProvider/register()}} or
-{{IdentityProvider/unregister()}}, when the user types a [=/handle=] ([=resolve a handle=]), and
-for each registered [=/handle=] on a [=type request=] ([=group registered handles by IdP=]).
-
-### Resolve a handle ### {#resolve}
-
-<div algorithm>
-To <dfn>resolve a handle</dfn> given a [=string=] |input|, an {{IdentityProviderRequestOptions}}
-|typeRequest|, and a |globalObject|, run the following steps. This returns a
-[=registered provider=] or failure.
-
-1. Let |parsed| be the result of [=parse a handle=] with |input|. If |parsed| is failure, return
+1. Let |handle| be the result of [=parse a handle=] with |input|. If |handle| is failure, return
     failure.
-1. Let (|handle|, |host|) be |parsed|.
-1. Let |configUrl| be the result of [=discover the IdP=] with |host| and |globalObject|. If
+1. Let |configUrl| be the result of [=resolve a handle=] with |handle| and |globalObject|. If
     |configUrl| is failure, return failure.
 1. Let |provider| be the result of [=create a registered provider=] with |configUrl| and
     |typeRequest|.
@@ -955,8 +951,6 @@ To <dfn>resolve a handle</dfn> given a [=string=] |input|, an {{IdentityProvider
 1. Return |provider|.
 
 </div>
-
-## Account selection ## {#account-selection}
 
 <div algorithm>
 To <dfn>find matching accounts</dfn> given a [=list=] of {{IdentityProviderAccount}}s |accounts|
@@ -996,7 +990,7 @@ To <dfn>find your account</dfn> given an {{IdentityProviderRequestOptions}} |typ
     send network requests while the user types.
 1. Wait for the user to submit a [=string=] |input|, or to cancel. If the user cancels, return
     null.
-1. Let |provider| be the result of [=resolve a handle=] with |input|, |typeRequest|, and
+1. Let |provider| be the result of [=look up a typed handle=] with |input|, |typeRequest|, and
     |globalObject|.
 1. If |provider| is failure, tell the user that no account provider was found for |input|, and go
     back to the first step.
@@ -1130,7 +1124,7 @@ To <dfn>sign in with a handle</dfn> given a [=/handle=] |handle|, a [=registered
     [=IDP=] the [=/handle=] is offered with. A user agent that caches discovery results MAY
     notice such a change and ask the user to confirm it.
 * **An [=IDP=] can only register [=/handle|handles=] that resolve to it.** {{IdentityProvider/register()}}
-    requires the [=discover the IdP|discovered=] [=config file=] to be [=same site=] with the
+    requires the [=resolve a handle|resolved=] [=config file=] to be [=same site=] with the
     caller, so a site can't register handles served by another [=IDP=]. Similarly,
     {{IdentityProvider/unregister()}} only removes [=/handle|handles=] that resolve to the caller's
     [=site of a host|site=].
