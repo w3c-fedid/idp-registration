@@ -1,6 +1,6 @@
 # IdP Registration API
 
-A proposal to extend [FedCM](https://w3c-fedid.github.io/FedCM/) so that websites can ask for *any* identity provider the user has, instead of listing a few big ones.
+A proposal to extend [FedCM](https://w3c-fedid.github.io/FedCM/) to support open federations, in which a relying party accepts any identity provider that implements a given protocol.
 
 **Spec:** https://w3c-fedid.github.io/idp-registration/
 
@@ -23,15 +23,56 @@ This is a [Stage 1](https://github.com/w3c-fedid/Administration/blob/main/propos
 
 # The problem
 
-Websites only have room for a handful of sign-in buttons, so they pick 2–5 large providers. Users whose identity lives elsewhere get left out: on a smaller provider, a custom domain, or a server they run themselves. Email verification doesn't have this problem, because any mail server works without being allow-listed.
+Web applications, or relying parties (RPs), use federated sign-in to authenticate users with an account they already have at an identity provider (IdP). FedCM lets the browser mediate this exchange: the RP lists the IdPs it accepts by their config URLs, and the browser shows the user's accounts at those IdPs.
 
-Earlier attempts to fix this ([OpenID 1.0](https://x.com/samuelgoto/status/1745147272055390295), [IndieAuth](https://indieweb.org/IndieAuth), [Solid](https://solid.github.io/webid-profile/)) asked users to type their identity into a box, and [most users didn't know what to do with it](https://x.com/DickHardt/status/1735056737844220279).
+This model assumes a **closed federation**: the RP knows in advance every IdP it accepts, and has a relationship with each of them.
+
+In an **open federation**, any server that implements the federation's protocol can act as an IdP, and RPs accept all of them without a prior relationship. Examples:
+
+- [IndieAuth](https://www.w3.org/TR/indieauth/): users are identified by a URL, e.g. `https://alice.example`.
+- [AT Protocol](https://atproto.com/specs/handle): users are identified by a handle, e.g. `@alice.example`.
+- [ActivityPub](https://www.w3.org/TR/activitypub/) servers: users are identified by an address, e.g. `alice@social.example`.
+- [Solid](https://solid.github.io/webid-profile/): users are identified by a WebID.
+
+Email works as an open federation in the same sense: an RP accepts an address at any mail domain.
+
+FedCM does not support open federations. RPs in an open federation therefore have two options, and each has a problem: listing IdPs, and asking the user for an identifier.
+
+## Listing IdPs
+
+An RP can list IdPs of an open federation in FedCM, but only the ones it knows about. Each listed IdP also takes space in the sign-in UI (the ["NASCAR problem"](https://github.com/fedidcg/FedCM/blob/main/explorations/related_problems.md#the-nascar-flag-problem)), so in practice RPs list a small number of large IdPs.
+
+Users whose account is at any other IdP can't use FedCM with that RP. That includes a smaller provider, a custom domain, or a server the user runs. As the AT Protocol community puts it, the RP wants to ask for ["an account that supports this protocol"](https://atproto.com/blog/working-to-decentralize-fedcm) rather than an account at a specific IdP. FedCM has no way to express that request.
+
+## Asking for an identifier
+
+Open-federation protocols typically ask the user to type an identifier (a URL, handle or address), so that the RP can discover the user's IdP from it. This requires users to know their identifier and to understand what the prompt is asking for.
+
+OpenID 2.0 used this approach. According to one of its authors, [deployments declined by about half after their peak, as it became clear that average users did not know what to do with the OpenID prompt](https://x.com/DickHardt/status/1735056737844220279).
+
+## Scope
+
+This proposal extends FedCM so that:
+
+- an RP can request any IdP in an open federation, identified by a URL, without listing IdPs;
+- the user can select an existing account without typing an identifier.
+
+### Goals
+
+- Any IdP that implements a federation's protocol can take part, including IdPs the browser and the RP have no prior knowledge of.
+- The browser does not need to implement the federation's protocol.
+- IdPs don't learn which RPs the user visits before the user chooses to sign in, as in FedCM today.
+
+### Non-goals
+
+- Changing how closed federations work. An RP can request both kinds in the same call.
+- Defining the federations' protocols, or how RPs verify the tokens they receive.
 
 # The proposal
 
-The browser acts as an intermediary. It remembers the user's **handles**, such as `@alice.example`, `alice@social.example` or `https://alice.example`. Websites can then ask for any provider that issues one of those handles and speaks a protocol they accept.
+The browser keeps a list of the user's **handles**, such as `@alice.example`, `alice@social.example` or `https://alice.example`. An RP can then request any IdP that is the issuer of one of those handles and supports a federation the RP accepts.
 
-**1. The identity provider registers the user's handle** after the user signs in, with the user's permission:
+**1. The IdP registers the user's handle** after the user signs in, with the user's permission:
 
 ```js
 await navigator.login.setStatus("logged-in", {
@@ -44,7 +85,7 @@ The browser asks the user whether to save the handle:
 
 <img width="784" height="745" alt="Registration prompt" src="https://github.com/user-attachments/assets/18dc0958-65f6-4222-bf77-c9d10eb1e9b8" />
 
-**2. The website asks for a federation** (a protocol or profile, identified by a URL) instead of a specific provider:
+**2. The RP requests a federation** (a protocol or profile, identified by a URL) instead of specific IdPs:
 
 ```js
 const credential = await navigator.credentials.get({
@@ -54,31 +95,31 @@ const credential = await navigator.credentials.get({
 });
 ```
 
-The browser shows the accounts for every registered handle whose provider lists that federation in its config file:
+The browser shows the accounts for the registered handles whose IdP lists that federation in its config file:
 
 <img width="784" height="745" alt="Account chooser" src="https://github.com/user-attachments/assets/c4b9050d-95cd-439e-a7a5-013d0621d1a1" />
 
-**3. Users can also type a handle** that isn't registered yet. The browser finds the handle's provider and remembers the handle for next time:
+**3. The user can type a handle** that isn't registered yet. The browser resolves it to its IdP and adds it to the registered handles:
 
 <img width="784" height="745" alt="Add another account" src="https://github.com/user-attachments/assets/99260e89-4e32-417d-96a7-45cb60b6dd8a" />
 
 <img width="784" height="745" alt="IdP-2" src="https://github.com/user-attachments/assets/6ad59a1d-5b7b-497b-bc38-3100daa515b3" />
 
-A handle's provider is found from the handle's own domain, with an optional DNS record to delegate it to another site. No protocol-specific logic is needed in the browser. See [Handles](https://w3c-fedid.github.io/idp-registration/#handles) in the spec for how handles are parsed and resolved.
+A handle's IdP is determined by the handle's domain, which can delegate to another site with a DNS record. The browser does not need protocol-specific logic. See [Handles](https://w3c-fedid.github.io/idp-registration/#handles) in the spec for how handles are parsed and resolved.
 
-**Privacy.** Registered providers never receive a credentialed request before the user picks an account or chooses to sign in. That removes the timing attack and the mismatch UI that FedCM's accounts endpoint needs. See [Privacy considerations](https://w3c-fedid.github.io/idp-registration/#privacy).
+**Privacy.** A registered IdP receives no credentialed request before the user selects an account or chooses to sign in. This avoids the timing attack and the mismatch UI associated with FedCM's accounts endpoint. See [Privacy considerations](https://w3c-fedid.github.io/idp-registration/#privacy).
 
 # Alternatives considered
 
 - **Registering through `navigator.login.setStatus()`.** A registered handle has to outlive the user's session, while login status changes every time the user signs in or out. Registration can also show a prompt, which wouldn't work for the `Set-Login` header. See [The Handle Registry](https://w3c-fedid.github.io/idp-registration/#registry).
-- **Registering a config URL instead of a handle.** Registering a handle means a provider registering it and a user typing it follow the same path. It also lets a handle move to another provider without re-registering.
-- **Passing the supported federations in `register()`.** Putting them in the config file means a provider doesn't need to register again when that list changes.
+- **Registering a config URL instead of a handle.** With handles, registration by an IdP and entry by the user follow the same path, and a handle can move to another IdP without being registered again.
+- **Passing the supported federations in `register()`.** Listing them in the config file means an IdP doesn't need to register again when the list changes.
 
 # Where things are
 
-- Chrome and Firefox have been largely supportive ([example](https://github.com/fedidcg/FedCM/issues/240#issuecomment-1335421460)), and Chrome has [a prototype behind a flag](https://github.com/fedidcg/FedCM/issues/240#issuecomment-2004650817).
-- The IndieWeb and Solid communities have built prototype identity providers, relying parties and protocol profiles, for example [FedCM for IndieAuth](https://indieweb.org/FedCM_for_IndieAuth).
+- Chrome and Firefox have expressed support ([example](https://github.com/fedidcg/FedCM/issues/240#issuecomment-1335421460)), and Chrome has [a prototype behind a flag](https://github.com/fedidcg/FedCM/issues/240#issuecomment-2004650817).
+- Members of the IndieWeb and Solid communities have built prototype IdPs, RPs and protocol profiles, for example [FedCM for IndieAuth](https://indieweb.org/FedCM_for_IndieAuth).
 
 # Open questions
 
-The main open question is whether relying parties will adopt it. Calling the API costs them little: with no registered providers nothing is shown, and otherwise the user sees a provider they chose themselves. The spec tracks other open questions as inline issues.
+The main open question is whether RPs will adopt it. When the user has no registered IdPs in the requested federation, the call shows nothing, so the cost to an RP of trying it is low. The spec tracks other open questions as inline issues.
