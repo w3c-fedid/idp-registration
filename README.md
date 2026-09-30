@@ -40,6 +40,10 @@ await navigator.login.setStatus("logged-in", {
 await IdentityProvider.register("@alice.example");
 ```
 
+The browser asks the user whether to save the handle:
+
+<img width="784" height="745" alt="Registration prompt" src="https://github.com/user-attachments/assets/18dc0958-65f6-4222-bf77-c9d10eb1e9b8" />
+
 **2. The website asks for a federation** (a protocol or profile, identified by a URL) instead of a specific provider:
 
 ```js
@@ -50,9 +54,13 @@ const credential = await navigator.credentials.get({
 });
 ```
 
-The browser shows the accounts for every registered handle whose provider lists that federation in its config file.
+The browser shows the accounts for every registered handle whose provider lists that federation in its config file:
+
+<img width="784" height="745" alt="Account chooser" src="https://github.com/user-attachments/assets/c4b9050d-95cd-439e-a7a5-013d0621d1a1" />
 
 **3. Users can also type a handle** that isn't registered yet. The browser finds the handle's provider and remembers the handle for next time:
+
+<img width="784" height="745" alt="Add another account" src="https://github.com/user-attachments/assets/99260e89-4e32-417d-96a7-45cb60b6dd8a" />
 
 <img width="784" height="745" alt="IdP-2" src="https://github.com/user-attachments/assets/6ad59a1d-5b7b-497b-bc38-3100daa515b3" />
 
