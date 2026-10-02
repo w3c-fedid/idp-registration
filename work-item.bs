@@ -245,24 +245,24 @@ To <dfn>parse a handle</dfn> given a [=string=] |input|, run the following steps
 </div>
 
 <div algorithm>
-The <dfn for="handle">domain</dfn> of a [=/handle=] |handle| is the result of the following steps:
+The <dfn for="handle">site</dfn> of a [=/handle=] |handle| is the result of the following steps:
 
-1. If |handle| starts with "`https://`", return the [=url/host=] of the result of running the
-    [=URL parser=] on |handle|.
-1. Return the result of running the [=host parser=] on the part of |handle| after the last
-    "`@`".
+1. Let |host| be the [=url/host=] of the result of running the [=URL parser=] on |handle| if
+    |handle| starts with "`https://`", and the result of running the [=host parser=] on the
+    part of |handle| after the last "`@`" otherwise.
+1. Return |host|'s [=host/registrable domain=].
 
 </div>
 
 Note: Because a [=/handle=] is always in the canonical form that [=parse a handle=] produces, its
-[=handle/domain=] can be read off directly, without validating it again.
+[=handle/site=] is always a [=site host=].
 
 <div class="example" id="example-parse-a-handle">
 <table class="data">
-<thead><tr><th>Input<th>Handle<th>Its [=handle/domain=]
+<thead><tr><th>Input<th>Handle<th>Its [=handle/site=]
 <tbody>
 <tr><td>`@alice.example`, `alice.example`<td>`@alice.example`<td>`alice.example`
-<tr><td>`@alice.social.example`<td>`@alice.social.example`<td>`alice.social.example`
+<tr><td>`@alice.social.example`<td>`@alice.social.example`<td>`social.example`
 <tr><td>`alice@social.example`, `@alice@social.example`<td>`alice@social.example`<td>`social.example`
 <tr><td>`https://alice.example`<td>`https://alice.example/`<td>`alice.example`
 <tr><td>`@192.0.2.1`, `@com`<td colspan=2>failure
@@ -320,82 +320,65 @@ fetch the [=config file=] or check its {{IdentityProviderAPIConfig/federations}}
 
 ### Resolve the issuer ### {#resolve-issuer}
 
-The first step of [=resolve a handle|resolution=] finds a [=/handle=]'s [=issuer=]. It is based on
-one rule: **a handle's [=issuer=] is on the handle's own [=site of a host|site=], unless the
-handle's [=handle/domain=] delegates to another site in DNS.** There are three cases:
-
-:   The handle's own site hosts it
-::  The [=issuer=] of `@alice.example` is on `alice.example`. Alice runs her own [=IDP=], or
-    has a provider serve the [=well-known file=] on her site for her. No DNS record is needed.
-:   The handle's domain delegates to another issuer site
-::  The [=issuer=] of `@alice.example` is on `social.example`. Alice keeps her domain as her
-    handle but uses a provider as its issuer, so she publishes a [[#dns-record|delegation record]] on
-    `alice.example` naming `social.example`.
-:   The provider assigned the handle under its own domain
-::  The [=issuer=] of `@alice.social.example` and of `alice@social.example` is on
-    `social.example`. This is really the first case: the handle's own site is `social.example`,
-    because a site is a [=host/registrable domain=]. No DNS record is needed.
-
-In every case, the user agent first looks for a [[#dns-record|delegation record]] on the
-handle's [=handle/domain=]. If there is one, its `iss=` value names the [=issuer=]'s site. If
-there isn't, the [=issuer=] is on the handle's own site.
+The first step of [=resolve a handle|resolution=] finds a [=/handle=]'s [=issuer=] by looking up a
+[[#dns-record|delegation record]] on the handle's [=handle/site=]. Its `iss=` value names the
+[=issuer=]'s site, whether the [=handle/site=] hosts its own [=IDP=] or delegates to another site.
 
 <div algorithm>
 To <dfn>resolve the issuer</dfn> of a [=/handle=] |handle|, run the following steps. This returns
 the [=site host=] of |handle|'s [=issuer=], or failure.
 
-1. Let |domain| be |handle|'s [=handle/domain=].
-1. Let |records| be the result of [=look up the delegation records=] for |domain|.
-1. If |records| is failure or [=list/is empty=], return |domain|'s [=host/registrable domain=].
-1. If |records|'s [=list/size=] is greater than 1, return failure.
+1. Let |records| be the result of [=look up the delegation records=] for |handle|'s
+    [=handle/site=].
+1. If |records| is failure or its [=list/size=] is not 1, return failure.
+1. Let |value| be |records|[0] with the leading "`iss=`" removed.
 1. Let |issuer| be the result of running the [=host parser=] on the
-    [=ASCII lowercase|ASCII lowercased=] |records|[0].
+    [=ASCII lowercase|ASCII lowercased=] |value|.
 1. If |issuer| is failure or is not a [=site host=], return failure.
 1. Return |issuer|.
 
 </div>
 
-Note: When the provider's domain is a [=host/public suffix=] (for example, `hosting.example`, where each
-user gets their own subdomain), each subdomain is its own site. `@alice.hosting.example` falls
-under the first case, and its [=issuer=] is on `alice.hosting.example`, not on
-`hosting.example`.
-
-Issue: Should a failed DNS query (e.g. `SERVFAIL`) fail closed instead of falling back to the
-handle's own site?
+Note: When a provider's domain is a [=host/public suffix=] (for example, `hosting.example`, where each
+user gets their own subdomain), each subdomain is its own [=handle/site=]. The [=handle/site=] of
+`@alice.hosting.example` is `alice.hosting.example`, not `hosting.example`.
 
 <div class="example" id="example-resolve-issuer">
 <table class="data">
-<thead><tr><th>Handle<th>Delegation record<th>[=Issuer=]
+<thead><tr><th>Handle<th>Its [=handle/site=]<th>Delegation record<th>[=Issuer=]
 <tbody>
-<tr><td>`@alice.example`<td>none<td>`alice.example`
-<tr><td>`@alice.example`<td>`iss=social.example`<td>`social.example`
-<tr><td>`@alice.social.example`<td>none<td>`social.example`
-<tr><td>`alice@social.example`<td>none<td>`social.example`
-<tr><td>`https://alice.example/`<td>none<td>`alice.example`
-<tr><td>`@alice.hosting.example` (`hosting.example` is a public suffix)<td>none<td>`alice.hosting.example`
-<tr><td>`@alice.example`<td>`iss=pds.social.example`<td>failure (not a site)
+<tr><td>`@alice.example`<td>`alice.example`<td>`iss=alice.example`<td>`alice.example`
+<tr><td>`@alice.example`<td>`alice.example`<td>`iss=social.example`<td>`social.example`
+<tr><td>`@alice.social.example`<td>`social.example`<td>`iss=social.example`<td>`social.example`
+<tr><td>`alice@social.example`<td>`social.example`<td>`iss=social.example`<td>`social.example`
+<tr><td>`https://alice.example/`<td>`alice.example`<td>`iss=alice.example`<td>`alice.example`
+<tr><td>`@alice.hosting.example` (`hosting.example` is a public suffix)<td>`alice.hosting.example`<td>`iss=alice.hosting.example`<td>`alice.hosting.example`
+<tr><td>`@alice.example`<td>`alice.example`<td>none<td>failure
+<tr><td>`@alice.example`<td>`alice.example`<td>`iss=pds.social.example`<td>failure (not a site)
 </table>
 </div>
 
 ### DNS delegation record ### {#dns-record}
 
-The owner of a handle's domain can delegate to an [=issuer=] on another [=site of a host|site=] by
-publishing a DNS `TXT` record [[!RFC1035]] at the name `_web-identity.` followed by the handle's
-host:
+A [=/handle=]'s [=handle/site=] names its [=issuer=] by publishing a DNS `TXT` record [[!RFC1035]]
+at the name `_web-identity.` followed by the [=handle/site=]:
 
 <div class="example" id="example-dns-record">
 ```
 _web-identity.alice.example.   TXT   "iss=social.example"
 ```
 
-This record says that the [=issuer=] of handles on `alice.example` is on the
-[=site of a host|site=] `social.example`.
+This record says that the [=issuer=] of handles whose [=handle/site=] is `alice.example` is on the
+[=site of a host|site=] `social.example`. If `alice.example` is its own [=issuer=], the record is:
+
+```
+_web-identity.alice.example.   TXT   "iss=alice.example"
+```
 
 </div>
 
-The record's value MUST be the string "`iss=`" followed by a [=site host=]. There MUST be at most
-one such record at a name. A record naming the handle's own [=site of a host|site=] has the same
-effect as having no record.
+The record's value MUST be the string "`iss=`" followed by a [=site host=]. There MUST be
+exactly one such record at a name.
 
 Note: This is modeled on the DNS delegation in the
 [Email Verification Protocol](https://dickhardt.github.io/email-verification/draft-hardt-email-verification.html#name-dns-delegation).
@@ -407,10 +390,10 @@ Should it carry a `federation`, so that one domain can delegate different protoc
 [=IDPs=]?
 
 <div algorithm>
-To <dfn>look up the delegation records</dfn> for a [=/domain=] |host|, the user agent performs a
-DNS query for `TXT` records at the name `_web-identity.` followed by |host|, using its DNS
-resolver. This returns a [=list=] of [=strings=] (the records whose contents start with "`iss=`",
-with that prefix removed), or failure if the query failed.
+To <dfn>look up the delegation records</dfn> for a [=site host=] |site|, the user agent performs a
+DNS query for `TXT` records at the name `_web-identity.` followed by |site|, using its DNS
+resolver. This returns a [=list=] of [=strings=] (the records whose contents start with "`iss=`"),
+or failure if the query failed.
 
 </div>
 
@@ -560,9 +543,8 @@ partial interface IdentityProvider {
 An [=IDP=] registering a [=/handle=] and the user typing it follow the same path: both
 [=resolve a handle|resolve=] it, and both add the same [=/handle=] to the [=handle registry=].
 
-Note: An [=IDP=] can only register and unregister [=/handle|handles=] that it is the [=issuer=] of.
-An [=IDP=] on another [=site of a host|site=] is a [=/handle=]'s [=issuer=] only if the handle's
-domain delegates to it with a [[#dns-record|delegation record]].
+Note: An [=IDP=] can only register and unregister [=/handle|handles=] that it is the [=issuer=] of,
+as named by the [[#dns-record|delegation record]] on the handle's [=handle/site=].
 
 <div algorithm="register">
 When the static <dfn method for="IdentityProvider">register(|handle|)</dfn> method is invoked, run
@@ -1095,10 +1077,8 @@ To <dfn>sign in with a handle</dfn> given a [=/handle=] |handle|, a [=registered
     handle. Calls {{IdentityProvider/unregister()}} when the handle stops existing (e.g. the account
     is deleted or renamed), and `setStatus("logged-out")` when the user merely signs out. Accepts
     `login_hint` on its {{IdentityProviderAPIConfig/login_url}}.
-<tr><td>Owner of a handle's domain, when its [=issuer=] is on another site<td>
-    Publishes a [[#dns-record|delegation record]].
-<tr><td>Owner of a handle's domain, when its [=issuer=] is on the same site<td>
-    Serves the [=well-known file=] at the site. The [=config file=] can be on any same-site host.
+<tr><td>Owner of a handle's [=handle/site=]<td>
+    Publishes a [[#dns-record|delegation record]] naming the [=issuer=].
 <tr><td>Federation authority<td>
     Publishes [=federation branding=] for its {{IdentityProviderConfig/federation}}.
 <tr><td>[=RP=]<td>
@@ -1129,10 +1109,11 @@ To <dfn>sign in with a handle</dfn> given a [=/handle=] |handle|, a [=registered
 * Registered [=IDPs=] never get a credentialed request before the user picks an account or chooses
     to sign in. This removes the timing attack that affects the
     {{IdentityProviderAPIConfig/accounts_endpoint}}, and the need for mismatch UI.
-* Typing a handle reveals it to the DNS resolver and the resolved [=IDP=]'s servers, but not to
-    the [=RP=] until the user finishes signing in.
+* Typing a handle reveals its [=handle/site=] to the DNS resolver and to the resolved [=IDP=]'s
+    servers, and signing in with a [=handle chip=] sends the handle to the [=IDP=], but nothing is
+    revealed to the [=RP=] until the user finishes signing in.
 * Because the [=handle registry=] stores only [=/handle|handles=], a [=federation request=] can cause
-    DNS lookups for the domains of the user's registered [=/handle|handles=], which the DNS
+    DNS lookups for the [=handle/sites=] of the user's registered [=/handle|handles=], which the DNS
     resolver can observe. The requests don't carry credentials or reveal the [=RP=]. User agents
     can reduce this by caching resolution results (see [[#registry]]).
 * The [=handle registry=] and [=account registry=] are global. They are used only in user agent UI,
@@ -1150,8 +1131,8 @@ To <dfn>sign in with a handle</dfn> given a [=/handle=] |handle|, a [=registered
     [=RP=] accept a token for someone else's handle, as long as the [=RP=] verifies the token using
     its protocol (for example, atproto's two-way check between handle and DID). This is the same
     reasoning as the Email Verification Protocol's analysis of DNS delegation.
-* **A site speaks for its subdomains.** [=Resolve the issuer=] falls back to the
-    [=host/registrable domain=], just as cookies and the FedCM [=well-known file=] do. Hosts that
+* **A site speaks for its subdomains.** A [=/handle=]'s [=handle/site=] is its
+    [=host/registrable domain=], just as for cookies and the FedCM [=well-known file=]. Hosts that
     give independent users their own subdomains need to be on the Public Suffix List to keep them
     separate.
 * **Handles that are mistyped or don't exist** still resolve to the provider. However,
@@ -1163,12 +1144,12 @@ To <dfn>sign in with a handle</dfn> given a [=/handle=] |handle|, a [=registered
     {{IdentityProvider/register()}}, require [=transient activation=], and remember when the user
     declines.
 * **A [=/handle=]'s [=issuer=] can change.** Because the [=handle registry=] stores only
-    [=/handle|handles=], a registered [=/handle=] follows its domain: if the domain's
-    [[#dns-record|delegation record]] or [=well-known file=] changes, the [=/handle=] is offered
-    with the new [=issuer=]. That is how a user moves a [=/handle=] to another [=IDP=], but it also
-    means that whoever controls the domain later (for example, after it expires) controls the
-    handle's [=issuer=]. A user agent that caches resolution results MAY
-    notice such a change and ask the user to confirm it.
+    [=/handle|handles=], a registered [=/handle=] follows its [=handle/site=]: if the site's
+    [[#dns-record|delegation record]] or the [=issuer=]'s [=well-known file=] changes, the
+    [=/handle=] is offered with the new [=issuer=]. That is how a user moves a [=/handle=] to
+    another [=IDP=], but it also means that whoever controls the site later (for example, after the
+    domain expires) controls the handle's [=issuer=]. A user agent that caches resolution results
+    MAY notice such a change and ask the user to confirm it.
 * **An [=IDP=] can only register [=/handle|handles=] it is the [=issuer=] of.** {{IdentityProvider/register()}}
     requires the [=resolve a handle|resolved=] [=config file=] to be [=same site=] with the
     caller, so a site can't register handles whose [=issuer=] is another [=IDP=]. Similarly,
@@ -1186,8 +1167,9 @@ To <dfn>sign in with a handle</dfn> given a [=/handle=] |handle|, a [=registered
 `pds.alice.example`, and her handle is `@alice.example`.
 
 1. Alice types `@alice.example` in [=find your account=]. [=Parse a handle=] gives
-    `@alice.example`, whose [=handle/domain=] is `alice.example`.
-1. There's no delegation record, so [=resolve the issuer=] returns `alice.example`.
+    `@alice.example`, whose [=handle/site=] is `alice.example`.
+1. `_web-identity.alice.example` has `TXT "iss=alice.example"`, so [=resolve the issuer=] returns
+    `alice.example`.
 1. `https://alice.example/.well-known/web-identity` returns
     `{"provider_urls": ["https://pds.alice.example/config.json"]}`, which is on the same site.
 1. The [=config file=] lists `https://atproto.com` in {{IdentityProviderAPIConfig/federations}}.
@@ -1217,8 +1199,9 @@ Because `@bob.example` resolves to `social.example`, `social.example` can also c
 <div class="example" id="example-subdomain">
 **The handle is a subdomain of the provider.** Carol's handle is `@carol.social.example`.
 
-1. There's no record at `_web-identity.carol.social.example`, so [=resolve the issuer=]
-    returns `social.example`, the [=host/registrable domain=].
+1. Its [=handle/site=] is `social.example`, which publishes
+    `_web-identity.social.example TXT "iss=social.example"`, so [=resolve the issuer=] returns
+    `social.example`.
 1. Resolution continues as in the previous example.
 
 </div>

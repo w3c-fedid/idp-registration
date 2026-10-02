@@ -6,7 +6,7 @@
   <link href="https://www.w3.org/StyleSheets/TR/2021/cg-draft" rel="stylesheet">
   <meta content="Bikeshed version ea4009a02, updated Thu Sep 17 15:24:44 2026 -0700" name="generator">
   <link href="https://w3c-fedid.github.io/idp-registration/" rel="canonical">
-  <meta content="d113dd8ad24ad76bdc1e12df6b1373c2457dd67f" name="revision">
+  <meta content="45e9c0ac7c8d85efa48ef6f9bcf3cfa46b80511d" name="revision">
   <meta content="dark light" name="color-scheme">
   <link href="https://www.w3.org/StyleSheets/TR/2021/dark.css" media="(prefers-color-scheme: dark)" rel="stylesheet" type="text/css">
 <style>
@@ -782,7 +782,7 @@ var[data-var-color="6"] { --var-vg: #FFBCF2; }
   <div class="head">
    <h1 class="no-ref p-name" id="title">IdP Registration API</h1>
    <p id="w3c-state"><a href="https://www.w3.org/standards/types/#CG-DRAFT">Draft Community Group Report</a>,
-    <time class="dt-updated" datetime="2026-09-30">30 September 2026</time></p>
+    <time class="dt-updated" datetime="2026-10-02">2 October 2026</time></p>
    <div data-fill-with="spec-metadata">
     <dl>
      <dt>This version:
@@ -796,7 +796,7 @@ var[data-var-color="6"] { --var-vg: #FFBCF2; }
    </div>
    <div data-fill-with="warning"></div>
    <p class="copyright" data-fill-with="copyright"><a href="https://www.w3.org/policies/#copyright">Copyright</a> © 2026 the Contributors to the IdP Registration API Specification, published by the <a href="https://www.w3.org/community/fed-id/">Federated Identity Community Group</a> under the <a href="https://www.w3.org/community/about/agreements/cla/">W3C Community Contributor License Agreement (CLA)</a>.
-A human-readable <a href="http://www.w3.org/community/about/agreements/cla-deed/">summary</a> is available.
+A human-readable <a href="https://www.w3.org/community/about/agreements/cla-deed/">summary</a> is available.
 </p>
    <hr title="Separator for header">
   </div>
@@ -822,7 +822,7 @@ it.</p>
   there is a limited opt-out and other conditions apply.
 
   Learn more about
-  <a href="http://www.w3.org/community/">W3C Community and Business Groups</a>.
+  <a href="https://www.w3.org/community/">W3C Community and Business Groups</a>.
 </p>
    <p></p>
   </div>
@@ -1061,22 +1061,22 @@ of <var>host</var>. Otherwise, let <var>handle</var> be <var>local</var>, follow
       <p>Return <var>handle</var>.</p>
     </ol>
    </div>
-   <div class="algorithm" data-algorithm="domain" data-algorithm-for="handle">
+   <div class="algorithm" data-algorithm="site" data-algorithm-for="handle">
     
-The <dfn class="dfn-paneled" data-dfn-for="handle" data-dfn-type="dfn" data-noexport id="handle-domain">domain</dfn> of a <a data-link-type="dfn" href="#handle" id="ref-for-handle⑨">handle</a> <var>handle</var> is the result of the following steps:
+The <dfn class="dfn-paneled" data-dfn-for="handle" data-dfn-type="dfn" data-noexport id="handle-site">site</dfn> of a <a data-link-type="dfn" href="#handle" id="ref-for-handle⑨">handle</a> <var>handle</var> is the result of the following steps:
 
 
     <ol>
      <li data-md>
-      <p>If <var>handle</var> starts with "<code>https://</code>", return the <a data-link-type="dfn" href="https://url.spec.whatwg.org/#concept-url-host" id="ref-for-concept-url-host①">host</a> of the result of running the
-<a data-link-type="dfn" href="https://url.spec.whatwg.org/#concept-url-parser" id="ref-for-concept-url-parser①">URL parser</a> on <var>handle</var>.</p>
+      <p>Let <var>host</var> be the <a data-link-type="dfn" href="https://url.spec.whatwg.org/#concept-url-host" id="ref-for-concept-url-host①">host</a> of the result of running the <a data-link-type="dfn" href="https://url.spec.whatwg.org/#concept-url-parser" id="ref-for-concept-url-parser①">URL parser</a> on <var>handle</var> if
+<var>handle</var> starts with "<code>https://</code>", and the result of running the <a data-link-type="dfn" href="https://url.spec.whatwg.org/#concept-host-parser" id="ref-for-concept-host-parser①">host parser</a> on the
+part of <var>handle</var> after the last "<code>@</code>" otherwise.</p>
      <li data-md>
-      <p>Return the result of running the <a data-link-type="dfn" href="https://url.spec.whatwg.org/#concept-host-parser" id="ref-for-concept-host-parser①">host parser</a> on the part of <var>handle</var> after the last
-"<code>@</code>".</p>
+      <p>Return <var>host</var>’s <a data-link-type="dfn" href="https://url.spec.whatwg.org/#host-registrable-domain" id="ref-for-host-registrable-domain④">registrable domain</a>.</p>
     </ol>
    </div>
    <p class="note" role="note"><span class="marker">Note:</span> Because a <a data-link-type="dfn" href="#handle" id="ref-for-handle①⓪">handle</a> is always in the canonical form that <a data-link-type="dfn" href="#parse-a-handle" id="ref-for-parse-a-handle②">parse a handle</a> produces, its
-<a data-link-type="dfn" href="#handle-domain" id="ref-for-handle-domain">domain</a> can be read off directly, without validating it again.</p>
+<a data-link-type="dfn" href="#handle-site" id="ref-for-handle-site">site</a> is always a <a data-link-type="dfn" href="#site-host" id="ref-for-site-host">site host</a>.</p>
    <div class="example" id="example-parse-a-handle">
     <a class="self-link" href="#example-parse-a-handle"></a>
 
@@ -1085,7 +1085,7 @@ The <dfn class="dfn-paneled" data-dfn-for="handle" data-dfn-type="dfn" data-noex
       <tr>
        <th>Input
        <th>Handle
-       <th>Its <a data-link-type="dfn" href="#handle-domain" id="ref-for-handle-domain①">domain</a>
+       <th>Its <a data-link-type="dfn" href="#handle-site" id="ref-for-handle-site①">site</a>
 
      <tbody>
       <tr>
@@ -1096,7 +1096,7 @@ The <dfn class="dfn-paneled" data-dfn-for="handle" data-dfn-type="dfn" data-noex
       <tr>
        <td><code>@alice.social.example</code>
        <td><code>@alice.social.example</code>
-       <td><code>alice.social.example</code>
+       <td><code>social.example</code>
 
       <tr>
        <td><code>alice@social.example</code>, <code>@alice@social.example</code>
@@ -1168,7 +1168,7 @@ If <var>wellKnown</var> is failure, return failure.</p>
 <var>wellKnown</var>["<code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dom-identityproviderwellknown-provider_urls" id="ref-for-dom-identityproviderwellknown-provider_urls①">provider_urls</a></code>"][0].</p>
      <li data-md>
       <p>If <var>url</var> is failure, or <var>url</var>’s <a data-link-type="dfn" href="https://url.spec.whatwg.org/#concept-url-scheme" id="ref-for-concept-url-scheme">scheme</a> is not "<code>https</code>", or <var>url</var>’s <a data-link-type="dfn" href="https://url.spec.whatwg.org/#concept-url-host" id="ref-for-concept-url-host②">host</a>’s
-<a data-link-type="dfn" href="https://url.spec.whatwg.org/#host-registrable-domain" id="ref-for-host-registrable-domain④">registrable domain</a> is not <var>issuer</var>, return failure.</p>
+<a data-link-type="dfn" href="https://url.spec.whatwg.org/#host-registrable-domain" id="ref-for-host-registrable-domain⑤">registrable domain</a> is not <var>issuer</var>, return failure.</p>
      <li data-md>
       <p>Return <var>url</var>.</p>
     </ol>
@@ -1178,58 +1178,35 @@ first run <a data-link-type="dfn" href="#parse-a-handle" id="ref-for-parse-a-han
 <code>@alice.example</code>), and then resolve the result. Resolution stops at the config URL: it doesn’t
 fetch the <a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file②">config file</a> or check its <code class="idl"><a data-link-type="idl" href="#dom-identityproviderapiconfig-federations" id="ref-for-dom-identityproviderapiconfig-federations">federations</a></code>, because each caller needs a different check.</p>
    <h4 class="heading settled" data-level="3.2.1" id="resolve-issuer"><span class="secno">3.2.1. </span><span class="content">Resolve the issuer</span><a class="self-link" href="#resolve-issuer"></a></h4>
-   <p>The first step of <a data-link-type="dfn" href="#resolve-a-handle" id="ref-for-resolve-a-handle③">resolution</a> finds a <a data-link-type="dfn" href="#handle" id="ref-for-handle①④">handle</a>’s <a data-link-type="dfn" href="#issuer" id="ref-for-issuer③">issuer</a>. It is based on
-one rule: **a handle’s <a data-link-type="dfn" href="#issuer" id="ref-for-issuer④">issuer</a> is on the handle’s own <a data-link-type="dfn" href="#site-of-a-host" id="ref-for-site-of-a-host③">site</a>, unless the
-handle’s <a data-link-type="dfn" href="#handle-domain" id="ref-for-handle-domain②">domain</a> delegates to another site in DNS.** There are three cases:</p>
-   <dl>
-    <dt data-md>The handle’s own site hosts it
-    <dd data-md>
-     <p>The <a data-link-type="dfn" href="#issuer" id="ref-for-issuer⑤">issuer</a> of <code>@alice.example</code> is on <code>alice.example</code>. Alice runs her own <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp⑦">IDP</a>, or
-has a provider serve the <a data-link-type="dfn" href="https://url.spec.whatwg.org/#well-known-file" id="ref-for-well-known-file①">well-known file</a> on her site for her. No DNS record is needed.</p>
-    <dt data-md>The handle’s domain delegates to another issuer site
-    <dd data-md>
-     <p>The <a data-link-type="dfn" href="#issuer" id="ref-for-issuer⑥">issuer</a> of <code>@alice.example</code> is on <code>social.example</code>. Alice keeps her domain as her
-handle but uses a provider as its issuer, so she publishes a <a href="#dns-record">delegation record</a> on
-<code>alice.example</code> naming <code>social.example</code>.</p>
-    <dt data-md>The provider assigned the handle under its own domain
-    <dd data-md>
-     <p>The <a data-link-type="dfn" href="#issuer" id="ref-for-issuer⑦">issuer</a> of <code>@alice.social.example</code> and of <code>alice@social.example</code> is on
-<code>social.example</code>. This is really the first case: the handle’s own site is <code>social.example</code>,
-because a site is a <a data-link-type="dfn" href="https://url.spec.whatwg.org/#host-registrable-domain" id="ref-for-host-registrable-domain⑤">registrable domain</a>. No DNS record is needed.</p>
-   </dl>
-   <p>In every case, the user agent first looks for a <a href="#dns-record">delegation record</a> on the
-handle’s <a data-link-type="dfn" href="#handle-domain" id="ref-for-handle-domain③">domain</a>. If there is one, its <code>iss=</code> value names the <a data-link-type="dfn" href="#issuer" id="ref-for-issuer⑧">issuer</a>’s site. If
-there isn’t, the <a data-link-type="dfn" href="#issuer" id="ref-for-issuer⑨">issuer</a> is on the handle’s own site.</p>
+   <p>The first step of <a data-link-type="dfn" href="#resolve-a-handle" id="ref-for-resolve-a-handle③">resolution</a> finds a <a data-link-type="dfn" href="#handle" id="ref-for-handle①④">handle</a>’s <a data-link-type="dfn" href="#issuer" id="ref-for-issuer③">issuer</a> by looking up a
+<a href="#dns-record">delegation record</a> on the handle’s <a data-link-type="dfn" href="#handle-site" id="ref-for-handle-site②">site</a>. Its <code>iss=</code> value names the
+<a data-link-type="dfn" href="#issuer" id="ref-for-issuer④">issuer</a>’s site, whether the <a data-link-type="dfn" href="#handle-site" id="ref-for-handle-site③">site</a> hosts its own <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp⑦">IDP</a> or delegates to another site.</p>
    <div class="algorithm" data-algorithm="resolve the issuer">
     
 To <dfn class="dfn-paneled" data-dfn-type="dfn" data-noexport id="resolve-the-issuer">resolve the issuer</dfn> of a <a data-link-type="dfn" href="#handle" id="ref-for-handle①⑤">handle</a> <var>handle</var>, run the following steps. This returns
-the <a data-link-type="dfn" href="#site-host" id="ref-for-site-host">site host</a> of <var>handle</var>’s <a data-link-type="dfn" href="#issuer" id="ref-for-issuer①⓪">issuer</a>, or failure.
+the <a data-link-type="dfn" href="#site-host" id="ref-for-site-host①">site host</a> of <var>handle</var>’s <a data-link-type="dfn" href="#issuer" id="ref-for-issuer⑤">issuer</a>, or failure.
 
 
     <ol>
      <li data-md>
-      <p>Let <var>domain</var> be <var>handle</var>’s <a data-link-type="dfn" href="#handle-domain" id="ref-for-handle-domain④">domain</a>.</p>
+      <p>Let <var>records</var> be the result of <a data-link-type="dfn" href="#look-up-the-delegation-records" id="ref-for-look-up-the-delegation-records">look up the delegation records</a> for <var>handle</var>’s
+<a data-link-type="dfn" href="#handle-site" id="ref-for-handle-site④">site</a>.</p>
      <li data-md>
-      <p>Let <var>records</var> be the result of <a data-link-type="dfn" href="#look-up-the-delegation-records" id="ref-for-look-up-the-delegation-records">look up the delegation records</a> for <var>domain</var>.</p>
+      <p>If <var>records</var> is failure or its <a data-link-type="dfn" href="https://infra.spec.whatwg.org/#list-size" id="ref-for-list-size①">size</a> is not 1, return failure.</p>
      <li data-md>
-      <p>If <var>records</var> is failure or <a data-link-type="dfn" href="https://infra.spec.whatwg.org/#list-is-empty" id="ref-for-list-is-empty">is empty</a>, return <var>domain</var>’s <a data-link-type="dfn" href="https://url.spec.whatwg.org/#host-registrable-domain" id="ref-for-host-registrable-domain⑥">registrable domain</a>.</p>
-     <li data-md>
-      <p>If <var>records</var>’s <a data-link-type="dfn" href="https://infra.spec.whatwg.org/#list-size" id="ref-for-list-size①">size</a> is greater than 1, return failure.</p>
+      <p>Let <var>value</var> be <var>records</var>[0] with the leading "<code>iss=</code>" removed.</p>
      <li data-md>
       <p>Let <var>issuer</var> be the result of running the <a data-link-type="dfn" href="https://url.spec.whatwg.org/#concept-host-parser" id="ref-for-concept-host-parser②">host parser</a> on the
-<a data-link-type="dfn" href="https://infra.spec.whatwg.org/#ascii-lowercase" id="ref-for-ascii-lowercase①">ASCII lowercased</a> <var>records</var>[0].</p>
+<a data-link-type="dfn" href="https://infra.spec.whatwg.org/#ascii-lowercase" id="ref-for-ascii-lowercase①">ASCII lowercased</a> <var>value</var>.</p>
      <li data-md>
-      <p>If <var>issuer</var> is failure or is not a <a data-link-type="dfn" href="#site-host" id="ref-for-site-host①">site host</a>, return failure.</p>
+      <p>If <var>issuer</var> is failure or is not a <a data-link-type="dfn" href="#site-host" id="ref-for-site-host②">site host</a>, return failure.</p>
      <li data-md>
       <p>Return <var>issuer</var>.</p>
     </ol>
    </div>
-   <p class="note" role="note"><span class="marker">Note:</span> When the provider’s domain is a <a data-link-type="dfn" href="https://url.spec.whatwg.org/#host-public-suffix" id="ref-for-host-public-suffix①">public suffix</a> (for example, <code>hosting.example</code>, where each
-user gets their own subdomain), each subdomain is its own site. <code>@alice.hosting.example</code> falls
-under the first case, and its <a data-link-type="dfn" href="#issuer" id="ref-for-issuer①①">issuer</a> is on <code>alice.hosting.example</code>, not on
-<code>hosting.example</code>.</p>
-   <p class="issue" id="issue-acdd303e"><a class="self-link" href="#issue-acdd303e"></a> Should a failed DNS query (e.g. <code>SERVFAIL</code>) fail closed instead of falling back to the
-handle’s own site?</p>
+   <p class="note" role="note"><span class="marker">Note:</span> When a provider’s domain is a <a data-link-type="dfn" href="https://url.spec.whatwg.org/#host-public-suffix" id="ref-for-host-public-suffix①">public suffix</a> (for example, <code>hosting.example</code>, where each
+user gets their own subdomain), each subdomain is its own <a data-link-type="dfn" href="#handle-site" id="ref-for-handle-site⑤">site</a>. The <a data-link-type="dfn" href="#handle-site" id="ref-for-handle-site⑥">site</a> of
+<code>@alice.hosting.example</code> is <code>alice.hosting.example</code>, not <code>hosting.example</code>.</p>
    <div class="example" id="example-resolve-issuer">
     <a class="self-link" href="#example-resolve-issuer"></a>
 
@@ -1237,122 +1214,136 @@ handle’s own site?</p>
      <thead>
       <tr>
        <th>Handle
+       <th>Its <a data-link-type="dfn" href="#handle-site" id="ref-for-handle-site⑦">site</a>
        <th>Delegation record
-       <th><a data-link-type="dfn" href="#issuer" id="ref-for-issuer①②">Issuer</a>
+       <th><a data-link-type="dfn" href="#issuer" id="ref-for-issuer⑥">Issuer</a>
 
      <tbody>
       <tr>
        <td><code>@alice.example</code>
-       <td>none
+       <td><code>alice.example</code>
+       <td><code>iss=alice.example</code>
        <td><code>alice.example</code>
 
       <tr>
        <td><code>@alice.example</code>
+       <td><code>alice.example</code>
        <td><code>iss=social.example</code>
        <td><code>social.example</code>
 
       <tr>
        <td><code>@alice.social.example</code>
-       <td>none
+       <td><code>social.example</code>
+       <td><code>iss=social.example</code>
        <td><code>social.example</code>
 
       <tr>
        <td><code>alice@social.example</code>
-       <td>none
+       <td><code>social.example</code>
+       <td><code>iss=social.example</code>
        <td><code>social.example</code>
 
       <tr>
        <td><code>https://alice.example/</code>
-       <td>none
+       <td><code>alice.example</code>
+       <td><code>iss=alice.example</code>
        <td><code>alice.example</code>
 
       <tr>
        <td><code>@alice.hosting.example</code> (<code>hosting.example</code> is a public suffix)
-       <td>none
+       <td><code>alice.hosting.example</code>
+       <td><code>iss=alice.hosting.example</code>
        <td><code>alice.hosting.example</code>
 
       <tr>
        <td><code>@alice.example</code>
+       <td><code>alice.example</code>
+       <td>none
+       <td>failure
+
+      <tr>
+       <td><code>@alice.example</code>
+       <td><code>alice.example</code>
        <td><code>iss=pds.social.example</code>
        <td>failure (not a site)
 
     </table>
    </div>
    <h4 class="heading settled" data-level="3.2.2" id="dns-record"><span class="secno">3.2.2. </span><span class="content">DNS delegation record</span><a class="self-link" href="#dns-record"></a></h4>
-   <p>The owner of a handle’s domain can delegate to an <a data-link-type="dfn" href="#issuer" id="ref-for-issuer①③">issuer</a> on another <a data-link-type="dfn" href="#site-of-a-host" id="ref-for-site-of-a-host④">site</a> by
-publishing a DNS <code>TXT</code> record <a data-link-type="biblio" href="https://www.rfc-editor.org/info/rfc1035/"><cite>Domain names - implementation and specification</cite></a> at the name <code>_web-identity.</code> followed by the handle’s
-host:</p>
+   <p>A <a data-link-type="dfn" href="#handle" id="ref-for-handle①⑥">handle</a>’s <a data-link-type="dfn" href="#handle-site" id="ref-for-handle-site⑧">site</a> names its <a data-link-type="dfn" href="#issuer" id="ref-for-issuer⑦">issuer</a> by publishing a DNS <code>TXT</code> record <a data-link-type="biblio" href="https://www.rfc-editor.org/info/rfc1035/"><cite>Domain names - implementation and specification</cite></a>
+at the name <code>_web-identity.</code> followed by the <a data-link-type="dfn" href="#handle-site" id="ref-for-handle-site⑨">site</a>:</p>
    <div class="example" id="example-dns-record">
     <a class="self-link" href="#example-dns-record"></a>
 
 <pre>_web-identity.alice.example.   TXT   "iss=social.example"
 </pre>
-    <p>This record says that the <a data-link-type="dfn" href="#issuer" id="ref-for-issuer①④">issuer</a> of handles on <code>alice.example</code> is on the
-<a data-link-type="dfn" href="#site-of-a-host" id="ref-for-site-of-a-host⑤">site</a> <code>social.example</code>.</p>
+    <p>This record says that the <a data-link-type="dfn" href="#issuer" id="ref-for-issuer⑧">issuer</a> of handles whose <a data-link-type="dfn" href="#handle-site" id="ref-for-handle-site①⓪">site</a> is <code>alice.example</code> is on the
+<a data-link-type="dfn" href="#site-of-a-host" id="ref-for-site-of-a-host③">site</a> <code>social.example</code>. If <code>alice.example</code> is its own <a data-link-type="dfn" href="#issuer" id="ref-for-issuer⑨">issuer</a>, the record is:</p>
+<pre>_web-identity.alice.example.   TXT   "iss=alice.example"
+</pre>
    </div>
-   <p>The record’s value MUST be the string "<code>iss=</code>" followed by a <a data-link-type="dfn" href="#site-host" id="ref-for-site-host②">site host</a>. There MUST be at most
-one such record at a name. A record naming the handle’s own <a data-link-type="dfn" href="#site-of-a-host" id="ref-for-site-of-a-host⑥">site</a> has the same
-effect as having no record.</p>
+   <p>The record’s value MUST be the string "<code>iss=</code>" followed by a <a data-link-type="dfn" href="#site-host" id="ref-for-site-host③">site host</a>. There MUST be
+exactly one such record at a name.</p>
    <p class="note" role="note"><span class="marker">Note:</span> This is modeled on the DNS delegation in the
 <a href="https://dickhardt.github.io/email-verification/draft-hardt-email-verification.html#name-dns-delegation">Email Verification Protocol</a>.
 Unlike that record, the value here names a site rather than a host, so that resolution always
-ends at a site’s <a data-link-type="dfn" href="https://url.spec.whatwg.org/#well-known-file" id="ref-for-well-known-file②">well-known file</a>.</p>
+ends at a site’s <a data-link-type="dfn" href="https://url.spec.whatwg.org/#well-known-file" id="ref-for-well-known-file①">well-known file</a>.</p>
    <p class="issue" id="issue-006efa19"><a class="self-link" href="#issue-006efa19"></a> Should the record name be <code>_web-identity</code> or something more specific (e.g. <code>_web-handle</code>)?
 Should it carry a <code>federation</code>, so that one domain can delegate different protocols to different
 <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp⑧">IDPs</a>?</p>
    <div class="algorithm" data-algorithm="look up the delegation records">
-To <dfn class="dfn-paneled" data-dfn-type="dfn" data-noexport id="look-up-the-delegation-records">look up the delegation records</dfn> for a <a data-link-type="dfn" href="https://url.spec.whatwg.org/#concept-domain" id="ref-for-concept-domain②">domain</a> <var>host</var>, the user agent performs a
-DNS query for <code>TXT</code> records at the name <code>_web-identity.</code> followed by <var>host</var>, using its DNS
-resolver. This returns a <a data-link-type="dfn" href="https://infra.spec.whatwg.org/#list" id="ref-for-list">list</a> of <a data-link-type="dfn" href="https://infra.spec.whatwg.org/#string" id="ref-for-string③">strings</a> (the records whose contents start with "<code>iss=</code>",
-with that prefix removed), or failure if the query failed.
+To <dfn class="dfn-paneled" data-dfn-type="dfn" data-noexport id="look-up-the-delegation-records">look up the delegation records</dfn> for a <a data-link-type="dfn" href="#site-host" id="ref-for-site-host④">site host</a> <var>site</var>, the user agent performs a
+DNS query for <code>TXT</code> records at the name <code>_web-identity.</code> followed by <var>site</var>, using its DNS
+resolver. This returns a <a data-link-type="dfn" href="https://infra.spec.whatwg.org/#list" id="ref-for-list">list</a> of <a data-link-type="dfn" href="https://infra.spec.whatwg.org/#string" id="ref-for-string③">strings</a> (the records whose contents start with "<code>iss=</code>"),
+or failure if the query failed.
 
 </div>
    <h3 class="heading settled" data-level="3.3" id="registry"><span class="secno">3.3. </span><span class="content">The Handle Registry</span><a class="self-link" href="#registry"></a></h3>
    <p>Each <a data-link-type="dfn" href="https://infra.spec.whatwg.org/#user-agent" id="ref-for-user-agent①">user agent</a> has a global, persistent <dfn class="dfn-paneled" data-dfn-type="dfn" data-noexport id="handle-registry">handle registry</dfn>, an initially empty
-<a data-link-type="dfn" href="https://infra.spec.whatwg.org/#ordered-set" id="ref-for-ordered-set">ordered set</a> of <a data-link-type="dfn" href="#handle" id="ref-for-handle①⑥">handles</a> that the user uses to sign in. No two
-<a data-link-type="dfn" href="#handle" id="ref-for-handle①⑦">handles</a> in the <a data-link-type="dfn" href="#handle-registry" id="ref-for-handle-registry①">handle registry</a> <a data-link-type="dfn" href="#handles-match" id="ref-for-handles-match">match</a>.</p>
-   <p>A <a data-link-type="dfn" href="#handle" id="ref-for-handle①⑧">handle</a> is added to the <a data-link-type="dfn" href="#handle-registry" id="ref-for-handle-registry②">handle registry</a> in the same way whether the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp⑨">IDP</a> registered it
+<a data-link-type="dfn" href="https://infra.spec.whatwg.org/#ordered-set" id="ref-for-ordered-set">ordered set</a> of <a data-link-type="dfn" href="#handle" id="ref-for-handle①⑦">handles</a> that the user uses to sign in. No two
+<a data-link-type="dfn" href="#handle" id="ref-for-handle①⑧">handles</a> in the <a data-link-type="dfn" href="#handle-registry" id="ref-for-handle-registry①">handle registry</a> <a data-link-type="dfn" href="#handles-match" id="ref-for-handles-match">match</a>.</p>
+   <p>A <a data-link-type="dfn" href="#handle" id="ref-for-handle①⑨">handle</a> is added to the <a data-link-type="dfn" href="#handle-registry" id="ref-for-handle-registry②">handle registry</a> in the same way whether the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp⑨">IDP</a> registered it
 with <code class="idl"><a data-link-type="idl" href="#dom-identityprovider-register" id="ref-for-dom-identityprovider-register①">register()</a></code> or the user typed it (<a data-link-type="dfn" href="#find-your-account" id="ref-for-find-your-account①">find your account</a>). The user agent
 doesn’t record which one did.</p>
-   <p>The <a data-link-type="dfn" href="#handle-registry" id="ref-for-handle-registry③">handle registry</a> stores only <a data-link-type="dfn" href="#handle" id="ref-for-handle①⑨">handles</a>. It doesn’t store which <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp①⓪">IDP</a> a
-<a data-link-type="dfn" href="#handle" id="ref-for-handle②⓪">handle</a> resolves to, that <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp①①">IDP</a>’s <a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file③">config file</a>, or any accounts. The user agent computes
-the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp①②">IDP</a> from the <a data-link-type="dfn" href="#handle" id="ref-for-handle②①">handle</a> by <a data-link-type="dfn" href="#resolve-a-handle" id="ref-for-resolve-a-handle④">resolving</a> it whenever it needs it, and accounts come
+   <p>The <a data-link-type="dfn" href="#handle-registry" id="ref-for-handle-registry③">handle registry</a> stores only <a data-link-type="dfn" href="#handle" id="ref-for-handle②⓪">handles</a>. It doesn’t store which <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp①⓪">IDP</a> a
+<a data-link-type="dfn" href="#handle" id="ref-for-handle②①">handle</a> resolves to, that <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp①①">IDP</a>’s <a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file③">config file</a>, or any accounts. The user agent computes
+the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp①②">IDP</a> from the <a data-link-type="dfn" href="#handle" id="ref-for-handle②②">handle</a> by <a data-link-type="dfn" href="#resolve-a-handle" id="ref-for-resolve-a-handle④">resolving</a> it whenever it needs it, and accounts come
 from the <a data-link-type="dfn" href="#account-registry" id="ref-for-account-registry">account registry</a>.</p>
    <p class="note" role="note"><span class="marker">Note:</span> A user agent can cache the results of <a data-link-type="dfn" href="#resolve-a-handle" id="ref-for-resolve-a-handle⑤">resolution</a> and <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#fetch-the-config-file" id="ref-for-fetch-the-config-file">fetch the config file</a>,
 for example to avoid DNS lookups and fetches on every <a data-link-type="dfn" href="#federation-request" id="ref-for-federation-request">federation request</a>. That’s an implementation
 choice, as long as the cache respects DNS TTLs and HTTP caching, and is cleared along with the
 <a data-link-type="dfn" href="#handle-registry" id="ref-for-handle-registry④">handle registry</a>. See also <a href="#privacy">§ 8 Privacy considerations</a> and <a href="#security">§ 9 Security considerations</a>.</p>
    <p>When the user clears browsing data or site settings for an <a data-link-type="dfn" href="https://html.spec.whatwg.org/multipage/browsers.html#concept-origin" id="ref-for-concept-origin">origin</a> <var>origin</var>, the user agent
-MUST <a data-link-type="dfn" href="https://infra.spec.whatwg.org/#list-remove" id="ref-for-list-remove">remove</a> from the <a data-link-type="dfn" href="#handle-registry" id="ref-for-handle-registry⑤">handle registry</a> every <a data-link-type="dfn" href="#handle" id="ref-for-handle②②">handle</a> whose <a data-link-type="dfn" href="#issuer" id="ref-for-issuer①⑤">issuer</a>, as determined
+MUST <a data-link-type="dfn" href="https://infra.spec.whatwg.org/#list-remove" id="ref-for-list-remove">remove</a> from the <a data-link-type="dfn" href="#handle-registry" id="ref-for-handle-registry⑤">handle registry</a> every <a data-link-type="dfn" href="#handle" id="ref-for-handle②③">handle</a> whose <a data-link-type="dfn" href="#issuer" id="ref-for-issuer①⓪">issuer</a>, as determined
 by <a data-link-type="dfn" href="#resolve-the-issuer" id="ref-for-resolve-the-issuer①">resolve the issuer</a> (or by the user agent’s cached result of it), is on the same
-<a data-link-type="dfn" href="#site-of-a-host" id="ref-for-site-of-a-host⑦">site</a> as <var>origin</var>.</p>
+<a data-link-type="dfn" href="#site-of-a-host" id="ref-for-site-of-a-host④">site</a> as <var>origin</var>.</p>
    <div class="algorithm" data-algorithm="add to the handle registry">
     
-To <dfn class="dfn-paneled" data-dfn-type="dfn" data-noexport id="add-to-the-handle-registry">add to the handle registry</dfn> given a <a data-link-type="dfn" href="#handle" id="ref-for-handle②③">handle</a> <var>handle</var>, run the following steps:
+To <dfn class="dfn-paneled" data-dfn-type="dfn" data-noexport id="add-to-the-handle-registry">add to the handle registry</dfn> given a <a data-link-type="dfn" href="#handle" id="ref-for-handle②④">handle</a> <var>handle</var>, run the following steps:
 
 
     <ol>
      <li data-md>
-      <p>If the <a data-link-type="dfn" href="#handle-registry" id="ref-for-handle-registry⑥">handle registry</a> contains a <a data-link-type="dfn" href="#handle" id="ref-for-handle②④">handle</a> that <a data-link-type="dfn" href="#handles-match" id="ref-for-handles-match①">matches</a> <var>handle</var>,
+      <p>If the <a data-link-type="dfn" href="#handle-registry" id="ref-for-handle-registry⑥">handle registry</a> contains a <a data-link-type="dfn" href="#handle" id="ref-for-handle②⑤">handle</a> that <a data-link-type="dfn" href="#handles-match" id="ref-for-handles-match①">matches</a> <var>handle</var>,
 return.</p>
      <li data-md>
       <p><a data-link-type="dfn" href="https://infra.spec.whatwg.org/#set-append" id="ref-for-set-append">Append</a> <var>handle</var> to the <a data-link-type="dfn" href="#handle-registry" id="ref-for-handle-registry⑦">handle registry</a>.</p>
     </ol>
    </div>
    <div class="algorithm" data-algorithm="remove from the handle registry">
-To <dfn class="dfn-paneled" data-dfn-type="dfn" data-noexport id="remove-from-the-handle-registry">remove from the handle registry</dfn> given a <a data-link-type="dfn" href="#handle" id="ref-for-handle②⑤">handle</a> <var>handle</var>, <a data-link-type="dfn" href="https://infra.spec.whatwg.org/#list-remove" id="ref-for-list-remove①">remove</a> from
-the <a data-link-type="dfn" href="#handle-registry" id="ref-for-handle-registry⑧">handle registry</a> every <a data-link-type="dfn" href="#handle" id="ref-for-handle②⑥">handle</a> that <a data-link-type="dfn" href="#handles-match" id="ref-for-handles-match②">matches</a> <var>handle</var>.
+To <dfn class="dfn-paneled" data-dfn-type="dfn" data-noexport id="remove-from-the-handle-registry">remove from the handle registry</dfn> given a <a data-link-type="dfn" href="#handle" id="ref-for-handle②⑥">handle</a> <var>handle</var>, <a data-link-type="dfn" href="https://infra.spec.whatwg.org/#list-remove" id="ref-for-list-remove①">remove</a> from
+the <a data-link-type="dfn" href="#handle-registry" id="ref-for-handle-registry⑧">handle registry</a> every <a data-link-type="dfn" href="#handle" id="ref-for-handle②⑦">handle</a> that <a data-link-type="dfn" href="#handles-match" id="ref-for-handles-match②">matches</a> <var>handle</var>.
 
 </div>
-   <p>The user agent SHOULD let the user see the <a data-link-type="dfn" href="#handle-registry" id="ref-for-handle-registry⑨">handle registry</a> and remove <a data-link-type="dfn" href="#handle" id="ref-for-handle②⑦">handles</a> from
+   <p>The user agent SHOULD let the user see the <a data-link-type="dfn" href="#handle-registry" id="ref-for-handle-registry⑨">handle registry</a> and remove <a data-link-type="dfn" href="#handle" id="ref-for-handle②⑧">handles</a> from
 it (by running <a data-link-type="dfn" href="#remove-from-the-handle-registry" id="ref-for-remove-from-the-handle-registry">remove from the handle registry</a>), for example to remove a mistyped handle.</p>
    <p class="note" role="note"><span class="marker">Note:</span> The <a data-link-type="dfn" href="#handle-registry" id="ref-for-handle-registry①⓪">handle registry</a> is deliberately separate from the <a data-link-type="dfn" href="#account-registry" id="ref-for-account-registry①">account registry</a> and the
 <a data-link-type="biblio" href="https://w3c-fedid.github.io/login-status/">login status</a>. Those record whether the user is signed in right now, which changes
-silently, while the <a data-link-type="dfn" href="#handle-registry" id="ref-for-handle-registry①①">handle registry</a> records which <a data-link-type="dfn" href="#handle" id="ref-for-handle②⑧">handles</a> the user uses, which the
-user approved and which outlives their session. After the user signs out, a registered <a data-link-type="dfn" href="#handle" id="ref-for-handle②⑨">handle</a>
+silently, while the <a data-link-type="dfn" href="#handle-registry" id="ref-for-handle-registry①①">handle registry</a> records which <a data-link-type="dfn" href="#handle" id="ref-for-handle②⑨">handles</a> the user uses, which the
+user approved and which outlives their session. After the user signs out, a registered <a data-link-type="dfn" href="#handle" id="ref-for-handle③⓪">handle</a>
 is still offered as a <a data-link-type="dfn" href="#handle-chip" id="ref-for-handle-chip">handle chip</a> that signs the user back in. So an <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp①③">IDP</a> calls
 <code>setStatus("logged-out")</code> when the user signs out, and <code class="idl"><a data-link-type="idl" href="#dom-identityprovider-unregister" id="ref-for-dom-identityprovider-unregister">unregister()</a></code> only when
-the <a data-link-type="dfn" href="#handle" id="ref-for-handle③⓪">handle</a> should no longer be offered, for example when the account is deleted.</p>
+the <a data-link-type="dfn" href="#handle" id="ref-for-handle③①">handle</a> should no longer be offered, for example when the account is deleted.</p>
    <h2 class="heading settled" data-level="4" id="accounts"><span class="secno">4. </span><span class="content">The Account Registry</span><a class="self-link" href="#accounts"></a></h2>
    <p class="issue" id="issue-5092997f"><a class="self-link" href="#issue-5092997f"></a> Accounts push is described in
 <a href="https://github.com/fedidcg/LightweightFedCM#fedcm-accounts-push">Lightweight FedCM</a> but isn’t
@@ -1429,14 +1420,14 @@ returns a <a data-link-type="dfn" href="https://infra.spec.whatwg.org/#list" id=
    </div>
    <div class="algorithm" data-algorithm="find matching accounts">
 To <dfn class="dfn-paneled" data-dfn-type="dfn" data-noexport id="find-matching-accounts">find matching accounts</dfn> given a <a data-link-type="dfn" href="https://infra.spec.whatwg.org/#list" id="ref-for-list⑥">list</a> of <code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dictdef-identityprovideraccount" id="ref-for-dictdef-identityprovideraccount③">IdentityProviderAccount</a></code>s <var>accounts</var>
-and a <a data-link-type="dfn" href="#handle" id="ref-for-handle③①">handle</a> <var>handle</var>, return the <a data-link-type="dfn" href="https://infra.spec.whatwg.org/#list-item" id="ref-for-list-item">items</a> of <var>accounts</var> whose
+and a <a data-link-type="dfn" href="#handle" id="ref-for-handle③②">handle</a> <var>handle</var>, return the <a data-link-type="dfn" href="https://infra.spec.whatwg.org/#list-item" id="ref-for-list-item">items</a> of <var>accounts</var> whose
 <code class="idl"><a data-link-type="idl" href="#dom-identityprovideraccount-handle" id="ref-for-dom-identityprovideraccount-handle②">handle</a></code> <a data-link-type="dfn" href="https://infra.spec.whatwg.org/#map-exists" id="ref-for-map-exists④">exists</a> and <a data-link-type="dfn" href="#handles-match" id="ref-for-handles-match③">matches</a> <var>handle</var>.
 
 </div>
    <p>The user agent MUST clear <a data-link-type="dfn" href="#account-registry" id="ref-for-account-registry⑧">account registry</a> entries whenever it clears the corresponding
 <a data-link-type="dfn" href="https://w3c-fedid.github.io/login-status/#login-status-map" id="ref-for-login-status-map">Login Status map</a> entries.</p>
    <h2 class="heading settled" data-level="5" id="registration"><span class="secno">5. </span><span class="content">Registration</span><a class="self-link" href="#registration"></a></h2>
-   <p>This section defines how an <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp①⑥">IDP</a> registers and unregisters a user’s <a data-link-type="dfn" href="#handle" id="ref-for-handle③②">handle</a>, and what it
+   <p>This section defines how an <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp①⑥">IDP</a> registers and unregisters a user’s <a data-link-type="dfn" href="#handle" id="ref-for-handle③③">handle</a>, and what it
 declares so that the user agent can present it to <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp①">RPs</a> later (<a href="#presentation">§ 6 Presentation</a>).</p>
    <h3 class="heading settled" data-level="5.1" id="register"><span class="secno">5.1. </span><span class="content">Registering a handle</span><a class="self-link" href="#register"></a></h3>
 <pre class="def highlight idl"><c- b>partial</c-> <c- b>interface</c-> <a class="idl-code" data-link-type="interface" href="https://w3c-fedid.github.io/FedCM/#identityprovider" id="ref-for-identityprovider"><c- g>IdentityProvider</c-></a> {
@@ -1444,11 +1435,10 @@ declares so that the user agent can present it to <a data-link-type="dfn" href="
   <c- b>static</c-> <a class="idl-code" data-link-type="interface" href="https://webidl.spec.whatwg.org/#idl-promise" id="ref-for-idl-promise①"><c- b>Promise</c-></a>&lt;<a class="idl-code" data-link-type="interface" href="https://webidl.spec.whatwg.org/#idl-undefined" id="ref-for-idl-undefined①"><c- b>undefined</c-></a>> <a class="idl-code" data-link-type="method" href="#dom-identityprovider-unregister" id="ref-for-dom-identityprovider-unregister①"><c- g>unregister</c-></a>(<a class="idl-code" data-link-type="interface" href="https://webidl.spec.whatwg.org/#idl-USVString" id="ref-for-idl-USVString①"><c- b>USVString</c-></a> <dfn class="dfn-paneled idl-code" data-dfn-for="IdentityProvider/unregister(handle)" data-dfn-type="argument" data-export id="dom-identityprovider-unregister-handle-handle"><code><c- g>handle</c-></code></dfn>);
 };
 </pre>
-   <p>An <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp①⑦">IDP</a> registering a <a data-link-type="dfn" href="#handle" id="ref-for-handle③③">handle</a> and the user typing it follow the same path: both
-<a data-link-type="dfn" href="#resolve-a-handle" id="ref-for-resolve-a-handle⑥">resolve</a> it, and both add the same <a data-link-type="dfn" href="#handle" id="ref-for-handle③④">handle</a> to the <a data-link-type="dfn" href="#handle-registry" id="ref-for-handle-registry①②">handle registry</a>.</p>
-   <p class="note" role="note"><span class="marker">Note:</span> An <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp①⑧">IDP</a> can only register and unregister <a data-link-type="dfn" href="#handle" id="ref-for-handle③⑤">handles</a> that it is the <a data-link-type="dfn" href="#issuer" id="ref-for-issuer①⑥">issuer</a> of.
-An <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp①⑨">IDP</a> on another <a data-link-type="dfn" href="#site-of-a-host" id="ref-for-site-of-a-host⑧">site</a> is a <a data-link-type="dfn" href="#handle" id="ref-for-handle③⑥">handle</a>’s <a data-link-type="dfn" href="#issuer" id="ref-for-issuer①⑦">issuer</a> only if the handle’s
-domain delegates to it with a <a href="#dns-record">delegation record</a>.</p>
+   <p>An <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp①⑦">IDP</a> registering a <a data-link-type="dfn" href="#handle" id="ref-for-handle③④">handle</a> and the user typing it follow the same path: both
+<a data-link-type="dfn" href="#resolve-a-handle" id="ref-for-resolve-a-handle⑥">resolve</a> it, and both add the same <a data-link-type="dfn" href="#handle" id="ref-for-handle③⑤">handle</a> to the <a data-link-type="dfn" href="#handle-registry" id="ref-for-handle-registry①②">handle registry</a>.</p>
+   <p class="note" role="note"><span class="marker">Note:</span> An <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp①⑧">IDP</a> can only register and unregister <a data-link-type="dfn" href="#handle" id="ref-for-handle③⑥">handles</a> that it is the <a data-link-type="dfn" href="#issuer" id="ref-for-issuer①①">issuer</a> of,
+as named by the <a href="#dns-record">delegation record</a> on the handle’s <a data-link-type="dfn" href="#handle-site" id="ref-for-handle-site①①">site</a>.</p>
    <div class="algorithm" data-algorithm="register">
     
 When the static <dfn class="dfn-paneled idl-code" data-dfn-for="IdentityProvider" data-dfn-type="method" data-export id="dom-identityprovider-register"><code>register(<var>handle</var>)</code></dfn> method is invoked, run
@@ -1480,9 +1470,9 @@ If <var>configUrl</var> is failure, <a data-link-type="dfn" href="https://w3c-fe
         <p>Let <var>accounts</var> be the result of <a data-link-type="dfn" href="#find-matching-accounts" id="ref-for-find-matching-accounts">find matching accounts</a> with the result of
 <a data-link-type="dfn" href="#get-the-pushed-accounts" id="ref-for-get-the-pushed-accounts">get the pushed accounts</a> for <var>configUrl</var>’s <a data-link-type="dfn" href="https://url.spec.whatwg.org/#concept-url-origin" id="ref-for-concept-url-origin①">origin</a>, and <var>canonical</var>.</p>
        <li data-md>
-        <p>If <var>accounts</var> <a data-link-type="dfn" href="https://infra.spec.whatwg.org/#list-is-empty" id="ref-for-list-is-empty①">is empty</a>, <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#queue-to-reject" id="ref-for-queue-to-reject③">queue to reject</a> <var>promise</var> with "<code class="idl"><a data-link-type="idl" href="https://webidl.spec.whatwg.org/#notallowederror" id="ref-for-notallowederror②">NotAllowedError</a></code>"
+        <p>If <var>accounts</var> <a data-link-type="dfn" href="https://infra.spec.whatwg.org/#list-is-empty" id="ref-for-list-is-empty">is empty</a>, <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#queue-to-reject" id="ref-for-queue-to-reject③">queue to reject</a> <var>promise</var> with "<code class="idl"><a data-link-type="idl" href="https://webidl.spec.whatwg.org/#notallowederror" id="ref-for-notallowederror②">NotAllowedError</a></code>"
 and return.</p>
-        <p class="note" role="note"><span class="marker">Note:</span> This fails if the user isn’t <a data-link-type="dfn" href="https://w3c-fedid.github.io/login-status/#logged-in" id="ref-for-logged-in①">logged-in</a> to the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp②⓪">IDP</a>, if the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp②①">IDP</a> hasn’t
+        <p class="note" role="note"><span class="marker">Note:</span> This fails if the user isn’t <a data-link-type="dfn" href="https://w3c-fedid.github.io/login-status/#logged-in" id="ref-for-logged-in①">logged-in</a> to the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp①⑨">IDP</a>, if the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp②⓪">IDP</a> hasn’t
 pushed any accounts, or if none of them has <var>canonical</var> as its
 <code class="idl"><a data-link-type="idl" href="#dom-identityprovideraccount-handle" id="ref-for-dom-identityprovideraccount-handle③">handle</a></code>.</p>
        <li data-md>
@@ -1491,7 +1481,7 @@ pushed any accounts, or if none of them has <var>canonical</var> as its
         <p>Let <var>config</var> be the result of <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#fetch-the-config-file" id="ref-for-fetch-the-config-file①">fetch the config file</a> with <var>provider</var> and <var>globalObject</var>.</p>
        <li data-md>
         <p>If <var>config</var> is failure, or <var>config</var>.<code class="idl"><a data-link-type="idl" href="#dom-identityproviderapiconfig-federations" id="ref-for-dom-identityproviderapiconfig-federations①">federations</a></code> doesn’t
-<a data-link-type="dfn" href="https://infra.spec.whatwg.org/#map-exists" id="ref-for-map-exists⑤">exist</a> or <a data-link-type="dfn" href="https://infra.spec.whatwg.org/#list-is-empty" id="ref-for-list-is-empty②">is empty</a>, <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#queue-to-reject" id="ref-for-queue-to-reject④">queue to reject</a> <var>promise</var> with "<code class="idl"><a data-link-type="idl" href="https://webidl.spec.whatwg.org/#networkerror" id="ref-for-networkerror①">NetworkError</a></code>"
+<a data-link-type="dfn" href="https://infra.spec.whatwg.org/#map-exists" id="ref-for-map-exists⑤">exist</a> or <a data-link-type="dfn" href="https://infra.spec.whatwg.org/#list-is-empty" id="ref-for-list-is-empty①">is empty</a>, <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#queue-to-reject" id="ref-for-queue-to-reject④">queue to reject</a> <var>promise</var> with "<code class="idl"><a data-link-type="idl" href="https://webidl.spec.whatwg.org/#networkerror" id="ref-for-networkerror①">NetworkError</a></code>"
 and return.</p>
        <li data-md>
         <p>If the <a data-link-type="dfn" href="#handle-registry" id="ref-for-handle-registry①③">handle registry</a> doesn’t already contain a <a data-link-type="dfn" href="#handle" id="ref-for-handle③⑦">handle</a> that
@@ -1530,9 +1520,9 @@ on the account’s picture.</p>
 it, and MAY remember that the user declined and not ask again.</p>
     </ul>
    </div>
-   <p class="note" role="note"><span class="marker">Note:</span> An <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp②②">IDP</a> pushes the user’s account with <code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/login-status/#dom-navigatorlogin-setstatus" id="ref-for-dom-navigatorlogin-setstatus②">setStatus()</a></code> before calling
+   <p class="note" role="note"><span class="marker">Note:</span> An <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp②①">IDP</a> pushes the user’s account with <code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/login-status/#dom-navigatorlogin-setstatus" id="ref-for-dom-navigatorlogin-setstatus②">setStatus()</a></code> before calling
 <code class="idl"><a data-link-type="idl" href="#dom-identityprovider-register" id="ref-for-dom-identityprovider-register③">register()</a></code>, as in the <a href="#example-idp-register">introduction’s
-example</a>. This way, an <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp②③">IDP</a> can only register a <a data-link-type="dfn" href="#handle" id="ref-for-handle③⑨">handle</a> for an account the user is
+example</a>. This way, an <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp②②">IDP</a> can only register a <a data-link-type="dfn" href="#handle" id="ref-for-handle③⑨">handle</a> for an account the user is
 signed in to, and the prompt can show that account’s name and picture.</p>
    <p class="note" role="note"><span class="marker">Note:</span> <code class="idl"><a data-link-type="idl" href="#dom-identityprovider-register" id="ref-for-dom-identityprovider-register④">register()</a></code> is separate from <code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/login-status/#dom-navigatorlogin-setstatus" id="ref-for-dom-navigatorlogin-setstatus③">setStatus()</a></code> because a
 registered <a data-link-type="dfn" href="#handle" id="ref-for-handle④⓪">handle</a> needs to outlive the user’s session. See <a href="#registry">§ 3.3 The Handle Registry</a>.</p>
@@ -1570,13 +1560,13 @@ If <var>configUrl</var> is failure, <a data-link-type="dfn" href="https://w3c-fe
       <p>Return <var>promise</var>.</p>
     </ol>
    </div>
-   <p><code class="idl"><a data-link-type="idl" href="#dom-identityprovider-unregister" id="ref-for-dom-identityprovider-unregister②">unregister()</a></code> removes the <a data-link-type="dfn" href="#handle" id="ref-for-handle④①">handle</a> whether the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp②④">IDP</a> registered it or the
-user typed it: either way, the handle’s <a data-link-type="dfn" href="#issuer" id="ref-for-issuer①⑧">issuer</a> has said it should no longer be offered. It resolves
+   <p><code class="idl"><a data-link-type="idl" href="#dom-identityprovider-unregister" id="ref-for-dom-identityprovider-unregister②">unregister()</a></code> removes the <a data-link-type="dfn" href="#handle" id="ref-for-handle④①">handle</a> whether the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp②③">IDP</a> registered it or the
+user typed it: either way, the handle’s <a data-link-type="dfn" href="#issuer" id="ref-for-issuer①②">issuer</a> has said it should no longer be offered. It resolves
 the same way whether or not the <a data-link-type="dfn" href="#handle" id="ref-for-handle④②">handle</a> was in the <a data-link-type="dfn" href="#handle-registry" id="ref-for-handle-registry①④">handle registry</a>, so that it doesn’t
 reveal whether the user had registered it.</p>
    <p class="note" role="note"><span class="marker">Note:</span> If a <a data-link-type="dfn" href="#handle" id="ref-for-handle④③">handle</a> no longer resolves to the caller, for example because its
 <a href="#dns-record">delegation record</a> was removed, the caller can’t unregister it. It doesn’t need to,
-because the <a data-link-type="dfn" href="#handle" id="ref-for-handle④④">handle</a> is no longer offered with the caller as its <a data-link-type="dfn" href="#issuer" id="ref-for-issuer①⑨">issuer</a> either
+because the <a data-link-type="dfn" href="#handle" id="ref-for-handle④④">handle</a> is no longer offered with the caller as its <a data-link-type="dfn" href="#issuer" id="ref-for-issuer①③">issuer</a> either
 (<a data-link-type="dfn" href="#gather-registered-providers" id="ref-for-gather-registered-providers">gather registered providers</a> resolves it again).</p>
    <h3 class="heading settled" data-level="5.2" id="account-handles"><span class="secno">5.2. </span><span class="content">Account handles</span><a class="self-link" href="#account-handles"></a></h3>
 <pre class="def highlight idl"><c- b>partial</c-> <c- b>dictionary</c-> <a class="idl-code" data-link-type="dictionary" href="https://w3c-fedid.github.io/FedCM/#dictdef-identityprovideraccount" id="ref-for-dictdef-identityprovideraccount⑤"><c- g>IdentityProviderAccount</c-></a> {
@@ -1590,7 +1580,7 @@ because the <a data-link-type="dfn" href="#handle" id="ref-for-handle④④">han
 agent uses it to match the account with registered and typed <a data-link-type="dfn" href="#handle" id="ref-for-handle④⑥">handles</a>
 (<a data-link-type="dfn" href="#find-matching-accounts" id="ref-for-find-matching-accounts①">find matching accounts</a>).</p>
    </dl>
-   <p class="note" role="note"><span class="marker">Note:</span> This is separate from <code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dom-identityprovideraccount-username" id="ref-for-dom-identityprovideraccount-username②">username</a></code>, which an <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp②⑤">IDP</a> can use for
+   <p class="note" role="note"><span class="marker">Note:</span> This is separate from <code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dom-identityprovideraccount-username" id="ref-for-dom-identityprovideraccount-username②">username</a></code>, which an <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp②④">IDP</a> can use for
 any display name it likes. An account can have both.</p>
    <h3 class="heading settled" data-level="5.3" id="declaring-federations"><span class="secno">5.3. </span><span class="content">Declaring supported federations</span><a class="self-link" href="#declaring-federations"></a></h3>
 <pre class="def highlight idl"><c- b>partial</c-> <c- b>dictionary</c-> <a class="idl-code" data-link-type="dictionary" href="https://w3c-fedid.github.io/FedCM/#dictdef-identityproviderapiconfig" id="ref-for-dictdef-identityproviderapiconfig①"><c- g>IdentityProviderAPIConfig</c-></a> {
@@ -1600,7 +1590,7 @@ any display name it likes. An account can have both.</p>
    <dl>
     <dt data-md><dfn class="dfn-paneled idl-code" data-dfn-for="IdentityProviderAPIConfig" data-dfn-type="dict-member" data-export id="dom-identityproviderapiconfig-federations"><code>federations</code></dfn>, <span> of type sequence&lt;<a data-link-type="idl-name" href="https://webidl.spec.whatwg.org/#idl-USVString" id="ref-for-idl-USVString⑤">USVString</a>></span>
     <dd data-md>
-     <p>The <code class="idl"><a data-link-type="idl" href="#dom-identityproviderconfig-federation" id="ref-for-dom-identityproviderconfig-federation①">federation</a></code> URLs that the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp②⑥">IDP</a> supports. An <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp②⑦">IDP</a> that
+     <p>The <code class="idl"><a data-link-type="idl" href="#dom-identityproviderconfig-federation" id="ref-for-dom-identityproviderconfig-federation①">federation</a></code> URLs that the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp②⑤">IDP</a> supports. An <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp②⑥">IDP</a> that
 doesn’t list a federation is never returned for a <a data-link-type="dfn" href="#federation-request" id="ref-for-federation-request①">federation request</a> for that
 federation.</p>
    </dl>
@@ -1613,11 +1603,11 @@ In <a data-link-type="biblio" href="https://w3c-fedid.github.io/FedCM/"><cite>Fe
 failure, except for <a data-link-type="dfn" href="#registered-provider" id="ref-for-registered-provider">registered providers</a>.
 
 
-    <p class="note" role="note"><span class="marker">Note:</span> Registered <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp②⑧">IDPs</a> only need a <a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file④">config file</a> and an
+    <p class="note" role="note"><span class="marker">Note:</span> Registered <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp②⑦">IDPs</a> only need a <a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file④">config file</a> and an
 <code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dom-identityproviderapiconfig-id_assertion_endpoint" id="ref-for-dom-identityproviderapiconfig-id_assertion_endpoint">id_assertion_endpoint</a></code>. Their accounts are always pushed.</p>
    </div>
    <h2 class="heading settled" data-level="6" id="presentation"><span class="secno">6. </span><span class="content">Presentation</span><a class="self-link" href="#presentation"></a></h2>
-   <p>This section defines how the user agent presents registered <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp②⑨">IDPs</a> to the user when an <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp②">RP</a>
+   <p>This section defines how the user agent presents registered <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp②⑧">IDPs</a> to the user when an <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp②">RP</a>
 calls <code>navigator.credentials.get()</code> with a <code class="idl"><a data-link-type="idl" href="#dom-identityproviderconfig-federation" id="ref-for-dom-identityproviderconfig-federation②">federation</a></code>. It changes
 <a data-link-type="biblio" href="https://w3c-fedid.github.io/FedCM/"><cite>Federated Credential Management API</cite></a> as follows, using the algorithms defined in the subsections below.</p>
    <div class="monkeypatch">
@@ -1713,7 +1703,7 @@ Add the following algorithm:
 
 
     <div class="algorithm" data-algorithm="fetch the well-known file">
-To <dfn class="dfn-paneled" data-dfn-type="dfn" data-noexport id="fetch-the-well-known-file">fetch the well-known file</dfn> given a <a data-link-type="dfn" href="#site-host" id="ref-for-site-host③">site host</a> <var>site</var> and a <var>globalObject</var>, run the
+To <dfn class="dfn-paneled" data-dfn-type="dfn" data-noexport id="fetch-the-well-known-file">fetch the well-known file</dfn> given a <a data-link-type="dfn" href="#site-host" id="ref-for-site-host⑤">site host</a> <var>site</var> and a <var>globalObject</var>, run the
 steps of <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#fetch-the-config-file" id="ref-for-fetch-the-config-file③">fetch the config file</a> that create <var>wellKnownRequest</var> and
 <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#fetch-request" id="ref-for-fetch-request">fetch</a> it, with <var>rootUrl</var> set to a new <a data-link-type="dfn" href="https://url.spec.whatwg.org/#concept-url" id="ref-for-concept-url①">URL</a> with
 <a data-link-type="dfn" href="https://url.spec.whatwg.org/#concept-url-scheme" id="ref-for-concept-url-scheme①">scheme</a> "<code>https</code>", <a data-link-type="dfn" href="https://url.spec.whatwg.org/#concept-url-host" id="ref-for-concept-url-host③">host</a> <var>site</var>, and <a data-link-type="dfn" href="https://url.spec.whatwg.org/#concept-url-path" id="ref-for-concept-url-path">path</a> « "<code>.well-known</code>",
@@ -1736,14 +1726,14 @@ is not an <a data-link-type="dfn" href="https://html.spec.whatwg.org/multipage/b
      <li data-md>
       <p>If <var>provider</var> is a <a data-link-type="dfn" href="#registered-provider" id="ref-for-registered-provider③">registered provider</a>, set <var>skipWellKnown</var> to true.</p>
     </ol>
-    <p class="note" role="note"><span class="marker">Note:</span> The <a data-link-type="dfn" href="https://url.spec.whatwg.org/#well-known-file" id="ref-for-well-known-file③">well-known file</a> exists to stop an <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp③">RP</a> from encoding tracking information in the
+    <p class="note" role="note"><span class="marker">Note:</span> The <a data-link-type="dfn" href="https://url.spec.whatwg.org/#well-known-file" id="ref-for-well-known-file②">well-known file</a> exists to stop an <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp③">RP</a> from encoding tracking information in the
 config URL it passes. A <a data-link-type="dfn" href="#registered-provider" id="ref-for-registered-provider④">registered provider</a>’s config URL doesn’t come from the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp④">RP</a>. The user
-agent obtained it from the <a data-link-type="dfn" href="https://url.spec.whatwg.org/#well-known-file" id="ref-for-well-known-file④">well-known file</a> itself, by <a data-link-type="dfn" href="#resolve-a-handle" id="ref-for-resolve-a-handle①⓪">resolving</a> a
+agent obtained it from the <a data-link-type="dfn" href="https://url.spec.whatwg.org/#well-known-file" id="ref-for-well-known-file③">well-known file</a> itself, by <a data-link-type="dfn" href="#resolve-a-handle" id="ref-for-resolve-a-handle①⓪">resolving</a> a
 <a data-link-type="dfn" href="#handle" id="ref-for-handle④⑧">handle</a>.</p>
    </div>
    <p class="issue" id="issue-bcec5902"><a class="self-link" href="#issue-bcec5902"></a> Because <a data-link-type="dfn" href="#resolve-a-handle" id="ref-for-resolve-a-handle①①">resolution</a> requires exactly one
-<code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dom-identityproviderwellknown-provider_urls" id="ref-for-dom-identityproviderwellknown-provider_urls②">provider_urls</a></code> entry, a <a data-link-type="dfn" href="#site-of-a-host" id="ref-for-site-of-a-host⑨">site</a> can register
-<a data-link-type="dfn" href="#handle" id="ref-for-handle④⑨">handles</a> for only one <a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file⑤">config file</a>. Is that acceptable for <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp③⓪">IDPs</a> that have several
+<code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dom-identityproviderwellknown-provider_urls" id="ref-for-dom-identityproviderwellknown-provider_urls②">provider_urls</a></code> entry, a <a data-link-type="dfn" href="#site-of-a-host" id="ref-for-site-of-a-host⑤">site</a> can register
+<a data-link-type="dfn" href="#handle" id="ref-for-handle④⑨">handles</a> for only one <a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file⑤">config file</a>. Is that acceptable for <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp②⑨">IDPs</a> that have several
 configurations (e.g. one per product)?</p>
    <div class="monkeypatch">
     
@@ -1773,9 +1763,9 @@ In <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#fetch-an-ide
 <a data-link-type="dfn" href="https://html.spec.whatwg.org/multipage/nav-history-apis.html#concept-document-window" id="ref-for-concept-document-window②">associated Document</a>’s <a data-link-type="dfn" href="https://dom.spec.whatwg.org/#concept-document-origin" id="ref-for-concept-document-origin②">origin</a>.</p>
     </ol>
    </div>
-   <p class="issue" id="issue-1107d123"><a class="self-link" href="#issue-1107d123"></a> Is the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp⑤">RP</a>’s origin the right default <code>client_id</code> for registered <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp③①">IDPs</a>? It matches
+   <p class="issue" id="issue-1107d123"><a class="self-link" href="#issue-1107d123"></a> Is the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp⑤">RP</a>’s origin the right default <code>client_id</code> for registered <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp③⓪">IDPs</a>? It matches
 how IndieAuth identifies clients by URL, but other protocols may expect something else.</p>
-   <p class="note" role="note"><span class="marker">Note:</span> <code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dom-identitycredential-configurl" id="ref-for-dom-identitycredential-configurl">configURL</a></code> tells the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp⑥">RP</a> which <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp③②">IDP</a> issued the token, so it can
+   <p class="note" role="note"><span class="marker">Note:</span> <code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dom-identitycredential-configurl" id="ref-for-dom-identitycredential-configurl">configURL</a></code> tells the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp⑥">RP</a> which <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp③①">IDP</a> issued the token, so it can
 verify the token using the protocol named by <code class="idl"><a data-link-type="idl" href="#dom-identityproviderconfig-federation" id="ref-for-dom-identityproviderconfig-federation③">federation</a></code>.</p>
    <h3 class="heading settled" data-level="6.1" id="request-by-federation"><span class="secno">6.1. </span><span class="content">Requesting by federation</span><a class="self-link" href="#request-by-federation"></a></h3>
 <pre class="def highlight idl"><c- b>partial</c-> <c- b>dictionary</c-> <a class="idl-code" data-link-type="dictionary" href="https://w3c-fedid.github.io/FedCM/#dictdef-identityproviderconfig" id="ref-for-dictdef-identityproviderconfig"><c- g>IdentityProviderConfig</c-></a> {
@@ -1797,17 +1787,17 @@ modified in <a href="#presentation">§ 6 Presentation</a>.</p>
     <dt data-md><dfn class="dfn-paneled idl-code" data-dfn-for="IdentityProviderConfig" data-dfn-type="dict-member" data-export id="dom-identityproviderconfig-federation"><code>federation</code></dfn>, <span> of type <a data-link-type="idl-name" href="https://webidl.spec.whatwg.org/#idl-USVString" id="ref-for-idl-USVString⑦">USVString</a></span>
     <dd data-md>
      <p>A URL that points to the definition of a federation the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp⑧">RP</a> accepts: the protocol or
-profile that its <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp③③">IDPs</a> and <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp⑨">RPs</a> follow, for example
+profile that its <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp③②">IDPs</a> and <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp⑨">RPs</a> follow, for example
 <code>"https://www.w3.org/TR/indieauth/"</code> or <code>"https://atproto.com"</code>. The authority behind the
 URL defines the federation. When present, <code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dom-identityproviderconfig-configurl" id="ref-for-dom-identityproviderconfig-configurl③">configURL</a></code> is ignored,
-and the entry stands for every registered <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp③④">IDP</a> whose <a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file⑥">config file</a> lists this
+and the entry stands for every registered <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp③③">IDP</a> whose <a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file⑥">config file</a> lists this
 federation.</p>
    </dl>
    <p>An <code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dictdef-identityproviderrequestoptions" id="ref-for-dictdef-identityproviderrequestoptions">IdentityProviderRequestOptions</a></code> whose <code class="idl"><a data-link-type="idl" href="#dom-identityproviderconfig-federation" id="ref-for-dom-identityproviderconfig-federation⑤">federation</a></code> <a data-link-type="dfn" href="https://infra.spec.whatwg.org/#map-exists" id="ref-for-map-exists⑨">exists</a> is a
 <dfn class="dfn-paneled" data-dfn-type="dfn" data-noexport id="federation-request">federation request</dfn>.</p>
    <h3 class="heading settled" data-level="6.2" id="registered-providers"><span class="secno">6.2. </span><span class="content">Registered providers</span><a class="self-link" href="#registered-providers"></a></h3>
    <p>A <dfn class="dfn-paneled" data-dfn-type="dfn" data-noexport id="registered-provider">registered provider</dfn> is an <code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dictdef-identityproviderrequestoptions" id="ref-for-dictdef-identityproviderrequestoptions①">IdentityProviderRequestOptions</a></code> that the user agent
-creates for the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp③⑤">IDP</a> of one or more <a data-link-type="dfn" href="#handle" id="ref-for-handle⑤⓪">handles</a>, rather than one the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp①⓪">RP</a> passed. The
+creates for the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp③④">IDP</a> of one or more <a data-link-type="dfn" href="#handle" id="ref-for-handle⑤⓪">handles</a>, rather than one the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp①⓪">RP</a> passed. The
 user agent keeps the following associated with it:</p>
    <dl>
     <dt data-md><dfn class="dfn-paneled" data-dfn-for="registered provider" data-dfn-type="dfn" data-noexport id="registered-provider-config">config</dfn>
@@ -1815,7 +1805,7 @@ user agent keeps the following associated with it:</p>
      <p>The <code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dictdef-identityproviderapiconfig" id="ref-for-dictdef-identityproviderapiconfig③">IdentityProviderAPIConfig</a></code> from <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#fetch-the-config-file" id="ref-for-fetch-the-config-file⑦">fetch the config file</a>.</p>
     <dt data-md><dfn class="dfn-paneled" data-dfn-for="registered provider" data-dfn-type="dfn" data-noexport id="registered-provider-handles">handles</dfn>
     <dd data-md>
-     <p>A <a data-link-type="dfn" href="https://infra.spec.whatwg.org/#list" id="ref-for-list⑧">list</a> of <a data-link-type="dfn" href="#handle" id="ref-for-handle⑤①">handles</a> that <a data-link-type="dfn" href="#resolve-a-handle" id="ref-for-resolve-a-handle①②">resolve</a> to this <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp③⑥">IDP</a>: the
+     <p>A <a data-link-type="dfn" href="https://infra.spec.whatwg.org/#list" id="ref-for-list⑧">list</a> of <a data-link-type="dfn" href="#handle" id="ref-for-handle⑤①">handles</a> that <a data-link-type="dfn" href="#resolve-a-handle" id="ref-for-resolve-a-handle①②">resolve</a> to this <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp③⑤">IDP</a>: the
 ones in the <a data-link-type="dfn" href="#handle-registry" id="ref-for-handle-registry①⑤">handle registry</a>, or the single <a data-link-type="dfn" href="#handle" id="ref-for-handle⑤②">handle</a> the user typed.</p>
     <dt data-md><dfn class="dfn-paneled" data-dfn-for="registered provider" data-dfn-type="dfn" data-noexport id="registered-provider-accounts">accounts</dfn>
     <dd data-md>
@@ -1873,9 +1863,9 @@ of <a data-link-type="dfn" href="#find-matching-accounts" id="ref-for-find-match
    </div>
    <p class="note" role="note"><span class="marker">Note:</span> Only accounts whose <code class="idl"><a data-link-type="idl" href="#dom-identityprovideraccount-handle" id="ref-for-dom-identityprovideraccount-handle⑤">handle</a></code> is a registered <a data-link-type="dfn" href="#handle" id="ref-for-handle⑤⑤">handle</a> are shown
 to other <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp①①">RPs</a>, because those are the accounts the user agreed to (with
-<code class="idl"><a data-link-type="idl" href="#dom-identityprovider-register" id="ref-for-dom-identityprovider-register⑤">register()</a></code>, or by typing the <a data-link-type="dfn" href="#handle" id="ref-for-handle⑤⑥">handle</a>). An <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp③⑦">IDP</a> can push other accounts,
+<code class="idl"><a data-link-type="idl" href="#dom-identityprovider-register" id="ref-for-dom-identityprovider-register⑤">register()</a></code>, or by typing the <a data-link-type="dfn" href="#handle" id="ref-for-handle⑤⑥">handle</a>). An <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp③⑥">IDP</a> can push other accounts,
 but they aren’t shown on a <a data-link-type="dfn" href="#federation-request" id="ref-for-federation-request③">federation request</a> until their <a data-link-type="dfn" href="#handle" id="ref-for-handle⑤⑦">handles</a> are registered.</p>
-   <p class="issue" id="issue-85f0ce6b"><a class="self-link" href="#issue-85f0ce6b"></a> Should other pushed accounts from a registered <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp③⑧">IDP</a> also be shown, once the user has
+   <p class="issue" id="issue-85f0ce6b"><a class="self-link" href="#issue-85f0ce6b"></a> Should other pushed accounts from a registered <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp③⑦">IDP</a> also be shown, once the user has
 registered at least one <a data-link-type="dfn" href="#handle" id="ref-for-handle⑤⑧">handle</a> with it?</p>
    <div class="algorithm" data-algorithm="group registered handles by config URL">
     
@@ -1903,8 +1893,8 @@ empty <a data-link-type="dfn" href="https://infra.spec.whatwg.org/#list" id="ref
       <p>Return <var>groups</var>.</p>
     </ol>
    </div>
-   <p class="note" role="note"><span class="marker">Note:</span> Several <a data-link-type="dfn" href="#handle" id="ref-for-handle⑥⓪">handles</a> can resolve to the same <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp③⑨">IDP</a>, for example when two users of
-the same <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp④⓪">IDP</a> share a user agent. Grouping them means the user agent fetches that <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp④①">IDP</a>’s
+   <p class="note" role="note"><span class="marker">Note:</span> Several <a data-link-type="dfn" href="#handle" id="ref-for-handle⑥⓪">handles</a> can resolve to the same <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp③⑧">IDP</a>, for example when two users of
+the same <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp③⑨">IDP</a> share a user agent. Grouping them means the user agent fetches that <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp④⓪">IDP</a>’s
 <a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file⑧">config file</a> once.</p>
    <div class="algorithm" data-algorithm="gather registered providers">
     
@@ -1929,8 +1919,8 @@ To <dfn class="dfn-paneled" data-dfn-type="dfn" data-noexport id="gather-registe
         <p>Let <var>origin</var> be <var>configUrl</var>’s <a data-link-type="dfn" href="https://url.spec.whatwg.org/#concept-url-origin" id="ref-for-concept-url-origin⑤">origin</a>.</p>
        <li data-md>
         <p>If <var>seenOrigins</var> <a data-link-type="dfn" href="https://infra.spec.whatwg.org/#list-contain" id="ref-for-list-contain①">contains</a> <var>origin</var>, <a data-link-type="dfn" href="https://infra.spec.whatwg.org/#iteration-continue" id="ref-for-iteration-continue②">continue</a>.</p>
-        <p class="note" role="note"><span class="marker">Note:</span> If the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp①②">RP</a> also lists this <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp④②">IDP</a> explicitly, the explicit entry is used and
-the registration is ignored, so that the same <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp④③">IDP</a> doesn’t appear twice.</p>
+        <p class="note" role="note"><span class="marker">Note:</span> If the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp①②">RP</a> also lists this <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp④①">IDP</a> explicitly, the explicit entry is used and
+the registration is ignored, so that the same <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp④②">IDP</a> doesn’t appear twice.</p>
        <li data-md>
         <p>Let <var>provider</var> be the result of <a data-link-type="dfn" href="#create-a-registered-provider" id="ref-for-create-a-registered-provider①">create a registered provider</a> with <var>configUrl</var> and
 <var>federationRequest</var>.</p>
@@ -2093,10 +2083,10 @@ return it. If the user cancels, return failure.</p>
 
     <tbody>
      <tr>
-      <td><a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp④④">IDP</a>
+      <td><a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp④③">IDP</a>
       <td>
     Lists the federations it supports in <code class="idl"><a data-link-type="idl" href="#dom-identityproviderapiconfig-federations" id="ref-for-dom-identityproviderapiconfig-federations⑤">federations</a></code>.
-    Serves a <a data-link-type="dfn" href="https://url.spec.whatwg.org/#well-known-file" id="ref-for-well-known-file⑤">well-known file</a> at its <a data-link-type="dfn" href="#site-of-a-host" id="ref-for-site-of-a-host①⓪">site</a> with a single
+    Serves a <a data-link-type="dfn" href="https://url.spec.whatwg.org/#well-known-file" id="ref-for-well-known-file④">well-known file</a> at its <a data-link-type="dfn" href="#site-of-a-host" id="ref-for-site-of-a-host⑥">site</a> with a single
     <code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dom-identityproviderwellknown-provider_urls" id="ref-for-dom-identityproviderwellknown-provider_urls③">provider_urls</a></code> entry. Pushes accounts with
     <code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/login-status/#dom-navigatorlogin-setstatus" id="ref-for-dom-navigatorlogin-setstatus④">setStatus()</a></code>, setting each account’s <code class="idl"><a data-link-type="idl" href="#dom-identityprovideraccount-handle" id="ref-for-dom-identityprovideraccount-handle⑥">handle</a></code> to
     the user’s handle. After the user signs in, calls <code class="idl"><a data-link-type="idl" href="#dom-identityprovider-register" id="ref-for-dom-identityprovider-register⑦">register()</a></code> with that
@@ -2105,14 +2095,9 @@ return it. If the user cancels, return failure.</p>
     <code>login_hint</code> on its <code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dom-identityproviderapiconfig-login_url" id="ref-for-dom-identityproviderapiconfig-login_url">login_url</a></code>.
 
      <tr>
-      <td>Owner of a handle’s domain, when its <a data-link-type="dfn" href="#issuer" id="ref-for-issuer②⓪">issuer</a> is on another site
+      <td>Owner of a handle’s <a data-link-type="dfn" href="#handle-site" id="ref-for-handle-site①②">site</a>
       <td>
-    Publishes a <a href="#dns-record">delegation record</a>.
-
-     <tr>
-      <td>Owner of a handle’s domain, when its <a data-link-type="dfn" href="#issuer" id="ref-for-issuer②①">issuer</a> is on the same site
-      <td>
-    Serves the <a data-link-type="dfn" href="https://url.spec.whatwg.org/#well-known-file" id="ref-for-well-known-file⑥">well-known file</a> at the site. The <a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file⑨">config file</a> can be on any same-site host.
+    Publishes a <a href="#dns-record">delegation record</a> naming the <a data-link-type="dfn" href="#issuer" id="ref-for-issuer①④">issuer</a>.
 
      <tr>
       <td>Federation authority
@@ -2124,7 +2109,7 @@ return it. If the user cancels, return failure.</p>
       <td>
     Passes a <code class="idl"><a data-link-type="idl" href="#dom-identityproviderconfig-federation" id="ref-for-dom-identityproviderconfig-federation①①">federation</a></code>, and verifies the returned token according to that
     federation, including checking that it was issued for the handle and by the
-    <code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dom-identitycredential-configurl" id="ref-for-dom-identitycredential-configurl①">configURL</a></code>’s <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp④⑤">IDP</a>.
+    <code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dom-identitycredential-configurl" id="ref-for-dom-identitycredential-configurl①">configURL</a></code>’s <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp④④">IDP</a>.
 
    </table>
    <h2 class="heading settled" data-level="8" id="privacy"><span class="secno">8. </span><span class="content">Privacy considerations</span><a class="self-link" href="#privacy"></a></h2>
@@ -2138,22 +2123,22 @@ return it. If the user cancels, return failure.</p>
 
     <tbody>
      <tr>
-      <td><a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file①⓪">Config file</a> of registered <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp④⑥">IDPs</a>
+      <td><a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file⑨">Config file</a> of registered <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp④⑤">IDPs</a>
       <td>On a <a data-link-type="dfn" href="#federation-request" id="ref-for-federation-request④">federation request</a>
       <td>No
       <td>No
 
      <tr>
-      <td>DNS <code>TXT</code> lookup and <a data-link-type="dfn" href="https://url.spec.whatwg.org/#well-known-file" id="ref-for-well-known-file⑦">well-known file</a>, for each registered <a data-link-type="dfn" href="#handle" id="ref-for-handle⑥⑤">handle</a>
+      <td>DNS <code>TXT</code> lookup and <a data-link-type="dfn" href="https://url.spec.whatwg.org/#well-known-file" id="ref-for-well-known-file⑤">well-known file</a>, for each registered <a data-link-type="dfn" href="#handle" id="ref-for-handle⑥⑤">handle</a>
       <td>On a
     <a data-link-type="dfn" href="#federation-request" id="ref-for-federation-request⑤">federation request</a>, unless cached
       <td>No
       <td>No
 
      <tr>
-      <td>DNS <code>TXT</code> lookup, <a data-link-type="dfn" href="https://url.spec.whatwg.org/#well-known-file" id="ref-for-well-known-file⑧">well-known file</a> and <a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file①①">config file</a> of the resolved <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp④⑦">IDP</a>
+      <td>DNS <code>TXT</code> lookup, <a data-link-type="dfn" href="https://url.spec.whatwg.org/#well-known-file" id="ref-for-well-known-file⑥">well-known file</a> and <a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file①⓪">config file</a> of the resolved <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp④⑥">IDP</a>
       <td>After
-    the user submits a handle, or when an <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp④⑧">IDP</a> calls <code class="idl"><a data-link-type="idl" href="#dom-identityprovider-register" id="ref-for-dom-identityprovider-register⑧">register()</a></code> or
+    the user submits a handle, or when an <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp④⑦">IDP</a> calls <code class="idl"><a data-link-type="idl" href="#dom-identityprovider-register" id="ref-for-dom-identityprovider-register⑧">register()</a></code> or
     <code class="idl"><a data-link-type="idl" href="#dom-identityprovider-unregister" id="ref-for-dom-identityprovider-unregister④">unregister()</a></code>
       <td>No
       <td>No
@@ -2175,15 +2160,16 @@ return it. If the user cancels, return failure.</p>
    </table>
    <ul>
     <li data-md>
-     <p>Registered <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp④⑨">IDPs</a> never get a credentialed request before the user picks an account or chooses
+     <p>Registered <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp④⑧">IDPs</a> never get a credentialed request before the user picks an account or chooses
 to sign in. This removes the timing attack that affects the
 <code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dom-identityproviderapiconfig-accounts_endpoint" id="ref-for-dom-identityproviderapiconfig-accounts_endpoint③">accounts_endpoint</a></code>, and the need for mismatch UI.</p>
     <li data-md>
-     <p>Typing a handle reveals it to the DNS resolver and the resolved <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp⑤⓪">IDP</a>’s servers, but not to
-the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp①④">RP</a> until the user finishes signing in.</p>
+     <p>Typing a handle reveals its <a data-link-type="dfn" href="#handle-site" id="ref-for-handle-site①③">site</a> to the DNS resolver and to the resolved <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp④⑨">IDP</a>’s
+servers, and signing in with a <a data-link-type="dfn" href="#handle-chip" id="ref-for-handle-chip④">handle chip</a> sends the handle to the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp⑤⓪">IDP</a>, but nothing is
+revealed to the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp①④">RP</a> until the user finishes signing in.</p>
     <li data-md>
      <p>Because the <a data-link-type="dfn" href="#handle-registry" id="ref-for-handle-registry①⑧">handle registry</a> stores only <a data-link-type="dfn" href="#handle" id="ref-for-handle⑥⑥">handles</a>, a <a data-link-type="dfn" href="#federation-request" id="ref-for-federation-request⑥">federation request</a> can cause
-DNS lookups for the domains of the user’s registered <a data-link-type="dfn" href="#handle" id="ref-for-handle⑥⑦">handles</a>, which the DNS
+DNS lookups for the <a data-link-type="dfn" href="#handle-site" id="ref-for-handle-site①④">sites</a> of the user’s registered <a data-link-type="dfn" href="#handle" id="ref-for-handle⑥⑦">handles</a>, which the DNS
 resolver can observe. The requests don’t carry credentials or reveal the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp①⑤">RP</a>. User agents
 can reduce this by caching resolution results (see <a href="#registry">§ 3.3 The Handle Registry</a>).</p>
     <li data-md>
@@ -2196,20 +2182,20 @@ and are never exposed to the <a data-link-type="dfn" href="https://w3c-fedid.git
    <h2 class="heading settled" data-level="9" id="security"><span class="secno">9. </span><span class="content">Security considerations</span><a class="self-link" href="#security"></a></h2>
    <ul>
     <li data-md>
-     <p><strong>Resolution isn’t proof.</strong> An attacker who spoofs DNS, or controls a <a data-link-type="dfn" href="#site-of-a-host" id="ref-for-site-of-a-host①①">site</a>’s
-<a data-link-type="dfn" href="https://url.spec.whatwg.org/#well-known-file" id="ref-for-well-known-file⑨">well-known file</a>, can make resolution end at an <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp⑤②">IDP</a> of their choosing. That gets them the typed
+     <p><strong>Resolution isn’t proof.</strong> An attacker who spoofs DNS, or controls a <a data-link-type="dfn" href="#site-of-a-host" id="ref-for-site-of-a-host⑦">site</a>’s
+<a data-link-type="dfn" href="https://url.spec.whatwg.org/#well-known-file" id="ref-for-well-known-file⑦">well-known file</a>, can make resolution end at an <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp⑤②">IDP</a> of their choosing. That gets them the typed
 handle. They don’t get the user’s credentials for the real <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp⑤③">IDP</a>, and they can’t make the
 <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp①⑧">RP</a> accept a token for someone else’s handle, as long as the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp①⑨">RP</a> verifies the token using
 its protocol (for example, atproto’s two-way check between handle and DID). This is the same
 reasoning as the Email Verification Protocol’s analysis of DNS delegation.</p>
     <li data-md>
-     <p><strong>A site speaks for its subdomains.</strong> <a data-link-type="dfn" href="#resolve-the-issuer" id="ref-for-resolve-the-issuer②">Resolve the issuer</a> falls back to the
-<a data-link-type="dfn" href="https://url.spec.whatwg.org/#host-registrable-domain" id="ref-for-host-registrable-domain⑦">registrable domain</a>, just as cookies and the FedCM <a data-link-type="dfn" href="https://url.spec.whatwg.org/#well-known-file" id="ref-for-well-known-file①⓪">well-known file</a> do. Hosts that
+     <p><strong>A site speaks for its subdomains.</strong> A <a data-link-type="dfn" href="#handle" id="ref-for-handle⑥⑧">handle</a>’s <a data-link-type="dfn" href="#handle-site" id="ref-for-handle-site①⑤">site</a> is its
+<a data-link-type="dfn" href="https://url.spec.whatwg.org/#host-registrable-domain" id="ref-for-host-registrable-domain⑥">registrable domain</a>, just as for cookies and the FedCM <a data-link-type="dfn" href="https://url.spec.whatwg.org/#well-known-file" id="ref-for-well-known-file⑧">well-known file</a>. Hosts that
 give independent users their own subdomains need to be on the Public Suffix List to keep them
 separate.</p>
     <li data-md>
      <p><strong>Handles that are mistyped or don’t exist</strong> still resolve to the provider. However,
-<a data-link-type="dfn" href="#find-matching-accounts" id="ref-for-find-matching-accounts⑤">find matching accounts</a> returns nothing, and the <a data-link-type="dfn" href="#handle-chip" id="ref-for-handle-chip④">handle chip</a> shows the handle exactly as
+<a data-link-type="dfn" href="#find-matching-accounts" id="ref-for-find-matching-accounts⑤">find matching accounts</a> returns nothing, and the <a data-link-type="dfn" href="#handle-chip" id="ref-for-handle-chip⑤">handle chip</a> shows the handle exactly as
 typed.</p>
     <li data-md>
      <p><strong>An account that doesn’t match</strong> isn’t used: <a data-link-type="dfn" href="#sign-in-with-a-handle" id="ref-for-sign-in-with-a-handle②">sign in with a handle</a> fails if the account the
@@ -2219,19 +2205,19 @@ user signs in with doesn’t match the handle.</p>
 <code class="idl"><a data-link-type="idl" href="#dom-identityprovider-register" id="ref-for-dom-identityprovider-register⑨">register()</a></code>, require <a data-link-type="dfn" href="https://html.spec.whatwg.org/multipage/interaction.html#transient-activation" id="ref-for-transient-activation①">transient activation</a>, and remember when the user
 declines.</p>
     <li data-md>
-     <p>**A <a data-link-type="dfn" href="#handle" id="ref-for-handle⑥⑧">handle</a>’s <a data-link-type="dfn" href="#issuer" id="ref-for-issuer②②">issuer</a> can change.** Because the <a data-link-type="dfn" href="#handle-registry" id="ref-for-handle-registry②⓪">handle registry</a> stores only
-<a data-link-type="dfn" href="#handle" id="ref-for-handle⑥⑨">handles</a>, a registered <a data-link-type="dfn" href="#handle" id="ref-for-handle⑦⓪">handle</a> follows its domain: if the domain’s
-<a href="#dns-record">delegation record</a> or <a data-link-type="dfn" href="https://url.spec.whatwg.org/#well-known-file" id="ref-for-well-known-file①①">well-known file</a> changes, the <a data-link-type="dfn" href="#handle" id="ref-for-handle⑦①">handle</a> is offered
-with the new <a data-link-type="dfn" href="#issuer" id="ref-for-issuer②③">issuer</a>. That is how a user moves a <a data-link-type="dfn" href="#handle" id="ref-for-handle⑦②">handle</a> to another <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp⑤④">IDP</a>, but it also
-means that whoever controls the domain later (for example, after it expires) controls the
-handle’s <a data-link-type="dfn" href="#issuer" id="ref-for-issuer②④">issuer</a>. A user agent that caches resolution results MAY
-notice such a change and ask the user to confirm it.</p>
+     <p>**A <a data-link-type="dfn" href="#handle" id="ref-for-handle⑥⑨">handle</a>’s <a data-link-type="dfn" href="#issuer" id="ref-for-issuer①⑤">issuer</a> can change.** Because the <a data-link-type="dfn" href="#handle-registry" id="ref-for-handle-registry②⓪">handle registry</a> stores only
+<a data-link-type="dfn" href="#handle" id="ref-for-handle⑦⓪">handles</a>, a registered <a data-link-type="dfn" href="#handle" id="ref-for-handle⑦①">handle</a> follows its <a data-link-type="dfn" href="#handle-site" id="ref-for-handle-site①⑥">site</a>: if the site’s
+<a href="#dns-record">delegation record</a> or the <a data-link-type="dfn" href="#issuer" id="ref-for-issuer①⑥">issuer</a>’s <a data-link-type="dfn" href="https://url.spec.whatwg.org/#well-known-file" id="ref-for-well-known-file⑨">well-known file</a> changes, the
+<a data-link-type="dfn" href="#handle" id="ref-for-handle⑦②">handle</a> is offered with the new <a data-link-type="dfn" href="#issuer" id="ref-for-issuer①⑦">issuer</a>. That is how a user moves a <a data-link-type="dfn" href="#handle" id="ref-for-handle⑦③">handle</a> to
+another <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp⑤④">IDP</a>, but it also means that whoever controls the site later (for example, after the
+domain expires) controls the handle’s <a data-link-type="dfn" href="#issuer" id="ref-for-issuer①⑧">issuer</a>. A user agent that caches resolution results
+MAY notice such a change and ask the user to confirm it.</p>
     <li data-md>
-     <p>**An <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp⑤⑤">IDP</a> can only register <a data-link-type="dfn" href="#handle" id="ref-for-handle⑦③">handles</a> it is the <a data-link-type="dfn" href="#issuer" id="ref-for-issuer②⑤">issuer</a> of.** <code class="idl"><a data-link-type="idl" href="#dom-identityprovider-register" id="ref-for-dom-identityprovider-register①⓪">register()</a></code>
-requires the <a data-link-type="dfn" href="#resolve-a-handle" id="ref-for-resolve-a-handle①⑤">resolved</a> <a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file①②">config file</a> to be <a data-link-type="dfn" href="https://html.spec.whatwg.org/multipage/browsers.html#same-site" id="ref-for-same-site②">same site</a> with the
-caller, so a site can’t register handles whose <a data-link-type="dfn" href="#issuer" id="ref-for-issuer②⑥">issuer</a> is another <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp⑤⑥">IDP</a>. Similarly,
-<code class="idl"><a data-link-type="idl" href="#dom-identityprovider-unregister" id="ref-for-dom-identityprovider-unregister⑤">unregister()</a></code> only removes <a data-link-type="dfn" href="#handle" id="ref-for-handle⑦④">handles</a> that resolve to the caller’s
-<a data-link-type="dfn" href="#site-of-a-host" id="ref-for-site-of-a-host①②">site</a>.</p>
+     <p>**An <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp⑤⑤">IDP</a> can only register <a data-link-type="dfn" href="#handle" id="ref-for-handle⑦④">handles</a> it is the <a data-link-type="dfn" href="#issuer" id="ref-for-issuer①⑨">issuer</a> of.** <code class="idl"><a data-link-type="idl" href="#dom-identityprovider-register" id="ref-for-dom-identityprovider-register①⓪">register()</a></code>
+requires the <a data-link-type="dfn" href="#resolve-a-handle" id="ref-for-resolve-a-handle①⑤">resolved</a> <a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file①①">config file</a> to be <a data-link-type="dfn" href="https://html.spec.whatwg.org/multipage/browsers.html#same-site" id="ref-for-same-site②">same site</a> with the
+caller, so a site can’t register handles whose <a data-link-type="dfn" href="#issuer" id="ref-for-issuer②⓪">issuer</a> is another <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp⑤⑥">IDP</a>. Similarly,
+<code class="idl"><a data-link-type="idl" href="#dom-identityprovider-unregister" id="ref-for-dom-identityprovider-unregister⑤">unregister()</a></code> only removes <a data-link-type="dfn" href="#handle" id="ref-for-handle⑦⑤">handles</a> that resolve to the caller’s
+<a data-link-type="dfn" href="#site-of-a-host" id="ref-for-site-of-a-host⑧">site</a>.</p>
    </ul>
    <h2 class="heading settled" data-level="10" id="examples"><span class="secno">10. </span><span class="content">Examples</span><a class="self-link" href="#examples"></a></h2>
    <p><em>This section is non-normative.</em></p>
@@ -2244,16 +2230,17 @@ caller, so a site can’t register handles whose <a data-link-type="dfn" href="#
     <ol>
      <li data-md>
       <p>Alice types <code>@alice.example</code> in <a data-link-type="dfn" href="#find-your-account" id="ref-for-find-your-account③">find your account</a>. <a data-link-type="dfn" href="#parse-a-handle" id="ref-for-parse-a-handle⑧">Parse a handle</a> gives
-<code>@alice.example</code>, whose <a data-link-type="dfn" href="#handle-domain" id="ref-for-handle-domain⑤">domain</a> is <code>alice.example</code>.</p>
+<code>@alice.example</code>, whose <a data-link-type="dfn" href="#handle-site" id="ref-for-handle-site①⑦">site</a> is <code>alice.example</code>.</p>
      <li data-md>
-      <p>There’s no delegation record, so <a data-link-type="dfn" href="#resolve-the-issuer" id="ref-for-resolve-the-issuer③">resolve the issuer</a> returns <code>alice.example</code>.</p>
+      <p><code>_web-identity.alice.example</code> has <code>TXT "iss=alice.example"</code>, so <a data-link-type="dfn" href="#resolve-the-issuer" id="ref-for-resolve-the-issuer②">resolve the issuer</a> returns
+<code>alice.example</code>.</p>
      <li data-md>
       <p><code>https://alice.example/.well-known/web-identity</code> returns
 <code>{"provider_urls": ["https://pds.alice.example/config.json"]}</code>, which is on the same site.</p>
      <li data-md>
-      <p>The <a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file①③">config file</a> lists <code>https://atproto.com</code> in <code class="idl"><a data-link-type="idl" href="#dom-identityproviderapiconfig-federations" id="ref-for-dom-identityproviderapiconfig-federations⑥">federations</a></code>.</p>
+      <p>The <a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file①②">config file</a> lists <code>https://atproto.com</code> in <code class="idl"><a data-link-type="idl" href="#dom-identityproviderapiconfig-federations" id="ref-for-dom-identityproviderapiconfig-federations⑥">federations</a></code>.</p>
      <li data-md>
-      <p>No account has been pushed yet, so the user agent shows a <a data-link-type="dfn" href="#handle-chip" id="ref-for-handle-chip⑤">handle chip</a> for <code>@alice.example</code>.</p>
+      <p>No account has been pushed yet, so the user agent shows a <a data-link-type="dfn" href="#handle-chip" id="ref-for-handle-chip⑥">handle chip</a> for <code>@alice.example</code>.</p>
      <li data-md>
       <p>When Alice selects it, the user agent adds <code>@alice.example</code> to the <a data-link-type="dfn" href="#handle-registry" id="ref-for-handle-registry②①">handle registry</a> and opens
 <code>login_url?login_hint=%40alice.example</code>. Her server pushes
@@ -2270,11 +2257,11 @@ account is hosted by <code>social.example</code>.
      <li data-md>
       <p>Bob publishes <code>_web-identity.bob.example TXT "iss=social.example"</code>.</p>
      <li data-md>
-      <p><a data-link-type="dfn" href="#resolve-the-issuer" id="ref-for-resolve-the-issuer④">Resolve the issuer</a> returns <code>social.example</code>. The user agent fetches
-<code>https://social.example/.well-known/web-identity</code> and then its <a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file①④">config file</a>.</p>
+      <p><a data-link-type="dfn" href="#resolve-the-issuer" id="ref-for-resolve-the-issuer③">Resolve the issuer</a> returns <code>social.example</code>. The user agent fetches
+<code>https://social.example/.well-known/web-identity</code> and then its <a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file①③">config file</a>.</p>
      <li data-md>
       <p>The user agent shows Bob’s pushed account with <code>handle: "@bob.example"</code>, or a
-<a data-link-type="dfn" href="#handle-chip" id="ref-for-handle-chip⑥">handle chip</a>.</p>
+<a data-link-type="dfn" href="#handle-chip" id="ref-for-handle-chip⑦">handle chip</a>.</p>
     </ol>
     <p>Because <code>@bob.example</code> resolves to <code>social.example</code>, <code>social.example</code> can also call
 <code>IdentityProvider.register("@bob.example")</code> after Bob signs in there. Another site, such as
@@ -2287,18 +2274,19 @@ account is hosted by <code>social.example</code>.
 
     <ol>
      <li data-md>
-      <p>There’s no record at <code>_web-identity.carol.social.example</code>, so <a data-link-type="dfn" href="#resolve-the-issuer" id="ref-for-resolve-the-issuer⑤">resolve the issuer</a>
-returns <code>social.example</code>, the <a data-link-type="dfn" href="https://url.spec.whatwg.org/#host-registrable-domain" id="ref-for-host-registrable-domain⑧">registrable domain</a>.</p>
+      <p>Its <a data-link-type="dfn" href="#handle-site" id="ref-for-handle-site①⑧">site</a> is <code>social.example</code>, which publishes
+<code>_web-identity.social.example TXT "iss=social.example"</code>, so <a data-link-type="dfn" href="#resolve-the-issuer" id="ref-for-resolve-the-issuer④">resolve the issuer</a> returns
+<code>social.example</code>.</p>
      <li data-md>
       <p>Resolution continues as in the previous example.</p>
     </ol>
    </div>
    <div class="example" id="example-shared-host"><a class="self-link" href="#example-shared-host"></a>
 <strong>Many users share a host.</strong> Dave (<code>dave@social.example</code>) and Erin (<code>@erin.social.example</code>) both
-resolve to the same <a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file①⑤">config file</a>. The <a data-link-type="dfn" href="#handle-registry" id="ref-for-handle-registry②②">handle registry</a> has both <a data-link-type="dfn" href="#handle" id="ref-for-handle⑦⑤">handles</a>, and
+resolve to the same <a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file①④">config file</a>. The <a data-link-type="dfn" href="#handle-registry" id="ref-for-handle-registry②②">handle registry</a> has both <a data-link-type="dfn" href="#handle" id="ref-for-handle⑦⑥">handles</a>, and
 <a data-link-type="dfn" href="#group-registered-handles-by-config-url" id="ref-for-group-registered-handles-by-config-url①">group registered handles by config URL</a> groups them together. On a <a data-link-type="dfn" href="#federation-request" id="ref-for-federation-request⑦">federation request</a>, the user agent fetches that
-<a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file①⑥">config file</a> once, and shows the pushed accounts that match <code>dave@social.example</code> or
-<code>@erin.social.example</code>, plus a <a data-link-type="dfn" href="#handle-chip" id="ref-for-handle-chip⑦">handle chip</a> for either handle that doesn’t have a matching
+<a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file①⑤">config file</a> once, and shows the pushed accounts that match <code>dave@social.example</code> or
+<code>@erin.social.example</code>, plus a <a data-link-type="dfn" href="#handle-chip" id="ref-for-handle-chip⑧">handle chip</a> for either handle that doesn’t have a matching
 pushed account.
 
 </div>
@@ -2312,12 +2300,12 @@ pushed account.
      <li data-md>
       <p>Erin signs out of <code>social.example</code>, which calls <code>navigator.login.setStatus("logged-out")</code>. Her
 pushed account is cleared, but <code>@erin.social.example</code> stays in the <a data-link-type="dfn" href="#handle-registry" id="ref-for-handle-registry②③">handle registry</a>. On the next
-<a data-link-type="dfn" href="#federation-request" id="ref-for-federation-request⑧">federation request</a>, the user agent shows a <a data-link-type="dfn" href="#handle-chip" id="ref-for-handle-chip⑧">handle chip</a> for <code>@erin.social.example</code>. Selecting
+<a data-link-type="dfn" href="#federation-request" id="ref-for-federation-request⑧">federation request</a>, the user agent shows a <a data-link-type="dfn" href="#handle-chip" id="ref-for-handle-chip⑨">handle chip</a> for <code>@erin.social.example</code>. Selecting
 it opens <code>social.example</code>’s <code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dom-identityproviderapiconfig-login_url" id="ref-for-dom-identityproviderapiconfig-login_url②">login_url</a></code> with
 <code>login_hint=%40erin.social.example</code>.</p>
      <li data-md>
       <p>Later, Erin deletes her account. <code>social.example</code> calls
-<code>IdentityProvider.unregister("@erin.social.example")</code>, and the <a data-link-type="dfn" href="#handle" id="ref-for-handle⑦⑥">handle</a> is removed from the
+<code>IdentityProvider.unregister("@erin.social.example")</code>, and the <a data-link-type="dfn" href="#handle" id="ref-for-handle⑦⑦">handle</a> is removed from the
 <a data-link-type="dfn" href="#handle-registry" id="ref-for-handle-registry②④">handle registry</a>, so the handle is no longer offered to any <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp②⓪">RP</a>.</p>
     </ol>
    </div>
@@ -2380,7 +2368,6 @@ IndieWeb, Solid, atproto and Fediverse communities for their feedback on this pr
    <li><a href="#registered-provider-associated-handle">associated handle</a><span>, in § 6.2</span>
    <li><a href="#registered-provider-config">config</a><span>, in § 6.2</span>
    <li><a href="#create-a-registered-provider">create a registered provider</a><span>, in § 6.2</span>
-   <li><a href="#handle-domain">domain</a><span>, in § 3.1</span>
    <li>
     expiration
     <ul>
@@ -2420,6 +2407,7 @@ IndieWeb, Solid, atproto and Fediverse communities for their feedback on this pr
    <li><a href="#resolve-a-handle">resolve a handle</a><span>, in § 3.2</span>
    <li><a href="#resolve-the-issuer">resolve the issuer</a><span>, in § 3.2.1</span>
    <li><a href="#sign-in-with-a-handle">sign in with a handle</a><span>, in § 6.3</span>
+   <li><a href="#handle-site">site</a><span>, in § 3.1</span>
    <li><a href="#site-host">site host</a><span>, in § 2</span>
    <li><a href="#site-of-a-host">site of a host</a><span>, in § 2</span>
    <li><a href="#dom-identityprovider-unregister">unregister(handle)</a><span>, in § 5.1</span>
@@ -2619,8 +2607,6 @@ IndieWeb, Solid, atproto and Fediverse communities for their feedback on this pr
   <h2 class="heading no-num no-ref settled" id="issues-index"><span class="content">Issues Index</span><a class="self-link" href="#issues-index"></a></h2>
   <div style="counter-reset:issue">
    <div class="issue"> URL handles need more normalization (fragments such as <code>#me</code>, trailing slashes). <a class="issue-return" href="#issue-b0e3e4b1" title="Jump to section">↵</a></div>
-   <div class="issue"> Should a failed DNS query (e.g. <code>SERVFAIL</code>) fail closed instead of falling back to the
-handle’s own site? <a class="issue-return" href="#issue-acdd303e" title="Jump to section">↵</a></div>
    <div class="issue"> Should the record name be <code>_web-identity</code> or something more specific (e.g. <code>_web-handle</code>)?
 Should it carry a <code>federation</code>, so that one domain can delegate different protocols to different
 <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp">IDPs</a>? <a class="issue-return" href="#issue-006efa19" title="Jump to section">↵</a></div>
@@ -2849,7 +2835,7 @@ let dfnPanelData = {
 "12d6b9a8": {"dfnID":"12d6b9a8","dfnText":"values","external":true,"refSections":[{"refs":[{"id":"ref-for-map-getting-the-values"}],"title":"4. The Account Registry"}],"url":"https://infra.spec.whatwg.org/#map-getting-the-values"},
 "166860af": {"dfnID":"166860af","dfnText":"id_assertion_endpoint","external":true,"refSections":[{"refs":[{"id":"ref-for-dom-identityproviderapiconfig-id_assertion_endpoint"}],"title":"5.3. Declaring supported federations"},{"refs":[{"id":"ref-for-dom-identityproviderapiconfig-id_assertion_endpoint\u2460"}],"title":"8. Privacy considerations"}],"url":"https://w3c-fedid.github.io/FedCM/#dom-identityproviderapiconfig-id_assertion_endpoint"},
 "1e4b5475": {"dfnID":"1e4b5475","dfnText":"params","external":true,"refSections":[{"refs":[{"id":"ref-for-dom-identityproviderrequestoptions-params"}],"title":"6.2. Registered providers"}],"url":"https://w3c-fedid.github.io/FedCM/#dom-identityproviderrequestoptions-params"},
-"22477314": {"dfnID":"22477314","dfnText":"domain","external":true,"refSections":[{"refs":[{"id":"ref-for-concept-domain"}],"title":"2. Infrastructure"},{"refs":[{"id":"ref-for-concept-domain\u2460"}],"title":"3.1. Parsing"},{"refs":[{"id":"ref-for-concept-domain\u2461"}],"title":"3.2.2. DNS delegation record"}],"url":"https://url.spec.whatwg.org/#concept-domain"},
+"22477314": {"dfnID":"22477314","dfnText":"domain","external":true,"refSections":[{"refs":[{"id":"ref-for-concept-domain"}],"title":"2. Infrastructure"},{"refs":[{"id":"ref-for-concept-domain\u2460"}],"title":"3.1. Parsing"}],"url":"https://url.spec.whatwg.org/#concept-domain"},
 "228be966": {"dfnID":"228be966","dfnText":"navigable","external":true,"refSections":[{"refs":[{"id":"ref-for-window-navigable"}],"title":"5.1. Registering a handle"}],"url":"https://html.spec.whatwg.org/multipage/nav-history-apis.html#window-navigable"},
 "22da450a": {"dfnID":"22da450a","dfnText":"get the login status","external":true,"refSections":[{"refs":[{"id":"ref-for-get-the-login-status"}],"title":"4. The Account Registry"}],"url":"https://w3c-fedid.github.io/login-status/#get-the-login-status"},
 "28c9264c": {"dfnID":"28c9264c","dfnText":"RP","external":true,"refSections":[{"refs":[{"id":"ref-for-rp"}],"title":"1. Introduction"},{"refs":[{"id":"ref-for-rp\u2460"}],"title":"5. Registration"},{"refs":[{"id":"ref-for-rp\u2461"},{"id":"ref-for-rp\u2462"},{"id":"ref-for-rp\u2463"},{"id":"ref-for-rp\u2464"},{"id":"ref-for-rp\u2465"}],"title":"6. Presentation"},{"refs":[{"id":"ref-for-rp\u2466"},{"id":"ref-for-rp\u2467"},{"id":"ref-for-rp\u2468"}],"title":"6.1. Requesting by federation"},{"refs":[{"id":"ref-for-rp\u2460\u24ea"},{"id":"ref-for-rp\u2460\u2460"},{"id":"ref-for-rp\u2460\u2461"}],"title":"6.2. Registered providers"},{"refs":[{"id":"ref-for-rp\u2460\u2462"}],"title":"7. Requirements on other parties"},{"refs":[{"id":"ref-for-rp\u2460\u2463"},{"id":"ref-for-rp\u2460\u2464"},{"id":"ref-for-rp\u2460\u2465"},{"id":"ref-for-rp\u2460\u2466"}],"title":"8. Privacy considerations"},{"refs":[{"id":"ref-for-rp\u2460\u2467"},{"id":"ref-for-rp\u2460\u2468"}],"title":"9. Security considerations"},{"refs":[{"id":"ref-for-rp\u2461\u24ea"}],"title":"10. Examples"}],"url":"https://w3c-fedid.github.io/FedCM/#rp"},
@@ -2882,7 +2868,7 @@ let dfnPanelData = {
 "649608b9": {"dfnID":"649608b9","dfnText":"list","external":true,"refSections":[{"refs":[{"id":"ref-for-list"}],"title":"3.2.2. DNS delegation record"},{"refs":[{"id":"ref-for-list\u2460"},{"id":"ref-for-list\u2461"},{"id":"ref-for-list\u2462"},{"id":"ref-for-list\u2463"},{"id":"ref-for-list\u2464"},{"id":"ref-for-list\u2465"}],"title":"4. The Account Registry"},{"refs":[{"id":"ref-for-list\u2466"}],"title":"6. Presentation"},{"refs":[{"id":"ref-for-list\u2467"},{"id":"ref-for-list\u2468"},{"id":"ref-for-list\u2460\u24ea"},{"id":"ref-for-list\u2460\u2460"},{"id":"ref-for-list\u2460\u2461"},{"id":"ref-for-list\u2460\u2462"},{"id":"ref-for-list\u2460\u2463"},{"id":"ref-for-list\u2460\u2464"},{"id":"ref-for-list\u2460\u2465"},{"id":"ref-for-list\u2460\u2466"}],"title":"6.2. Registered providers"}],"url":"https://infra.spec.whatwg.org/#list"},
 "68d578dc": {"dfnID":"68d578dc","dfnText":"IdentityProvider","external":true,"refSections":[{"refs":[{"id":"ref-for-identityprovider"}],"title":"5.1. Registering a handle"}],"url":"https://w3c-fedid.github.io/FedCM/#identityprovider"},
 "692595fe": {"dfnID":"692595fe","dfnText":"ordered set","external":true,"refSections":[{"refs":[{"id":"ref-for-ordered-set"}],"title":"3.3. The Handle Registry"},{"refs":[{"id":"ref-for-ordered-set\u2460"}],"title":"6.2. Registered providers"}],"url":"https://infra.spec.whatwg.org/#ordered-set"},
-"6b815fdd": {"dfnID":"6b815fdd","dfnText":"is empty (for list)","external":true,"refSections":[{"refs":[{"id":"ref-for-list-is-empty"}],"title":"3.2.1. Resolve the issuer"},{"refs":[{"id":"ref-for-list-is-empty\u2460"},{"id":"ref-for-list-is-empty\u2461"}],"title":"5.1. Registering a handle"}],"url":"https://infra.spec.whatwg.org/#list-is-empty"},
+"6b815fdd": {"dfnID":"6b815fdd","dfnText":"is empty (for list)","external":true,"refSections":[{"refs":[{"id":"ref-for-list-is-empty"},{"id":"ref-for-list-is-empty\u2460"}],"title":"5.1. Registering a handle"}],"url":"https://infra.spec.whatwg.org/#list-is-empty"},
 "6ce926eb": {"dfnID":"6ce926eb","dfnText":"promise rejection delay","external":true,"refSections":[{"refs":[{"id":"ref-for-promise-rejection-delay"}],"title":"8. Privacy considerations"}],"url":"https://w3c-fedid.github.io/FedCM/#promise-rejection-delay"},
 "6d19ac93": {"dfnID":"6d19ac93","dfnText":"user agent","external":true,"refSections":[{"refs":[{"id":"ref-for-user-agent"}],"title":"1. Introduction"},{"refs":[{"id":"ref-for-user-agent\u2460"}],"title":"3.3. The Handle Registry"},{"refs":[{"id":"ref-for-user-agent\u2461"}],"title":"4. The Account Registry"}],"url":"https://infra.spec.whatwg.org/#user-agent"},
 "6dd4391b": {"dfnID":"6dd4391b","dfnText":"loginHint","external":true,"refSections":[{"refs":[{"id":"ref-for-dom-identityproviderrequestoptions-loginhint"}],"title":"6. Presentation"},{"refs":[{"id":"ref-for-dom-identityproviderrequestoptions-loginhint\u2460"}],"title":"6.2. Registered providers"}],"url":"https://w3c-fedid.github.io/FedCM/#dom-identityproviderrequestoptions-loginhint"},
@@ -2893,7 +2879,7 @@ let dfnPanelData = {
 "7c3a290e": {"dfnID":"7c3a290e","dfnText":"fetch the config file","external":true,"refSections":[{"refs":[{"id":"ref-for-fetch-the-config-file"}],"title":"3.3. The Handle Registry"},{"refs":[{"id":"ref-for-fetch-the-config-file\u2460"}],"title":"5.1. Registering a handle"},{"refs":[{"id":"ref-for-fetch-the-config-file\u2461"}],"title":"5.3. Declaring supported federations"},{"refs":[{"id":"ref-for-fetch-the-config-file\u2462"},{"id":"ref-for-fetch-the-config-file\u2463"},{"id":"ref-for-fetch-the-config-file\u2464"},{"id":"ref-for-fetch-the-config-file\u2465"}],"title":"6. Presentation"},{"refs":[{"id":"ref-for-fetch-the-config-file\u2466"},{"id":"ref-for-fetch-the-config-file\u2467"}],"title":"6.2. Registered providers"},{"refs":[{"id":"ref-for-fetch-the-config-file\u2468"}],"title":"6.3. Account selection"}],"url":"https://w3c-fedid.github.io/FedCM/#fetch-the-config-file"},
 "7d4424b2": {"dfnID":"7d4424b2","dfnText":"remove (for map)","external":true,"refSections":[{"refs":[{"id":"ref-for-map-remove"},{"id":"ref-for-map-remove\u2460"},{"id":"ref-for-map-remove\u2461"}],"title":"4. The Account Registry"}],"url":"https://infra.spec.whatwg.org/#map-remove"},
 "7d957c27": {"dfnID":"7d957c27","dfnText":"show an IDP login dialog","external":true,"refSections":[{"refs":[{"id":"ref-for-show-an-idp-login-dialog"}],"title":"6. Presentation"},{"refs":[{"id":"ref-for-show-an-idp-login-dialog\u2460"}],"title":"6.2. Registered providers"},{"refs":[{"id":"ref-for-show-an-idp-login-dialog\u2461"}],"title":"6.3. Account selection"}],"url":"https://w3c-fedid.github.io/FedCM/#show-an-idp-login-dialog"},
-"814d7c9a": {"dfnID":"814d7c9a","dfnText":"well-known file","external":true,"refSections":[{"refs":[{"id":"ref-for-well-known-file"}],"title":"3. Handles"},{"refs":[{"id":"ref-for-well-known-file\u2460"}],"title":"3.2.1. Resolve the issuer"},{"refs":[{"id":"ref-for-well-known-file\u2461"}],"title":"3.2.2. DNS delegation record"},{"refs":[{"id":"ref-for-well-known-file\u2462"},{"id":"ref-for-well-known-file\u2463"}],"title":"6. Presentation"},{"refs":[{"id":"ref-for-well-known-file\u2464"},{"id":"ref-for-well-known-file\u2465"}],"title":"7. Requirements on other parties"},{"refs":[{"id":"ref-for-well-known-file\u2466"},{"id":"ref-for-well-known-file\u2467"}],"title":"8. Privacy considerations"},{"refs":[{"id":"ref-for-well-known-file\u2468"},{"id":"ref-for-well-known-file\u2460\u24ea"},{"id":"ref-for-well-known-file\u2460\u2460"}],"title":"9. Security considerations"}],"url":"https://url.spec.whatwg.org/#well-known-file"},
+"814d7c9a": {"dfnID":"814d7c9a","dfnText":"well-known file","external":true,"refSections":[{"refs":[{"id":"ref-for-well-known-file"}],"title":"3. Handles"},{"refs":[{"id":"ref-for-well-known-file\u2460"}],"title":"3.2.2. DNS delegation record"},{"refs":[{"id":"ref-for-well-known-file\u2461"},{"id":"ref-for-well-known-file\u2462"}],"title":"6. Presentation"},{"refs":[{"id":"ref-for-well-known-file\u2463"}],"title":"7. Requirements on other parties"},{"refs":[{"id":"ref-for-well-known-file\u2464"},{"id":"ref-for-well-known-file\u2465"}],"title":"8. Privacy considerations"},{"refs":[{"id":"ref-for-well-known-file\u2466"},{"id":"ref-for-well-known-file\u2467"},{"id":"ref-for-well-known-file\u2468"}],"title":"9. Security considerations"}],"url":"https://url.spec.whatwg.org/#well-known-file"},
 "82ca3efc": {"dfnID":"82ca3efc","dfnText":"TypeError","external":true,"refSections":[{"refs":[{"id":"ref-for-exceptiondef-typeerror"}],"title":"4. The Account Registry"}],"url":"https://webidl.spec.whatwg.org/#exceptiondef-typeerror"},
 "84b454ff": {"dfnID":"84b454ff","dfnText":"ordered map","external":true,"refSections":[{"refs":[{"id":"ref-for-ordered-map"}],"title":"4. The Account Registry"},{"refs":[{"id":"ref-for-ordered-map\u2460"},{"id":"ref-for-ordered-map\u2461"}],"title":"6.2. Registered providers"}],"url":"https://infra.spec.whatwg.org/#ordered-map"},
 "8b62bce1": {"dfnID":"8b62bce1","dfnText":"tel","external":true,"refSections":[{"refs":[{"id":"ref-for-dom-identityprovideraccount-tel"}],"title":"4. The Account Registry"}],"url":"https://w3c-fedid.github.io/FedCM/#dom-identityprovideraccount-tel"},
@@ -2923,7 +2909,7 @@ let dfnPanelData = {
 "b410a6ef": {"dfnID":"b410a6ef","dfnText":"ASCII serialization of an origin","external":true,"refSections":[{"refs":[{"id":"ref-for-ascii-serialisation-of-an-origin"}],"title":"6. Presentation"}],"url":"https://html.spec.whatwg.org/multipage/browsers.html#ascii-serialisation-of-an-origin"},
 "b85ee3be": {"dfnID":"b85ee3be","dfnText":"host (for url)","external":true,"refSections":[{"refs":[{"id":"ref-for-concept-url-host"},{"id":"ref-for-concept-url-host\u2460"}],"title":"3.1. Parsing"},{"refs":[{"id":"ref-for-concept-url-host\u2461"}],"title":"3.2. Resolution"},{"refs":[{"id":"ref-for-concept-url-host\u2462"},{"id":"ref-for-concept-url-host\u2463"}],"title":"6. Presentation"},{"refs":[{"id":"ref-for-concept-url-host\u2464"}],"title":"6.3. Account selection"}],"url":"https://url.spec.whatwg.org/#concept-url-host"},
 "ba556545": {"dfnID":"ba556545","dfnText":"NotAllowedError","external":true,"refSections":[{"refs":[{"id":"ref-for-notallowederror"},{"id":"ref-for-notallowederror\u2460"},{"id":"ref-for-notallowederror\u2461"},{"id":"ref-for-notallowederror\u2462"},{"id":"ref-for-notallowederror\u2463"}],"title":"5.1. Registering a handle"}],"url":"https://webidl.spec.whatwg.org/#notallowederror"},
-"bc9d7803": {"dfnID":"bc9d7803","dfnText":"registrable domain","external":true,"refSections":[{"refs":[{"id":"ref-for-host-registrable-domain"},{"id":"ref-for-host-registrable-domain\u2460"},{"id":"ref-for-host-registrable-domain\u2461"}],"title":"2. Infrastructure"},{"refs":[{"id":"ref-for-host-registrable-domain\u2462"}],"title":"3.1. Parsing"},{"refs":[{"id":"ref-for-host-registrable-domain\u2463"}],"title":"3.2. Resolution"},{"refs":[{"id":"ref-for-host-registrable-domain\u2464"},{"id":"ref-for-host-registrable-domain\u2465"}],"title":"3.2.1. Resolve the issuer"},{"refs":[{"id":"ref-for-host-registrable-domain\u2466"}],"title":"9. Security considerations"},{"refs":[{"id":"ref-for-host-registrable-domain\u2467"}],"title":"10. Examples"}],"url":"https://url.spec.whatwg.org/#host-registrable-domain"},
+"bc9d7803": {"dfnID":"bc9d7803","dfnText":"registrable domain","external":true,"refSections":[{"refs":[{"id":"ref-for-host-registrable-domain"},{"id":"ref-for-host-registrable-domain\u2460"},{"id":"ref-for-host-registrable-domain\u2461"}],"title":"2. Infrastructure"},{"refs":[{"id":"ref-for-host-registrable-domain\u2462"},{"id":"ref-for-host-registrable-domain\u2463"}],"title":"3.1. Parsing"},{"refs":[{"id":"ref-for-host-registrable-domain\u2464"}],"title":"3.2. Resolution"},{"refs":[{"id":"ref-for-host-registrable-domain\u2465"}],"title":"9. Security considerations"}],"url":"https://url.spec.whatwg.org/#host-registrable-domain"},
 "bd6b32a4": {"dfnID":"bd6b32a4","dfnText":"public suffix","external":true,"refSections":[{"refs":[{"id":"ref-for-host-public-suffix"}],"title":"2. Infrastructure"},{"refs":[{"id":"ref-for-host-public-suffix\u2460"}],"title":"3.2.1. Resolve the issuer"}],"url":"https://url.spec.whatwg.org/#host-public-suffix"},
 "bd736ec6": {"dfnID":"bd736ec6","dfnText":"top-level traversable","external":true,"refSections":[{"refs":[{"id":"ref-for-top-level-traversable"}],"title":"5.1. Registering a handle"}],"url":"https://html.spec.whatwg.org/multipage/document-sequences.html#top-level-traversable"},
 "bdbd19d1": {"dfnID":"bdbd19d1","dfnText":"Promise","external":true,"refSections":[{"refs":[{"id":"ref-for-idl-promise"},{"id":"ref-for-idl-promise\u2460"},{"id":"ref-for-idl-promise\u2461"},{"id":"ref-for-idl-promise\u2462"}],"title":"5.1. Registering a handle"}],"url":"https://webidl.spec.whatwg.org/#idl-promise"},
@@ -2931,7 +2917,7 @@ let dfnPanelData = {
 "be2d2b4c": {"dfnID":"be2d2b4c","dfnText":"SyntaxError","external":true,"refSections":[{"refs":[{"id":"ref-for-syntaxerror"},{"id":"ref-for-syntaxerror\u2460"}],"title":"5.1. Registering a handle"}],"url":"https://webidl.spec.whatwg.org/#syntaxerror"},
 "bfe10949": {"dfnID":"bfe10949","dfnText":"fetch the account picture","external":true,"refSections":[{"refs":[{"id":"ref-for-fetch-the-account-picture"}],"title":"6.2. Registered providers"}],"url":"https://w3c-fedid.github.io/FedCM/#fetch-the-account-picture"},
 "c01cbda0": {"dfnID":"c01cbda0","dfnText":"EnforceRange","external":true,"refSections":[{"refs":[{"id":"ref-for-EnforceRange"}],"title":"4. The Account Registry"}],"url":"https://webidl.spec.whatwg.org/#EnforceRange"},
-"c0307185": {"dfnID":"c0307185","dfnText":"IDP","external":true,"refSections":[{"refs":[{"id":"ref-for-idp"},{"id":"ref-for-idp\u2460"},{"id":"ref-for-idp\u2461"},{"id":"ref-for-idp\u2462"}],"title":"1. Introduction"},{"refs":[{"id":"ref-for-idp\u2463"},{"id":"ref-for-idp\u2464"}],"title":"3. Handles"},{"refs":[{"id":"ref-for-idp\u2465"}],"title":"3.1. Parsing"},{"refs":[{"id":"ref-for-idp\u2466"}],"title":"3.2.1. Resolve the issuer"},{"refs":[{"id":"ref-for-idp\u2467"}],"title":"3.2.2. DNS delegation record"},{"refs":[{"id":"ref-for-idp\u2468"},{"id":"ref-for-idp\u2460\u24ea"},{"id":"ref-for-idp\u2460\u2460"},{"id":"ref-for-idp\u2460\u2461"},{"id":"ref-for-idp\u2460\u2462"}],"title":"3.3. The Handle Registry"},{"refs":[{"id":"ref-for-idp\u2460\u2463"},{"id":"ref-for-idp\u2460\u2464"}],"title":"4. The Account Registry"},{"refs":[{"id":"ref-for-idp\u2460\u2465"}],"title":"5. Registration"},{"refs":[{"id":"ref-for-idp\u2460\u2466"},{"id":"ref-for-idp\u2460\u2467"},{"id":"ref-for-idp\u2460\u2468"},{"id":"ref-for-idp\u2461\u24ea"},{"id":"ref-for-idp\u2461\u2460"},{"id":"ref-for-idp\u2461\u2461"},{"id":"ref-for-idp\u2461\u2462"},{"id":"ref-for-idp\u2461\u2463"}],"title":"5.1. Registering a handle"},{"refs":[{"id":"ref-for-idp\u2461\u2464"}],"title":"5.2. Account handles"},{"refs":[{"id":"ref-for-idp\u2461\u2465"},{"id":"ref-for-idp\u2461\u2466"},{"id":"ref-for-idp\u2461\u2467"}],"title":"5.3. Declaring supported federations"},{"refs":[{"id":"ref-for-idp\u2461\u2468"},{"id":"ref-for-idp\u2462\u24ea"},{"id":"ref-for-idp\u2462\u2460"},{"id":"ref-for-idp\u2462\u2461"}],"title":"6. Presentation"},{"refs":[{"id":"ref-for-idp\u2462\u2462"},{"id":"ref-for-idp\u2462\u2463"}],"title":"6.1. Requesting by federation"},{"refs":[{"id":"ref-for-idp\u2462\u2464"},{"id":"ref-for-idp\u2462\u2465"},{"id":"ref-for-idp\u2462\u2466"},{"id":"ref-for-idp\u2462\u2467"},{"id":"ref-for-idp\u2462\u2468"},{"id":"ref-for-idp\u2463\u24ea"},{"id":"ref-for-idp\u2463\u2460"},{"id":"ref-for-idp\u2463\u2461"},{"id":"ref-for-idp\u2463\u2462"}],"title":"6.2. Registered providers"},{"refs":[{"id":"ref-for-idp\u2463\u2463"},{"id":"ref-for-idp\u2463\u2464"}],"title":"7. Requirements on other parties"},{"refs":[{"id":"ref-for-idp\u2463\u2465"},{"id":"ref-for-idp\u2463\u2466"},{"id":"ref-for-idp\u2463\u2467"},{"id":"ref-for-idp\u2463\u2468"},{"id":"ref-for-idp\u2464\u24ea"},{"id":"ref-for-idp\u2464\u2460"}],"title":"8. Privacy considerations"},{"refs":[{"id":"ref-for-idp\u2464\u2461"},{"id":"ref-for-idp\u2464\u2462"},{"id":"ref-for-idp\u2464\u2463"},{"id":"ref-for-idp\u2464\u2464"},{"id":"ref-for-idp\u2464\u2465"}],"title":"9. Security considerations"},{"refs":[{"id":"ref-for-idp\u2464\u2466"},{"id":"ref-for-idp\u2464\u2467"}],"title":"10. Examples"}],"url":"https://w3c-fedid.github.io/FedCM/#idp"},
+"c0307185": {"dfnID":"c0307185","dfnText":"IDP","external":true,"refSections":[{"refs":[{"id":"ref-for-idp"},{"id":"ref-for-idp\u2460"},{"id":"ref-for-idp\u2461"},{"id":"ref-for-idp\u2462"}],"title":"1. Introduction"},{"refs":[{"id":"ref-for-idp\u2463"},{"id":"ref-for-idp\u2464"}],"title":"3. Handles"},{"refs":[{"id":"ref-for-idp\u2465"}],"title":"3.1. Parsing"},{"refs":[{"id":"ref-for-idp\u2466"}],"title":"3.2.1. Resolve the issuer"},{"refs":[{"id":"ref-for-idp\u2467"}],"title":"3.2.2. DNS delegation record"},{"refs":[{"id":"ref-for-idp\u2468"},{"id":"ref-for-idp\u2460\u24ea"},{"id":"ref-for-idp\u2460\u2460"},{"id":"ref-for-idp\u2460\u2461"},{"id":"ref-for-idp\u2460\u2462"}],"title":"3.3. The Handle Registry"},{"refs":[{"id":"ref-for-idp\u2460\u2463"},{"id":"ref-for-idp\u2460\u2464"}],"title":"4. The Account Registry"},{"refs":[{"id":"ref-for-idp\u2460\u2465"}],"title":"5. Registration"},{"refs":[{"id":"ref-for-idp\u2460\u2466"},{"id":"ref-for-idp\u2460\u2467"},{"id":"ref-for-idp\u2460\u2468"},{"id":"ref-for-idp\u2461\u24ea"},{"id":"ref-for-idp\u2461\u2460"},{"id":"ref-for-idp\u2461\u2461"},{"id":"ref-for-idp\u2461\u2462"}],"title":"5.1. Registering a handle"},{"refs":[{"id":"ref-for-idp\u2461\u2463"}],"title":"5.2. Account handles"},{"refs":[{"id":"ref-for-idp\u2461\u2464"},{"id":"ref-for-idp\u2461\u2465"},{"id":"ref-for-idp\u2461\u2466"}],"title":"5.3. Declaring supported federations"},{"refs":[{"id":"ref-for-idp\u2461\u2467"},{"id":"ref-for-idp\u2461\u2468"},{"id":"ref-for-idp\u2462\u24ea"},{"id":"ref-for-idp\u2462\u2460"}],"title":"6. Presentation"},{"refs":[{"id":"ref-for-idp\u2462\u2461"},{"id":"ref-for-idp\u2462\u2462"}],"title":"6.1. Requesting by federation"},{"refs":[{"id":"ref-for-idp\u2462\u2463"},{"id":"ref-for-idp\u2462\u2464"},{"id":"ref-for-idp\u2462\u2465"},{"id":"ref-for-idp\u2462\u2466"},{"id":"ref-for-idp\u2462\u2467"},{"id":"ref-for-idp\u2462\u2468"},{"id":"ref-for-idp\u2463\u24ea"},{"id":"ref-for-idp\u2463\u2460"},{"id":"ref-for-idp\u2463\u2461"}],"title":"6.2. Registered providers"},{"refs":[{"id":"ref-for-idp\u2463\u2462"},{"id":"ref-for-idp\u2463\u2463"}],"title":"7. Requirements on other parties"},{"refs":[{"id":"ref-for-idp\u2463\u2464"},{"id":"ref-for-idp\u2463\u2465"},{"id":"ref-for-idp\u2463\u2466"},{"id":"ref-for-idp\u2463\u2467"},{"id":"ref-for-idp\u2463\u2468"},{"id":"ref-for-idp\u2464\u24ea"},{"id":"ref-for-idp\u2464\u2460"}],"title":"8. Privacy considerations"},{"refs":[{"id":"ref-for-idp\u2464\u2461"},{"id":"ref-for-idp\u2464\u2462"},{"id":"ref-for-idp\u2464\u2463"},{"id":"ref-for-idp\u2464\u2464"},{"id":"ref-for-idp\u2464\u2465"}],"title":"9. Security considerations"},{"refs":[{"id":"ref-for-idp\u2464\u2466"},{"id":"ref-for-idp\u2464\u2467"}],"title":"10. Examples"}],"url":"https://w3c-fedid.github.io/FedCM/#idp"},
 "c0868016": {"dfnID":"c0868016","dfnText":"path","external":true,"refSections":[{"refs":[{"id":"ref-for-concept-url-path"}],"title":"6. Presentation"}],"url":"https://url.spec.whatwg.org/#concept-url-path"},
 "c62cd7cf": {"dfnID":"c62cd7cf","dfnText":"origin","external":true,"refSections":[{"refs":[{"id":"ref-for-concept-document-origin"},{"id":"ref-for-concept-document-origin\u2460"}],"title":"5.1. Registering a handle"},{"refs":[{"id":"ref-for-concept-document-origin\u2461"}],"title":"6. Presentation"}],"url":"https://dom.spec.whatwg.org/#concept-document-origin"},
 "c6a1d695": {"dfnID":"c6a1d695","dfnText":"username","external":true,"refSections":[{"refs":[{"id":"ref-for-dom-identityprovideraccount-username"}],"title":"3.1. Parsing"},{"refs":[{"id":"ref-for-dom-identityprovideraccount-username\u2460"}],"title":"4. The Account Registry"},{"refs":[{"id":"ref-for-dom-identityprovideraccount-username\u2461"}],"title":"5.2. Account handles"}],"url":"https://w3c-fedid.github.io/FedCM/#dom-identityprovideraccount-username"},
@@ -2940,7 +2926,7 @@ let dfnPanelData = {
 "ca3ca4ae": {"dfnID":"ca3ca4ae","dfnText":"URL parser","external":true,"refSections":[{"refs":[{"id":"ref-for-concept-url-parser"},{"id":"ref-for-concept-url-parser\u2460"},{"id":"ref-for-concept-url-parser\u2461"}],"title":"3.1. Parsing"},{"refs":[{"id":"ref-for-concept-url-parser\u2462"}],"title":"3.2. Resolution"},{"refs":[{"id":"ref-for-concept-url-parser\u2463"}],"title":"6.3. Account selection"}],"url":"https://url.spec.whatwg.org/#concept-url-parser"},
 "ce3d2bbb": {"dfnID":"ce3d2bbb","dfnText":"current global object","external":true,"refSections":[{"refs":[{"id":"ref-for-current-global-object"},{"id":"ref-for-current-global-object\u2460"}],"title":"5.1. Registering a handle"}],"url":"https://html.spec.whatwg.org/multipage/webappapis.html#current-global-object"},
 "create-a-registered-provider": {"dfnID":"create-a-registered-provider","dfnText":"create a registered provider","external":false,"refSections":[{"refs":[{"id":"ref-for-create-a-registered-provider"}],"title":"5.1. Registering a handle"},{"refs":[{"id":"ref-for-create-a-registered-provider\u2460"}],"title":"6.2. Registered providers"},{"refs":[{"id":"ref-for-create-a-registered-provider\u2461"}],"title":"6.3. Account selection"}],"url":"#create-a-registered-provider"},
-"d5260602": {"dfnID":"d5260602","dfnText":"config file","external":true,"refSections":[{"refs":[{"id":"ref-for-config-file"}],"title":"1. Introduction"},{"refs":[{"id":"ref-for-config-file\u2460"},{"id":"ref-for-config-file\u2461"}],"title":"3.2. Resolution"},{"refs":[{"id":"ref-for-config-file\u2462"}],"title":"3.3. The Handle Registry"},{"refs":[{"id":"ref-for-config-file\u2463"}],"title":"5.3. Declaring supported federations"},{"refs":[{"id":"ref-for-config-file\u2464"}],"title":"6. Presentation"},{"refs":[{"id":"ref-for-config-file\u2465"}],"title":"6.1. Requesting by federation"},{"refs":[{"id":"ref-for-config-file\u2466"},{"id":"ref-for-config-file\u2467"}],"title":"6.2. Registered providers"},{"refs":[{"id":"ref-for-config-file\u2468"}],"title":"7. Requirements on other parties"},{"refs":[{"id":"ref-for-config-file\u2460\u24ea"},{"id":"ref-for-config-file\u2460\u2460"}],"title":"8. Privacy considerations"},{"refs":[{"id":"ref-for-config-file\u2460\u2461"}],"title":"9. Security considerations"},{"refs":[{"id":"ref-for-config-file\u2460\u2462"},{"id":"ref-for-config-file\u2460\u2463"},{"id":"ref-for-config-file\u2460\u2464"},{"id":"ref-for-config-file\u2460\u2465"}],"title":"10. Examples"}],"url":"https://url.spec.whatwg.org/#config-file"},
+"d5260602": {"dfnID":"d5260602","dfnText":"config file","external":true,"refSections":[{"refs":[{"id":"ref-for-config-file"}],"title":"1. Introduction"},{"refs":[{"id":"ref-for-config-file\u2460"},{"id":"ref-for-config-file\u2461"}],"title":"3.2. Resolution"},{"refs":[{"id":"ref-for-config-file\u2462"}],"title":"3.3. The Handle Registry"},{"refs":[{"id":"ref-for-config-file\u2463"}],"title":"5.3. Declaring supported federations"},{"refs":[{"id":"ref-for-config-file\u2464"}],"title":"6. Presentation"},{"refs":[{"id":"ref-for-config-file\u2465"}],"title":"6.1. Requesting by federation"},{"refs":[{"id":"ref-for-config-file\u2466"},{"id":"ref-for-config-file\u2467"}],"title":"6.2. Registered providers"},{"refs":[{"id":"ref-for-config-file\u2468"},{"id":"ref-for-config-file\u2460\u24ea"}],"title":"8. Privacy considerations"},{"refs":[{"id":"ref-for-config-file\u2460\u2460"}],"title":"9. Security considerations"},{"refs":[{"id":"ref-for-config-file\u2460\u2461"},{"id":"ref-for-config-file\u2460\u2462"},{"id":"ref-for-config-file\u2460\u2463"},{"id":"ref-for-config-file\u2460\u2464"}],"title":"10. Examples"}],"url":"https://url.spec.whatwg.org/#config-file"},
 "d7f3b337": {"dfnID":"d7f3b337","dfnText":"branding","external":true,"refSections":[{"refs":[{"id":"ref-for-dom-identityproviderapiconfig-branding"}],"title":"5.1. Registering a handle"}],"url":"https://w3c-fedid.github.io/FedCM/#dom-identityproviderapiconfig-branding"},
 "d8f8bd6e": {"dfnID":"d8f8bd6e","dfnText":"extend","external":true,"refSections":[{"refs":[{"id":"ref-for-list-extend"}],"title":"6. Presentation"},{"refs":[{"id":"ref-for-list-extend\u2460"}],"title":"6.2. Registered providers"}],"url":"https://infra.spec.whatwg.org/#list-extend"},
 "dc1f14fc": {"dfnID":"dc1f14fc","dfnText":"create an IdentityCredential","external":true,"refSections":[{"refs":[{"id":"ref-for-create-an-identitycredential"}],"title":"6. Presentation"},{"refs":[{"id":"ref-for-create-an-identitycredential\u2460"}],"title":"6.1. Requesting by federation"}],"url":"https://w3c-fedid.github.io/FedCM/#create-an-identitycredential"},
@@ -2974,12 +2960,12 @@ let dfnPanelData = {
 "get-the-pushed-accounts": {"dfnID":"get-the-pushed-accounts","dfnText":"get the pushed accounts","external":false,"refSections":[{"refs":[{"id":"ref-for-get-the-pushed-accounts"}],"title":"5.1. Registering a handle"},{"refs":[{"id":"ref-for-get-the-pushed-accounts\u2460"},{"id":"ref-for-get-the-pushed-accounts\u2461"}],"title":"6.2. Registered providers"}],"url":"#get-the-pushed-accounts"},
 "get-the-registered-accounts": {"dfnID":"get-the-registered-accounts","dfnText":"get the registered accounts","external":false,"refSections":[{"refs":[{"id":"ref-for-get-the-registered-accounts"}],"title":"6.2. Registered providers"},{"refs":[{"id":"ref-for-get-the-registered-accounts\u2460"},{"id":"ref-for-get-the-registered-accounts\u2461"}],"title":"6.3. Account selection"}],"url":"#get-the-registered-accounts"},
 "group-registered-handles-by-config-url": {"dfnID":"group-registered-handles-by-config-url","dfnText":"group registered handles by config URL","external":false,"refSections":[{"refs":[{"id":"ref-for-group-registered-handles-by-config-url"}],"title":"6.2. Registered providers"},{"refs":[{"id":"ref-for-group-registered-handles-by-config-url\u2460"}],"title":"10. Examples"}],"url":"#group-registered-handles-by-config-url"},
-"handle": {"dfnID":"handle","dfnText":"handle","external":false,"refSections":[{"refs":[{"id":"ref-for-handle"},{"id":"ref-for-handle\u2460"},{"id":"ref-for-handle\u2461"},{"id":"ref-for-handle\u2462"}],"title":"1. Introduction"},{"refs":[{"id":"ref-for-handle\u2463"},{"id":"ref-for-handle\u2464"},{"id":"ref-for-handle\u2465"},{"id":"ref-for-handle\u2466"}],"title":"3. Handles"},{"refs":[{"id":"ref-for-handle\u2467"},{"id":"ref-for-handle\u2468"},{"id":"ref-for-handle\u2460\u24ea"}],"title":"3.1. Parsing"},{"refs":[{"id":"ref-for-handle\u2460\u2460"},{"id":"ref-for-handle\u2460\u2461"},{"id":"ref-for-handle\u2460\u2462"}],"title":"3.2. Resolution"},{"refs":[{"id":"ref-for-handle\u2460\u2463"},{"id":"ref-for-handle\u2460\u2464"}],"title":"3.2.1. Resolve the issuer"},{"refs":[{"id":"ref-for-handle\u2460\u2465"},{"id":"ref-for-handle\u2460\u2466"},{"id":"ref-for-handle\u2460\u2467"},{"id":"ref-for-handle\u2460\u2468"},{"id":"ref-for-handle\u2461\u24ea"},{"id":"ref-for-handle\u2461\u2460"},{"id":"ref-for-handle\u2461\u2461"},{"id":"ref-for-handle\u2461\u2462"},{"id":"ref-for-handle\u2461\u2463"},{"id":"ref-for-handle\u2461\u2464"},{"id":"ref-for-handle\u2461\u2465"},{"id":"ref-for-handle\u2461\u2466"},{"id":"ref-for-handle\u2461\u2467"},{"id":"ref-for-handle\u2461\u2468"},{"id":"ref-for-handle\u2462\u24ea"}],"title":"3.3. The Handle Registry"},{"refs":[{"id":"ref-for-handle\u2462\u2460"}],"title":"4. The Account Registry"},{"refs":[{"id":"ref-for-handle\u2462\u2461"}],"title":"5. Registration"},{"refs":[{"id":"ref-for-handle\u2462\u2462"},{"id":"ref-for-handle\u2462\u2463"},{"id":"ref-for-handle\u2462\u2464"},{"id":"ref-for-handle\u2462\u2465"},{"id":"ref-for-handle\u2462\u2466"},{"id":"ref-for-handle\u2462\u2467"},{"id":"ref-for-handle\u2462\u2468"},{"id":"ref-for-handle\u2463\u24ea"},{"id":"ref-for-handle\u2463\u2460"},{"id":"ref-for-handle\u2463\u2461"},{"id":"ref-for-handle\u2463\u2462"},{"id":"ref-for-handle\u2463\u2463"}],"title":"5.1. Registering a handle"},{"refs":[{"id":"ref-for-handle\u2463\u2464"},{"id":"ref-for-handle\u2463\u2465"}],"title":"5.2. Account handles"},{"refs":[{"id":"ref-for-handle\u2463\u2466"},{"id":"ref-for-handle\u2463\u2467"},{"id":"ref-for-handle\u2463\u2468"}],"title":"6. Presentation"},{"refs":[{"id":"ref-for-handle\u2464\u24ea"},{"id":"ref-for-handle\u2464\u2460"},{"id":"ref-for-handle\u2464\u2461"},{"id":"ref-for-handle\u2464\u2462"},{"id":"ref-for-handle\u2464\u2463"},{"id":"ref-for-handle\u2464\u2464"},{"id":"ref-for-handle\u2464\u2465"},{"id":"ref-for-handle\u2464\u2466"},{"id":"ref-for-handle\u2464\u2467"},{"id":"ref-for-handle\u2464\u2468"},{"id":"ref-for-handle\u2465\u24ea"}],"title":"6.2. Registered providers"},{"refs":[{"id":"ref-for-handle\u2465\u2460"},{"id":"ref-for-handle\u2465\u2461"},{"id":"ref-for-handle\u2465\u2462"},{"id":"ref-for-handle\u2465\u2463"}],"title":"6.3. Account selection"},{"refs":[{"id":"ref-for-handle\u2465\u2464"},{"id":"ref-for-handle\u2465\u2465"},{"id":"ref-for-handle\u2465\u2466"}],"title":"8. Privacy considerations"},{"refs":[{"id":"ref-for-handle\u2465\u2467"},{"id":"ref-for-handle\u2465\u2468"},{"id":"ref-for-handle\u2466\u24ea"},{"id":"ref-for-handle\u2466\u2460"},{"id":"ref-for-handle\u2466\u2461"},{"id":"ref-for-handle\u2466\u2462"},{"id":"ref-for-handle\u2466\u2463"}],"title":"9. Security considerations"},{"refs":[{"id":"ref-for-handle\u2466\u2464"},{"id":"ref-for-handle\u2466\u2465"}],"title":"10. Examples"}],"url":"#handle"},
-"handle-chip": {"dfnID":"handle-chip","dfnText":"handle chip","external":false,"refSections":[{"refs":[{"id":"ref-for-handle-chip"}],"title":"3.3. The Handle Registry"},{"refs":[{"id":"ref-for-handle-chip\u2460"}],"title":"6. Presentation"},{"refs":[{"id":"ref-for-handle-chip\u2461"}],"title":"6.3. Account selection"},{"refs":[{"id":"ref-for-handle-chip\u2462"}],"title":"8. Privacy considerations"},{"refs":[{"id":"ref-for-handle-chip\u2463"}],"title":"9. Security considerations"},{"refs":[{"id":"ref-for-handle-chip\u2464"},{"id":"ref-for-handle-chip\u2465"},{"id":"ref-for-handle-chip\u2466"},{"id":"ref-for-handle-chip\u2467"}],"title":"10. Examples"}],"url":"#handle-chip"},
-"handle-domain": {"dfnID":"handle-domain","dfnText":"domain","external":false,"refSections":[{"refs":[{"id":"ref-for-handle-domain"},{"id":"ref-for-handle-domain\u2460"}],"title":"3.1. Parsing"},{"refs":[{"id":"ref-for-handle-domain\u2461"},{"id":"ref-for-handle-domain\u2462"},{"id":"ref-for-handle-domain\u2463"}],"title":"3.2.1. Resolve the issuer"},{"refs":[{"id":"ref-for-handle-domain\u2464"}],"title":"10. Examples"}],"url":"#handle-domain"},
+"handle": {"dfnID":"handle","dfnText":"handle","external":false,"refSections":[{"refs":[{"id":"ref-for-handle"},{"id":"ref-for-handle\u2460"},{"id":"ref-for-handle\u2461"},{"id":"ref-for-handle\u2462"}],"title":"1. Introduction"},{"refs":[{"id":"ref-for-handle\u2463"},{"id":"ref-for-handle\u2464"},{"id":"ref-for-handle\u2465"},{"id":"ref-for-handle\u2466"}],"title":"3. Handles"},{"refs":[{"id":"ref-for-handle\u2467"},{"id":"ref-for-handle\u2468"},{"id":"ref-for-handle\u2460\u24ea"}],"title":"3.1. Parsing"},{"refs":[{"id":"ref-for-handle\u2460\u2460"},{"id":"ref-for-handle\u2460\u2461"},{"id":"ref-for-handle\u2460\u2462"}],"title":"3.2. Resolution"},{"refs":[{"id":"ref-for-handle\u2460\u2463"},{"id":"ref-for-handle\u2460\u2464"}],"title":"3.2.1. Resolve the issuer"},{"refs":[{"id":"ref-for-handle\u2460\u2465"}],"title":"3.2.2. DNS delegation record"},{"refs":[{"id":"ref-for-handle\u2460\u2466"},{"id":"ref-for-handle\u2460\u2467"},{"id":"ref-for-handle\u2460\u2468"},{"id":"ref-for-handle\u2461\u24ea"},{"id":"ref-for-handle\u2461\u2460"},{"id":"ref-for-handle\u2461\u2461"},{"id":"ref-for-handle\u2461\u2462"},{"id":"ref-for-handle\u2461\u2463"},{"id":"ref-for-handle\u2461\u2464"},{"id":"ref-for-handle\u2461\u2465"},{"id":"ref-for-handle\u2461\u2466"},{"id":"ref-for-handle\u2461\u2467"},{"id":"ref-for-handle\u2461\u2468"},{"id":"ref-for-handle\u2462\u24ea"},{"id":"ref-for-handle\u2462\u2460"}],"title":"3.3. The Handle Registry"},{"refs":[{"id":"ref-for-handle\u2462\u2461"}],"title":"4. The Account Registry"},{"refs":[{"id":"ref-for-handle\u2462\u2462"}],"title":"5. Registration"},{"refs":[{"id":"ref-for-handle\u2462\u2463"},{"id":"ref-for-handle\u2462\u2464"},{"id":"ref-for-handle\u2462\u2465"},{"id":"ref-for-handle\u2462\u2466"},{"id":"ref-for-handle\u2462\u2467"},{"id":"ref-for-handle\u2462\u2468"},{"id":"ref-for-handle\u2463\u24ea"},{"id":"ref-for-handle\u2463\u2460"},{"id":"ref-for-handle\u2463\u2461"},{"id":"ref-for-handle\u2463\u2462"},{"id":"ref-for-handle\u2463\u2463"}],"title":"5.1. Registering a handle"},{"refs":[{"id":"ref-for-handle\u2463\u2464"},{"id":"ref-for-handle\u2463\u2465"}],"title":"5.2. Account handles"},{"refs":[{"id":"ref-for-handle\u2463\u2466"},{"id":"ref-for-handle\u2463\u2467"},{"id":"ref-for-handle\u2463\u2468"}],"title":"6. Presentation"},{"refs":[{"id":"ref-for-handle\u2464\u24ea"},{"id":"ref-for-handle\u2464\u2460"},{"id":"ref-for-handle\u2464\u2461"},{"id":"ref-for-handle\u2464\u2462"},{"id":"ref-for-handle\u2464\u2463"},{"id":"ref-for-handle\u2464\u2464"},{"id":"ref-for-handle\u2464\u2465"},{"id":"ref-for-handle\u2464\u2466"},{"id":"ref-for-handle\u2464\u2467"},{"id":"ref-for-handle\u2464\u2468"},{"id":"ref-for-handle\u2465\u24ea"}],"title":"6.2. Registered providers"},{"refs":[{"id":"ref-for-handle\u2465\u2460"},{"id":"ref-for-handle\u2465\u2461"},{"id":"ref-for-handle\u2465\u2462"},{"id":"ref-for-handle\u2465\u2463"}],"title":"6.3. Account selection"},{"refs":[{"id":"ref-for-handle\u2465\u2464"},{"id":"ref-for-handle\u2465\u2465"},{"id":"ref-for-handle\u2465\u2466"}],"title":"8. Privacy considerations"},{"refs":[{"id":"ref-for-handle\u2465\u2467"},{"id":"ref-for-handle\u2465\u2468"},{"id":"ref-for-handle\u2466\u24ea"},{"id":"ref-for-handle\u2466\u2460"},{"id":"ref-for-handle\u2466\u2461"},{"id":"ref-for-handle\u2466\u2462"},{"id":"ref-for-handle\u2466\u2463"},{"id":"ref-for-handle\u2466\u2464"}],"title":"9. Security considerations"},{"refs":[{"id":"ref-for-handle\u2466\u2465"},{"id":"ref-for-handle\u2466\u2466"}],"title":"10. Examples"}],"url":"#handle"},
+"handle-chip": {"dfnID":"handle-chip","dfnText":"handle chip","external":false,"refSections":[{"refs":[{"id":"ref-for-handle-chip"}],"title":"3.3. The Handle Registry"},{"refs":[{"id":"ref-for-handle-chip\u2460"}],"title":"6. Presentation"},{"refs":[{"id":"ref-for-handle-chip\u2461"}],"title":"6.3. Account selection"},{"refs":[{"id":"ref-for-handle-chip\u2462"},{"id":"ref-for-handle-chip\u2463"}],"title":"8. Privacy considerations"},{"refs":[{"id":"ref-for-handle-chip\u2464"}],"title":"9. Security considerations"},{"refs":[{"id":"ref-for-handle-chip\u2465"},{"id":"ref-for-handle-chip\u2466"},{"id":"ref-for-handle-chip\u2467"},{"id":"ref-for-handle-chip\u2468"}],"title":"10. Examples"}],"url":"#handle-chip"},
 "handle-registry": {"dfnID":"handle-registry","dfnText":"handle registry","external":false,"refSections":[{"refs":[{"id":"ref-for-handle-registry"}],"title":"1. Introduction"},{"refs":[{"id":"ref-for-handle-registry\u2460"},{"id":"ref-for-handle-registry\u2461"},{"id":"ref-for-handle-registry\u2462"},{"id":"ref-for-handle-registry\u2463"},{"id":"ref-for-handle-registry\u2464"},{"id":"ref-for-handle-registry\u2465"},{"id":"ref-for-handle-registry\u2466"},{"id":"ref-for-handle-registry\u2467"},{"id":"ref-for-handle-registry\u2468"},{"id":"ref-for-handle-registry\u2460\u24ea"},{"id":"ref-for-handle-registry\u2460\u2460"}],"title":"3.3. The Handle Registry"},{"refs":[{"id":"ref-for-handle-registry\u2460\u2461"},{"id":"ref-for-handle-registry\u2460\u2462"},{"id":"ref-for-handle-registry\u2460\u2463"}],"title":"5.1. Registering a handle"},{"refs":[{"id":"ref-for-handle-registry\u2460\u2464"},{"id":"ref-for-handle-registry\u2460\u2465"}],"title":"6.2. Registered providers"},{"refs":[{"id":"ref-for-handle-registry\u2460\u2466"}],"title":"6.3. Account selection"},{"refs":[{"id":"ref-for-handle-registry\u2460\u2467"},{"id":"ref-for-handle-registry\u2460\u2468"}],"title":"8. Privacy considerations"},{"refs":[{"id":"ref-for-handle-registry\u2461\u24ea"}],"title":"9. Security considerations"},{"refs":[{"id":"ref-for-handle-registry\u2461\u2460"},{"id":"ref-for-handle-registry\u2461\u2461"},{"id":"ref-for-handle-registry\u2461\u2462"},{"id":"ref-for-handle-registry\u2461\u2463"}],"title":"10. Examples"}],"url":"#handle-registry"},
+"handle-site": {"dfnID":"handle-site","dfnText":"site","external":false,"refSections":[{"refs":[{"id":"ref-for-handle-site"},{"id":"ref-for-handle-site\u2460"}],"title":"3.1. Parsing"},{"refs":[{"id":"ref-for-handle-site\u2461"},{"id":"ref-for-handle-site\u2462"},{"id":"ref-for-handle-site\u2463"},{"id":"ref-for-handle-site\u2464"},{"id":"ref-for-handle-site\u2465"},{"id":"ref-for-handle-site\u2466"}],"title":"3.2.1. Resolve the issuer"},{"refs":[{"id":"ref-for-handle-site\u2467"},{"id":"ref-for-handle-site\u2468"},{"id":"ref-for-handle-site\u2460\u24ea"}],"title":"3.2.2. DNS delegation record"},{"refs":[{"id":"ref-for-handle-site\u2460\u2460"}],"title":"5.1. Registering a handle"},{"refs":[{"id":"ref-for-handle-site\u2460\u2461"}],"title":"7. Requirements on other parties"},{"refs":[{"id":"ref-for-handle-site\u2460\u2462"},{"id":"ref-for-handle-site\u2460\u2463"}],"title":"8. Privacy considerations"},{"refs":[{"id":"ref-for-handle-site\u2460\u2464"},{"id":"ref-for-handle-site\u2460\u2465"}],"title":"9. Security considerations"},{"refs":[{"id":"ref-for-handle-site\u2460\u2466"},{"id":"ref-for-handle-site\u2460\u2467"}],"title":"10. Examples"}],"url":"#handle-site"},
 "handles-match": {"dfnID":"handles-match","dfnText":"match as handles","external":false,"refSections":[{"refs":[{"id":"ref-for-handles-match"},{"id":"ref-for-handles-match\u2460"},{"id":"ref-for-handles-match\u2461"}],"title":"3.3. The Handle Registry"},{"refs":[{"id":"ref-for-handles-match\u2462"}],"title":"4. The Account Registry"},{"refs":[{"id":"ref-for-handles-match\u2463"}],"title":"5.1. Registering a handle"},{"refs":[{"id":"ref-for-handles-match\u2464"}],"title":"6.2. Registered providers"}],"url":"#handles-match"},
-"issuer": {"dfnID":"issuer","dfnText":"issuer","external":false,"refSections":[{"refs":[{"id":"ref-for-issuer"}],"title":"1. Introduction"},{"refs":[{"id":"ref-for-issuer\u2460"}],"title":"3. Handles"},{"refs":[{"id":"ref-for-issuer\u2461"}],"title":"3.2. Resolution"},{"refs":[{"id":"ref-for-issuer\u2462"},{"id":"ref-for-issuer\u2463"},{"id":"ref-for-issuer\u2464"},{"id":"ref-for-issuer\u2465"},{"id":"ref-for-issuer\u2466"},{"id":"ref-for-issuer\u2467"},{"id":"ref-for-issuer\u2468"},{"id":"ref-for-issuer\u2460\u24ea"},{"id":"ref-for-issuer\u2460\u2460"},{"id":"ref-for-issuer\u2460\u2461"}],"title":"3.2.1. Resolve the issuer"},{"refs":[{"id":"ref-for-issuer\u2460\u2462"},{"id":"ref-for-issuer\u2460\u2463"}],"title":"3.2.2. DNS delegation record"},{"refs":[{"id":"ref-for-issuer\u2460\u2464"}],"title":"3.3. The Handle Registry"},{"refs":[{"id":"ref-for-issuer\u2460\u2465"},{"id":"ref-for-issuer\u2460\u2466"},{"id":"ref-for-issuer\u2460\u2467"},{"id":"ref-for-issuer\u2460\u2468"}],"title":"5.1. Registering a handle"},{"refs":[{"id":"ref-for-issuer\u2461\u24ea"},{"id":"ref-for-issuer\u2461\u2460"}],"title":"7. Requirements on other parties"},{"refs":[{"id":"ref-for-issuer\u2461\u2461"},{"id":"ref-for-issuer\u2461\u2462"},{"id":"ref-for-issuer\u2461\u2463"},{"id":"ref-for-issuer\u2461\u2464"},{"id":"ref-for-issuer\u2461\u2465"}],"title":"9. Security considerations"}],"url":"#issuer"},
+"issuer": {"dfnID":"issuer","dfnText":"issuer","external":false,"refSections":[{"refs":[{"id":"ref-for-issuer"}],"title":"1. Introduction"},{"refs":[{"id":"ref-for-issuer\u2460"}],"title":"3. Handles"},{"refs":[{"id":"ref-for-issuer\u2461"}],"title":"3.2. Resolution"},{"refs":[{"id":"ref-for-issuer\u2462"},{"id":"ref-for-issuer\u2463"},{"id":"ref-for-issuer\u2464"},{"id":"ref-for-issuer\u2465"}],"title":"3.2.1. Resolve the issuer"},{"refs":[{"id":"ref-for-issuer\u2466"},{"id":"ref-for-issuer\u2467"},{"id":"ref-for-issuer\u2468"}],"title":"3.2.2. DNS delegation record"},{"refs":[{"id":"ref-for-issuer\u2460\u24ea"}],"title":"3.3. The Handle Registry"},{"refs":[{"id":"ref-for-issuer\u2460\u2460"},{"id":"ref-for-issuer\u2460\u2461"},{"id":"ref-for-issuer\u2460\u2462"}],"title":"5.1. Registering a handle"},{"refs":[{"id":"ref-for-issuer\u2460\u2463"}],"title":"7. Requirements on other parties"},{"refs":[{"id":"ref-for-issuer\u2460\u2464"},{"id":"ref-for-issuer\u2460\u2465"},{"id":"ref-for-issuer\u2460\u2466"},{"id":"ref-for-issuer\u2460\u2467"},{"id":"ref-for-issuer\u2460\u2468"},{"id":"ref-for-issuer\u2461\u24ea"}],"title":"9. Security considerations"}],"url":"#issuer"},
 "look-up-a-typed-handle": {"dfnID":"look-up-a-typed-handle","dfnText":"look up a typed handle","external":false,"refSections":[{"refs":[{"id":"ref-for-look-up-a-typed-handle"}],"title":"1. Introduction"},{"refs":[{"id":"ref-for-look-up-a-typed-handle\u2460"}],"title":"6.3. Account selection"}],"url":"#look-up-a-typed-handle"},
 "look-up-the-delegation-records": {"dfnID":"look-up-the-delegation-records","dfnText":"look up the delegation records","external":false,"refSections":[{"refs":[{"id":"ref-for-look-up-the-delegation-records"}],"title":"3.2.1. Resolve the issuer"}],"url":"#look-up-the-delegation-records"},
 "parse-a-handle": {"dfnID":"parse-a-handle","dfnText":"parse a handle","external":false,"refSections":[{"refs":[{"id":"ref-for-parse-a-handle"}],"title":"3. Handles"},{"refs":[{"id":"ref-for-parse-a-handle\u2460"},{"id":"ref-for-parse-a-handle\u2461"}],"title":"3.1. Parsing"},{"refs":[{"id":"ref-for-parse-a-handle\u2462"}],"title":"3.2. Resolution"},{"refs":[{"id":"ref-for-parse-a-handle\u2463"},{"id":"ref-for-parse-a-handle\u2464"}],"title":"5.1. Registering a handle"},{"refs":[{"id":"ref-for-parse-a-handle\u2465"}],"title":"5.2. Account handles"},{"refs":[{"id":"ref-for-parse-a-handle\u2466"}],"title":"6.3. Account selection"},{"refs":[{"id":"ref-for-parse-a-handle\u2467"}],"title":"10. Examples"}],"url":"#parse-a-handle"},
@@ -2990,10 +2976,10 @@ let dfnPanelData = {
 "registered-provider-handles": {"dfnID":"registered-provider-handles","dfnText":"handles","external":false,"refSections":[{"refs":[{"id":"ref-for-registered-provider-handles"}],"title":"6. Presentation"},{"refs":[{"id":"ref-for-registered-provider-handles\u2460"},{"id":"ref-for-registered-provider-handles\u2461"}],"title":"6.2. Registered providers"},{"refs":[{"id":"ref-for-registered-provider-handles\u2462"},{"id":"ref-for-registered-provider-handles\u2463"}],"title":"6.3. Account selection"}],"url":"#registered-provider-handles"},
 "remove-from-the-handle-registry": {"dfnID":"remove-from-the-handle-registry","dfnText":"remove from the handle registry","external":false,"refSections":[{"refs":[{"id":"ref-for-remove-from-the-handle-registry"}],"title":"3.3. The Handle Registry"},{"refs":[{"id":"ref-for-remove-from-the-handle-registry\u2460"}],"title":"5.1. Registering a handle"}],"url":"#remove-from-the-handle-registry"},
 "resolve-a-handle": {"dfnID":"resolve-a-handle","dfnText":"Resolution","external":false,"refSections":[{"refs":[{"id":"ref-for-resolve-a-handle"},{"id":"ref-for-resolve-a-handle\u2460"}],"title":"3. Handles"},{"refs":[{"id":"ref-for-resolve-a-handle\u2461"}],"title":"3.2. Resolution"},{"refs":[{"id":"ref-for-resolve-a-handle\u2462"}],"title":"3.2.1. Resolve the issuer"},{"refs":[{"id":"ref-for-resolve-a-handle\u2463"},{"id":"ref-for-resolve-a-handle\u2464"}],"title":"3.3. The Handle Registry"},{"refs":[{"id":"ref-for-resolve-a-handle\u2465"},{"id":"ref-for-resolve-a-handle\u2466"},{"id":"ref-for-resolve-a-handle\u2467"}],"title":"5.1. Registering a handle"},{"refs":[{"id":"ref-for-resolve-a-handle\u2468"},{"id":"ref-for-resolve-a-handle\u2460\u24ea"},{"id":"ref-for-resolve-a-handle\u2460\u2460"}],"title":"6. Presentation"},{"refs":[{"id":"ref-for-resolve-a-handle\u2460\u2461"},{"id":"ref-for-resolve-a-handle\u2460\u2462"}],"title":"6.2. Registered providers"},{"refs":[{"id":"ref-for-resolve-a-handle\u2460\u2463"}],"title":"6.3. Account selection"},{"refs":[{"id":"ref-for-resolve-a-handle\u2460\u2464"}],"title":"9. Security considerations"}],"url":"#resolve-a-handle"},
-"resolve-the-issuer": {"dfnID":"resolve-the-issuer","dfnText":"resolve the issuer","external":false,"refSections":[{"refs":[{"id":"ref-for-resolve-the-issuer"}],"title":"3.2. Resolution"},{"refs":[{"id":"ref-for-resolve-the-issuer\u2460"}],"title":"3.3. The Handle Registry"},{"refs":[{"id":"ref-for-resolve-the-issuer\u2461"}],"title":"9. Security considerations"},{"refs":[{"id":"ref-for-resolve-the-issuer\u2462"},{"id":"ref-for-resolve-the-issuer\u2463"},{"id":"ref-for-resolve-the-issuer\u2464"}],"title":"10. Examples"}],"url":"#resolve-the-issuer"},
+"resolve-the-issuer": {"dfnID":"resolve-the-issuer","dfnText":"resolve the issuer","external":false,"refSections":[{"refs":[{"id":"ref-for-resolve-the-issuer"}],"title":"3.2. Resolution"},{"refs":[{"id":"ref-for-resolve-the-issuer\u2460"}],"title":"3.3. The Handle Registry"},{"refs":[{"id":"ref-for-resolve-the-issuer\u2461"},{"id":"ref-for-resolve-the-issuer\u2462"},{"id":"ref-for-resolve-the-issuer\u2463"}],"title":"10. Examples"}],"url":"#resolve-the-issuer"},
 "sign-in-with-a-handle": {"dfnID":"sign-in-with-a-handle","dfnText":"sign in with a handle","external":false,"refSections":[{"refs":[{"id":"ref-for-sign-in-with-a-handle"}],"title":"6. Presentation"},{"refs":[{"id":"ref-for-sign-in-with-a-handle\u2460"}],"title":"6.3. Account selection"},{"refs":[{"id":"ref-for-sign-in-with-a-handle\u2461"}],"title":"9. Security considerations"}],"url":"#sign-in-with-a-handle"},
-"site-host": {"dfnID":"site-host","dfnText":"site host","external":false,"refSections":[{"refs":[{"id":"ref-for-site-host"},{"id":"ref-for-site-host\u2460"}],"title":"3.2.1. Resolve the issuer"},{"refs":[{"id":"ref-for-site-host\u2461"}],"title":"3.2.2. DNS delegation record"},{"refs":[{"id":"ref-for-site-host\u2462"}],"title":"6. Presentation"}],"url":"#site-host"},
-"site-of-a-host": {"dfnID":"site-of-a-host","dfnText":"site of a host","external":false,"refSections":[{"refs":[{"id":"ref-for-site-of-a-host"},{"id":"ref-for-site-of-a-host\u2460"}],"title":"2. Infrastructure"},{"refs":[{"id":"ref-for-site-of-a-host\u2461"}],"title":"3. Handles"},{"refs":[{"id":"ref-for-site-of-a-host\u2462"}],"title":"3.2.1. Resolve the issuer"},{"refs":[{"id":"ref-for-site-of-a-host\u2463"},{"id":"ref-for-site-of-a-host\u2464"},{"id":"ref-for-site-of-a-host\u2465"}],"title":"3.2.2. DNS delegation record"},{"refs":[{"id":"ref-for-site-of-a-host\u2466"}],"title":"3.3. The Handle Registry"},{"refs":[{"id":"ref-for-site-of-a-host\u2467"}],"title":"5.1. Registering a handle"},{"refs":[{"id":"ref-for-site-of-a-host\u2468"}],"title":"6. Presentation"},{"refs":[{"id":"ref-for-site-of-a-host\u2460\u24ea"}],"title":"7. Requirements on other parties"},{"refs":[{"id":"ref-for-site-of-a-host\u2460\u2460"},{"id":"ref-for-site-of-a-host\u2460\u2461"}],"title":"9. Security considerations"}],"url":"#site-of-a-host"},
+"site-host": {"dfnID":"site-host","dfnText":"site host","external":false,"refSections":[{"refs":[{"id":"ref-for-site-host"}],"title":"3.1. Parsing"},{"refs":[{"id":"ref-for-site-host\u2460"},{"id":"ref-for-site-host\u2461"}],"title":"3.2.1. Resolve the issuer"},{"refs":[{"id":"ref-for-site-host\u2462"},{"id":"ref-for-site-host\u2463"}],"title":"3.2.2. DNS delegation record"},{"refs":[{"id":"ref-for-site-host\u2464"}],"title":"6. Presentation"}],"url":"#site-host"},
+"site-of-a-host": {"dfnID":"site-of-a-host","dfnText":"site of a host","external":false,"refSections":[{"refs":[{"id":"ref-for-site-of-a-host"},{"id":"ref-for-site-of-a-host\u2460"}],"title":"2. Infrastructure"},{"refs":[{"id":"ref-for-site-of-a-host\u2461"}],"title":"3. Handles"},{"refs":[{"id":"ref-for-site-of-a-host\u2462"}],"title":"3.2.2. DNS delegation record"},{"refs":[{"id":"ref-for-site-of-a-host\u2463"}],"title":"3.3. The Handle Registry"},{"refs":[{"id":"ref-for-site-of-a-host\u2464"}],"title":"6. Presentation"},{"refs":[{"id":"ref-for-site-of-a-host\u2465"}],"title":"7. Requirements on other parties"},{"refs":[{"id":"ref-for-site-of-a-host\u2466"},{"id":"ref-for-site-of-a-host\u2467"}],"title":"9. Security considerations"}],"url":"#site-of-a-host"},
 };
 
 document.addEventListener("DOMContentLoaded", ()=>{
@@ -3408,8 +3394,8 @@ let refsData = {
 "#group-registered-handles-by-config-url": {"displayText":"group registered handles by config url","export":true,"for_":[],"level":"","normative":true,"shortname":"idp-registration","spec":"idp-registration","status":"local","text":"group registered handles by config url","type":"dfn","url":"#group-registered-handles-by-config-url"},
 "#handle": {"displayText":"handle","export":true,"for_":[],"level":"","normative":true,"shortname":"idp-registration","spec":"idp-registration","status":"local","text":"handle","type":"dfn","url":"#handle"},
 "#handle-chip": {"displayText":"handle chip","export":true,"for_":[],"level":"","normative":true,"shortname":"idp-registration","spec":"idp-registration","status":"local","text":"handle chip","type":"dfn","url":"#handle-chip"},
-"#handle-domain": {"displayText":"domain","export":true,"for_":["handle"],"level":"","normative":true,"shortname":"idp-registration","spec":"idp-registration","status":"local","text":"domain","type":"dfn","url":"#handle-domain"},
 "#handle-registry": {"displayText":"handle registry","export":true,"for_":[],"level":"","normative":true,"shortname":"idp-registration","spec":"idp-registration","status":"local","text":"handle registry","type":"dfn","url":"#handle-registry"},
+"#handle-site": {"displayText":"site","export":true,"for_":["handle"],"level":"","normative":true,"shortname":"idp-registration","spec":"idp-registration","status":"local","text":"site","type":"dfn","url":"#handle-site"},
 "#handles-match": {"displayText":"handles match","export":true,"for_":[],"level":"","normative":true,"shortname":"idp-registration","spec":"idp-registration","status":"local","text":"handles match","type":"dfn","url":"#handles-match"},
 "#issuer": {"displayText":"issuer","export":true,"for_":[],"level":"","normative":true,"shortname":"idp-registration","spec":"idp-registration","status":"local","text":"issuer","type":"dfn","url":"#issuer"},
 "#look-up-a-typed-handle": {"displayText":"look up a typed handle","export":true,"for_":[],"level":"","normative":true,"shortname":"idp-registration","spec":"idp-registration","status":"local","text":"look up a typed handle","type":"dfn","url":"#look-up-a-typed-handle"},
