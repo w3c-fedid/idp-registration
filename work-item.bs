@@ -318,6 +318,32 @@ first run [=parse a handle=], which also normalizes it (for example, `Alice.Exam
 `@alice.example`), and then resolve the result. Resolution stops at the config URL: it doesn't
 fetch the [=config file=] or check its {{IdentityProviderAPIConfig/federations}}, because each caller needs a different check.
 
+Issue: Because [=resolve a handle|resolution=] requires exactly one
+{{IdentityProviderWellKnown/provider_urls}} entry, a [=site of a host|site=] can register
+[=/handle|handles=] for only one [=config file=]. Is that acceptable for [=IDPs=] that have several
+configurations (e.g. one per product)?
+
+<div class="monkeypatch">
+Add the following algorithm:
+
+<div algorithm>
+To <dfn>fetch the well-known file</dfn> given a [=site host=] |site| and a |globalObject|, run the
+steps of [=fetch the config file=] that create <var ignore>wellKnownRequest</var> and
+[=fetch request|fetch=] it, with <var ignore>rootUrl</var> set to a new [=/URL=] with
+[=url/scheme=] "`https`", [=url/host=] |site|, and [=url/path=] « "`.well-known`",
+"`web-identity`" », and with |globalObject|. Return the resulting <var ignore>wellKnown</var>, an
+{{IdentityProviderWellKnown}} or failure.
+
+</div>
+
+Then, in [=fetch the config file=], replace those steps with a call to [=fetch the well-known file=]
+with <var ignore>rootUrl</var>'s [=url/host=] and |globalObject|.
+
+Note: This only moves existing steps, so that [=resolve a handle|resolution=] can reuse them. It
+doesn't change the behavior of [=fetch the config file=].
+
+</div>
+
 ### Resolve the issuer ### {#resolve-issuer}
 
 The first step of [=resolve a handle|resolution=] finds a [=/handle=]'s [=issuer=] by looking up a
@@ -691,8 +717,39 @@ Note: Registered [=IDPs=] only need a [=config file=] and an
 <!-- ============================================================ -->
 
 This section defines how the user agent presents registered [=IDPs=] to the user when an [=RP=]
-calls `navigator.credentials.get()` with a {{IdentityProviderConfig/federation}}. It changes
-[[FEDCM]] as follows, using the algorithms defined in the subsections below.
+calls `navigator.credentials.get()` with a {{IdentityProviderConfig/federation}}.
+
+## Requesting by federation ## {#request-by-federation}
+
+<xmp class="idl">
+partial dictionary IdentityProviderConfig {
+  USVString federation;
+};
+</xmp>
+
+<dl dfn-type="dict-member" dfn-for="IdentityProviderConfig">
+    :   <dfn>federation</dfn>
+    ::  A URL that points to the definition of a federation the [=RP=] accepts: the protocol or
+        profile that its [=IDPs=] and [=RPs=] follow, for example
+        `"https://www.w3.org/TR/indieauth/"` or `"https://atproto.com"`. The authority behind the
+        URL defines the federation. When present, {{IdentityProviderConfig/configURL}} is ignored,
+        and the entry stands for every registered [=IDP=] whose [=config file=] lists this
+        federation.
+</dl>
+
+An {{IdentityProviderRequestOptions}} whose {{IdentityProviderConfig/federation}} [=map/exists=] is a
+<dfn>federation request</dfn>.
+
+<div class="monkeypatch">
+In [[FEDCM]], remove the `required` keyword from the {{IdentityProviderConfig/configURL}} and
+{{IdentityProviderConfig/clientId}} members of {{IdentityProviderConfig}}.
+
+Every algorithm in [[FEDCM]] that reads {{IdentityProviderConfig/configURL}} from an
+{{IdentityProviderConfig}} passed by the [=RP=] MUST first check that the member [=map/exists=],
+and treat its absence as failure. The one exception is [=create an IdentityCredential=], as
+modified below.
+
+</div>
 
 <div class="monkeypatch">
 In [=create an IdentityCredential=], insert the following steps immediately after the step
@@ -706,98 +763,6 @@ In [=create an IdentityCredential=], insert the following steps immediately afte
     1. Let |registered| be the result of [=gather registered providers=] with |federationRequest|,
         |providerList|, and |globalObject|.
     1. [=list/Extend=] |providerList| with |registered|.
-
-Then, in the step "For each |provider| in |providerList|", insert the following as the first
-sub-step:
-
-1. If |provider| is a [=registered provider=]:
-    1. Set |providerMap|[<var ignore>providerOrigin</var>] to |provider|'s [=registered provider/accounts=].
-    1. [=iteration/Continue=].
-
-    Note: For registered providers, the user agent doesn't check the login status, fetch the
-    {{IdentityProviderAPIConfig/accounts_endpoint}}, or show mismatch UI, because it already
-    knows the accounts that were pushed.
-
-Change the step "If |providerMap| [=map/is empty=], return (failure, false)" to:
-
-1. If |providerMap| [=map/is empty=]:
-    1. If |federationRequest| is null, or <var ignore>mode</var> is not
-        {{IdentityCredentialRequestOptionsMode/active}}, return (failure, false).
-    1. Otherwise, the user agent MAY continue, showing only the
-        [=find your account affordance=].
-
-In the "Build UI" step, add the following for each [=registered provider=] |provider| in
-|providerList|:
-
-1. For each [=/handle=] |handle| of |provider|'s [=registered provider/handles=] for which
-    [=find matching accounts=] with |provider|'s [=registered provider/accounts=] and |handle|
-    returns an empty [=list=], add a [=handle chip=] for |handle| and |provider|. If the user
-    selects it:
-    1. Let |account| be the result of [=sign in with a handle=] with |handle|, |provider|, and
-        |globalObject|.
-    1. If |account| is not failure, set |selectedAccount| to |account| and |permission| to true,
-        set the relevant provider to |provider| and the relevant config to |provider|'s
-        [=registered provider/config=], and close the dialog.
-
-After the "Build UI" step, add the following step:
-
-1. If |federationRequest| is not null, the user agent SHOULD add a
-    <dfn>find your account affordance</dfn>. If the user triggers it:
-    1. Let |result| be the result of [=find your account=] with |federationRequest| and |globalObject|.
-    1. If |result| is not null, let (|account|, |resolvedProvider|) be |result|. Set
-        |selectedAccount| to |account| and |permission| to true, set the relevant provider to
-        |resolvedProvider| and the relevant config to |resolvedProvider|'s
-        [=registered provider/config=], and close the dialog.
-
-</div>
-
-<div class="monkeypatch">
-Add the following algorithm:
-
-<div algorithm>
-To <dfn>fetch the well-known file</dfn> given a [=site host=] |site| and a |globalObject|, run the
-steps of [=fetch the config file=] that create <var ignore>wellKnownRequest</var> and
-[=fetch request|fetch=] it, with <var ignore>rootUrl</var> set to a new [=/URL=] with
-[=url/scheme=] "`https`", [=url/host=] |site|, and [=url/path=] « "`.well-known`",
-"`web-identity`" », and with |globalObject|. Return the resulting <var ignore>wellKnown</var>, an
-{{IdentityProviderWellKnown}} or failure.
-
-</div>
-
-Then, in [=fetch the config file=], replace those steps with a call to [=fetch the well-known file=]
-with <var ignore>rootUrl</var>'s [=url/host=] and |globalObject|.
-
-Note: This only moves existing steps, so that [=resolve a handle|resolution=] can reuse them. It
-doesn't change the behavior of [=fetch the config file=].
-
-</div>
-
-<div class="monkeypatch">
-In [=fetch the config file=], insert the following step immediately before the step "If <var ignore>rpOrigin</var>
-is not an [=opaque origin=], and ...":
-
-1. If |provider| is a [=registered provider=], set <var ignore>skipWellKnown</var> to true.
-
-Note: The [=well-known file=] exists to stop an [=RP=] from encoding tracking information in the
-config URL it passes. A [=registered provider=]'s config URL doesn't come from the [=RP=]. The user
-agent obtained it from the [=well-known file=] itself, by [=resolve a handle|resolving=] a
-[=/handle=].
-
-</div>
-
-Issue: Because [=resolve a handle|resolution=] requires exactly one
-{{IdentityProviderWellKnown/provider_urls}} entry, a [=site of a host|site=] can register
-[=/handle|handles=] for only one [=config file=]. Is that acceptable for [=IDPs=] that have several
-configurations (e.g. one per product)?
-
-<div class="monkeypatch">
-In [=show an IDP login dialog=], insert the following step immediately after the step that
-appends `login_hint`:
-
-1. If |provider| is a [=registered provider=] with an
-    [=registered provider/associated handle=] |handle|, and
-    |provider|'s {{IdentityProviderRequestOptions/loginHint}} is empty, [=list/append=]
-    ("login_hint", |handle|) to <var ignore>queryList</var>.
 
 </div>
 
@@ -817,38 +782,6 @@ how IndieAuth identifies clients by URL, but other protocols may expect somethin
 
 Note: {{IdentityCredential/configURL}} tells the [=RP=] which [=IDP=] issued the token, so it can
 verify the token using the protocol named by {{IdentityProviderConfig/federation}}.
-
-## Requesting by federation ## {#request-by-federation}
-
-<xmp class="idl">
-partial dictionary IdentityProviderConfig {
-  USVString federation;
-};
-</xmp>
-
-<div class="monkeypatch">
-In [[FEDCM]], remove the `required` keyword from the {{IdentityProviderConfig/configURL}} and
-{{IdentityProviderConfig/clientId}} members of {{IdentityProviderConfig}}.
-
-Every algorithm in [[FEDCM]] that reads {{IdentityProviderConfig/configURL}} from an
-{{IdentityProviderConfig}} passed by the [=RP=] MUST first check that the member [=map/exists=],
-and treat its absence as failure. The one exception is [=create an IdentityCredential=], as
-modified in [[#presentation]].
-
-</div>
-
-<dl dfn-type="dict-member" dfn-for="IdentityProviderConfig">
-    :   <dfn>federation</dfn>
-    ::  A URL that points to the definition of a federation the [=RP=] accepts: the protocol or
-        profile that its [=IDPs=] and [=RPs=] follow, for example
-        `"https://www.w3.org/TR/indieauth/"` or `"https://atproto.com"`. The authority behind the
-        URL defines the federation. When present, {{IdentityProviderConfig/configURL}} is ignored,
-        and the entry stands for every registered [=IDP=] whose [=config file=] lists this
-        federation.
-</dl>
-
-An {{IdentityProviderRequestOptions}} whose {{IdentityProviderConfig/federation}} [=map/exists=] is a
-<dfn>federation request</dfn>.
 
 ## Registered providers ## {#registered-providers}
 
@@ -964,6 +897,33 @@ To <dfn>gather registered providers</dfn> given an {{IdentityProviderRequestOpti
 
 </div>
 
+<div class="monkeypatch">
+In [=fetch the config file=], insert the following step immediately before the step "If <var ignore>rpOrigin</var>
+is not an [=opaque origin=], and ...":
+
+1. If |provider| is a [=registered provider=], set <var ignore>skipWellKnown</var> to true.
+
+Note: The [=well-known file=] exists to stop an [=RP=] from encoding tracking information in the
+config URL it passes. A [=registered provider=]'s config URL doesn't come from the [=RP=]. The user
+agent obtained it from the [=well-known file=] itself, by [=resolve a handle|resolving=] a
+[=/handle=].
+
+</div>
+
+<div class="monkeypatch">
+In [=create an IdentityCredential=], in the step "For each |provider| in |providerList|", insert the
+following as the first sub-step:
+
+1. If |provider| is a [=registered provider=]:
+    1. Set |providerMap|[<var ignore>providerOrigin</var>] to |provider|'s [=registered provider/accounts=].
+    1. [=iteration/Continue=].
+
+    Note: For registered providers, the user agent doesn't check the login status, fetch the
+    {{IdentityProviderAPIConfig/accounts_endpoint}}, or show mismatch UI, because it already
+    knows the accounts that were pushed.
+
+</div>
+
 ## Account selection ## {#account-selection}
 
 A <dfn>handle chip</dfn> for a [=/handle=] |handle| and a [=registered provider=] |provider| is a
@@ -1056,6 +1016,53 @@ To <dfn>sign in with a handle</dfn> given a [=/handle=] |handle|, a [=registered
 1. If |matches|'s [=list/size=] is greater than 1, let the user choose one of |matches| and
     return it. If the user cancels, return failure.
 1. Tell the user that the account they signed in with doesn't match |handle|, and return failure.
+
+</div>
+
+<div class="monkeypatch">
+In [=show an IDP login dialog=], insert the following step immediately after the step that
+appends `login_hint`:
+
+1. If |provider| is a [=registered provider=] with an
+    [=registered provider/associated handle=] |handle|, and
+    |provider|'s {{IdentityProviderRequestOptions/loginHint}} is empty, [=list/append=]
+    ("login_hint", |handle|) to <var ignore>queryList</var>.
+
+</div>
+
+<div class="monkeypatch">
+In [=create an IdentityCredential=]:
+
+Change the step "If |providerMap| [=map/is empty=], return (failure, false)" to:
+
+1. If |providerMap| [=map/is empty=]:
+    1. If |federationRequest| is null, or <var ignore>mode</var> is not
+        {{IdentityCredentialRequestOptionsMode/active}}, return (failure, false).
+    1. Otherwise, the user agent MAY continue, showing only the
+        [=find your account affordance=].
+
+In the "Build UI" step, add the following for each [=registered provider=] |provider| in
+|providerList|:
+
+1. For each [=/handle=] |handle| of |provider|'s [=registered provider/handles=] for which
+    [=find matching accounts=] with |provider|'s [=registered provider/accounts=] and |handle|
+    returns an empty [=list=], add a [=handle chip=] for |handle| and |provider|. If the user
+    selects it:
+    1. Let |account| be the result of [=sign in with a handle=] with |handle|, |provider|, and
+        |globalObject|.
+    1. If |account| is not failure, set |selectedAccount| to |account| and |permission| to true,
+        set the relevant provider to |provider| and the relevant config to |provider|'s
+        [=registered provider/config=], and close the dialog.
+
+After the "Build UI" step, add the following step:
+
+1. If |federationRequest| is not null, the user agent SHOULD add a
+    <dfn>find your account affordance</dfn>. If the user triggers it:
+    1. Let |result| be the result of [=find your account=] with |federationRequest| and |globalObject|.
+    1. If |result| is not null, let (|account|, |resolvedProvider|) be |result|. Set
+        |selectedAccount| to |account| and |permission| to true, set the relevant provider to
+        |resolvedProvider| and the relevant config to |resolvedProvider|'s
+        [=registered provider/config=], and close the dialog.
 
 </div>
 
