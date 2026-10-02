@@ -1,0 +1,236 @@
+<pre class="metadata">
+Title: Account Registry API
+Shortname: account-registry
+Level: None
+Status: CG-DRAFT
+Group: fedidcg
+Repository: w3c-fedid/idp-registration
+URL: https://w3c-fedid.github.io/idp-registration/account-registry.html
+Editor: Sam Goto, w3cid 50308, Google Inc. https://google.com, goto@google.com
+Abstract: This specification extends the Login Status API [[LOGIN-STATUS]] and the Federated
+    Credential Management API [[FEDCM]] so that an identity provider can push the user's
+    signed-in accounts to the user agent when setting its login status, allowing the user agent
+    to present those accounts without fetching the identity provider's accounts endpoint.
+Markup Shorthands: markdown yes, css no
+Default Biblio Display: inline
+Text Macro: RP Relying Party
+Text Macro: IDP Identity Provider
+</pre>
+
+<pre class="anchors">
+spec: fedcm; urlPrefix: https://w3c-fedid.github.io/FedCM/
+    type: dfn
+        text: IDP; url: idp
+        text: RP; url: rp
+        text: fetch the config file; url: fetch-the-config-file
+        text: fetch the accounts; url: fetch-the-accounts
+spec: url; urlPrefix: https://url.spec.whatwg.org/
+    type: dfn
+        text: config file; url: config-file
+spec: login-status; urlPrefix: https://w3c-fedid.github.io/login-status/
+    type: dfn
+        text: Login Status map; url: login-status-map
+        text: get the login status; url: get-the-login-status
+        text: set the login status; url: set-the-login-status
+        text: logged-in; url: logged-in
+        text: logged-out; url: logged-out
+</pre>
+
+<pre class="link-defaults">
+spec:infra; type:dfn; text:list
+spec:infra; type:dfn; text:user agent
+spec:infra; type:dfn; text:string
+spec:html; type:dfn; for:html-origin-def; text:origin
+spec:url; type:dfn; for:/; text:url
+</pre>
+
+<style>
+.monkeypatch {
+    border-left: 8px solid #8a6d3b;
+    background-color: rgba(138, 109, 59, 0.08);
+    margin: 16px 0;
+    padding: 8px 16px;
+}
+.monkeypatch::before {
+    content: "Monkey patch";
+    display: block;
+    font-weight: bold;
+    color: #8a6d3b;
+}
+</style>
+
+<!-- ============================================================ -->
+# Introduction # {#introduction}
+<!-- ============================================================ -->
+
+*This section is non-normative.*
+
+In [[FEDCM]], when an [=RP=] requests an [=IDP=] whose [[LOGIN-STATUS|login status]] is
+[=logged-in=], the [=user agent=] sends a credentialed request to the [=IDP=]'s
+{{IdentityProviderAPIConfig/accounts_endpoint}} before the user has chosen an account. That
+credentialed fetch enables a timing attack and requires the user agent to show mismatch UI when the
+endpoint returns no accounts.
+
+This specification lets an [=IDP=] **push** the user's signed-in accounts to the [=user agent=]
+when calling {{NavigatorLogin/setStatus()}}, as described in
+[Lightweight FedCM](https://github.com/fedidcg/LightweightFedCM#fedcm-accounts-push):
+
+<div class="example" id="example-push-accounts">
+After Alice signs in on `https://idp.example`, the [=IDP=] pushes her account when setting its
+login status:
+
+```js
+await navigator.login.setStatus("logged-in", {
+  accounts: [{
+    id: "1234",
+    name: "Alice",
+    email: "alice@idp.example",
+    picture: "https://idp.example/alice.jpg"
+  }]
+});
+```
+
+Because `idp.example` pushes its accounts, its [=config file=] does not need an
+{{IdentityProviderAPIConfig/accounts_endpoint}}:
+
+```json
+{
+  "id_assertion_endpoint": "/assertion",
+  "login_url": "/login"
+}
+```
+
+</div>
+
+This specification is written as a set of monkey patches to [[LOGIN-STATUS]] and [[FEDCM]], shown
+like this:
+
+<div class="monkeypatch">
+A change to an algorithm or definition in another specification.
+
+</div>
+
+<!-- ============================================================ -->
+# Infrastructure # {#infrastructure}
+<!-- ============================================================ -->
+
+This specification depends on the Infra Standard. [[!INFRA]]
+
+<!-- ============================================================ -->
+# The Account Registry # {#registry}
+<!-- ============================================================ -->
+
+Each [=user agent=] has a global, persistent <dfn>account registry</dfn>, which stores the accounts
+that [=IDPs=] push with {{NavigatorLogin/setStatus()}}. It is an initially empty [=map=]. Its
+[=map/keys=] are [=/origins=] of [=IDPs=], and its [=map/values=] are
+<dfn lt="account registry entry">account registry entries</dfn>. An [=account registry entry=] is
+a [=struct=] with the following [=struct/items=]:
+
+<dl dfn-for="account registry entry">
+    :   <dfn>accounts</dfn>
+    ::  A [=list=] of {{IdentityProviderAccount}}s.
+    :   <dfn>expiration</dfn>
+    ::  A moment in time, or null for no expiration.
+</dl>
+
+<xmp class="idl">
+dictionary LoginStatusOptions {
+  sequence<IdentityProviderAccount> accounts;
+  [EnforceRange] unsigned long long expiration;
+};
+</xmp>
+
+<dl dfn-type="dict-member" dfn-for="LoginStatusOptions">
+    :   <dfn>accounts</dfn>
+    ::  The [=list=] of {{IdentityProviderAccount}}s currently signed in at the [=IDP=].
+    :   <dfn>expiration</dfn>
+    ::  The duration in milliseconds for which the pushed accounts remain valid. If omitted, the
+        accounts remain valid until the [=IDP=]'s login status becomes [=logged-out=] or is cleared.
+</dl>
+
+<div class="monkeypatch">
+In [[LOGIN-STATUS]], change the {{NavigatorLogin/setStatus()}} method so that it takes an optional
+second argument, `optional LoginStatusOptions options = {}`, and add the following steps at the
+end of its algorithm:
+
+1. If <var ignore>status</var> is `"logged-out"`, [=map/remove=] [=account registry=][|origin|] and return.
+1. If |options|["{{LoginStatusOptions/accounts}}"] does not [=map/exist=], return.
+1. For each |account| of |options|["{{LoginStatusOptions/accounts}}"]: if |account| has none of
+    {{IdentityProviderAccount/name}}, {{IdentityProviderAccount/email}},
+    {{IdentityProviderAccount/tel}}, or {{IdentityProviderAccount/username}}, throw a
+    {{TypeError}}.
+1. Let |expiration| be null.
+1. If |options|["{{LoginStatusOptions/expiration}}"] [=map/exists=], set |expiration| to the
+    current time plus |options|["{{LoginStatusOptions/expiration}}"] milliseconds.
+1. [=map/Set=] [=account registry=][|origin|] to a new struct with
+    [=account registry entry/accounts=] |options|["{{LoginStatusOptions/accounts}}"] and
+    [=account registry entry/expiration=] |expiration|.
+
+Also, in the algorithm that processes the <code>Set-Login</code> header, when the token is
+`"logged-out"`, [=map/remove=] [=account registry=][|origin|].
+
+</div>
+
+<div algorithm>
+To <dfn>get the pushed accounts</dfn> for an [=/origin=] |origin|, run the following steps. This
+returns a [=list=] of {{IdentityProviderAccount}}s.
+
+1. If [=account registry=][|origin|] does not [=map/exist=], return an empty [=list=].
+1. Let |entry| be [=account registry=][|origin|].
+1. If |entry|'s [=account registry entry/expiration=] is not null and is in the past,
+    [=map/remove=] [=account registry=][|origin|] and return an empty [=list=].
+1. If [=get the login status=] for |origin| is not [=logged-in=], return an empty [=list=].
+1. Return |entry|'s [=account registry entry/accounts=].
+
+</div>
+
+The user agent MUST clear [=account registry=] entries whenever it clears the corresponding
+[=Login Status map=] entries.
+
+<!-- ============================================================ -->
+# Presentation # {#presentation}
+<!-- ============================================================ -->
+
+This section defines how the [=user agent=] uses the [=account registry=] when presenting accounts
+in [[FEDCM]].
+
+<div class="monkeypatch">
+In [[FEDCM]], remove the `required` keyword from the
+{{IdentityProviderAPIConfig/accounts_endpoint}} member of {{IdentityProviderAPIConfig}}.
+
+In [=fetch the config file=], if
+<var ignore>config</var>.{{IdentityProviderAPIConfig/accounts_endpoint}} doesn't [=map/exist=], set
+<var ignore>accounts_url</var> to null instead of computing it, and do not treat a null
+<var ignore>accounts_url</var> as failure.
+
+Note: An [=IDP=] that pushes its accounts with {{NavigatorLogin/setStatus()}} only needs a
+[=config file=] and an {{IdentityProviderAPIConfig/id_assertion_endpoint}}.
+
+</div>
+
+<div class="monkeypatch">
+In [=fetch the accounts=], insert the following steps at the beginning of the algorithm:
+
+1. Let |origin| be the [=url/origin=] of the result of running the [=URL parser=] on
+    <var ignore>provider</var>'s {{IdentityProviderConfig/configURL}}.
+1. Let |pushed| be the result of [=get the pushed accounts=] for |origin|.
+1. If |pushed| is not [=list/is empty|empty=], or if
+    <var ignore>config</var>["{{IdentityProviderAPIConfig/accounts_endpoint}}"] doesn't
+    [=map/exist=], return a new {{IdentityProviderAccountList}} with
+    {{IdentityProviderAccountList/accounts}} set to |pushed|.
+
+</div>
+
+<!-- ============================================================ -->
+# Privacy and security considerations # {#privacy-and-security}
+<!-- ============================================================ -->
+
+* An [=IDP=] that pushes its accounts and omits
+    {{IdentityProviderAPIConfig/accounts_endpoint}} never receives a credentialed request before
+    the user selects an account or chooses to sign in. This removes the timing attack that affects
+    {{IdentityProviderAPIConfig/accounts_endpoint}}.
+* The [=account registry=] is global to the [=user agent=], is used only in user agent UI, and is
+    never exposed to the [=RP=] until the user selects an account.
+* Entries in the [=account registry=] are scoped to the [=IDP=]'s [=/origin=], expire when
+    {{LoginStatusOptions/expiration}} elapses, and are cleared whenever the [=IDP=] sets its login
+    status to [=logged-out=] or the user clears browsing data for that [=/origin=].
