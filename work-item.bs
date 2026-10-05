@@ -652,6 +652,24 @@ partial dictionary IdentityProviderAPIConfig {
         federation.
 </dl>
 
+<div class="example" id="example-declaring-federations">
+An [=IDP=]'s [=config file=] at `https://idp.example/fedcm.json` declares that it supports both
+IndieAuth and AT Protocol:
+
+```json
+{
+  "accounts_endpoint": "/accounts",
+  "id_assertion_endpoint": "/assertion",
+  "login_url": "/login",
+  "federations": [
+    "https://www.w3.org/TR/indieauth/",
+    "https://atproto.com"
+  ]
+}
+```
+
+</div>
+
 <!-- ============================================================ -->
 # User-initiated Registration # {#user-registration}
 <!-- ============================================================ -->

@@ -782,7 +782,7 @@ var[data-var-color="6"] { --var-vg: #FFBCF2; }
   <div class="head">
    <h1 class="no-ref p-name" id="title">IdP Registration API</h1>
    <p id="w3c-state"><a href="https://www.w3.org/standards/types/#CG-DRAFT">Draft Community Group Report</a>,
-    <time class="dt-updated" datetime="2026-10-02">2 October 2026</time></p>
+    <time class="dt-updated" datetime="2026-10-05">5 October 2026</time></p>
    <div data-fill-with="spec-metadata">
     <dl>
      <dt>This version:
@@ -1549,6 +1549,23 @@ In <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#fetch-the-ac
 doesn’t list a federation is never returned for a <a data-link-type="dfn" href="#federation-request" id="ref-for-federation-request①">federation request</a> for that
 federation.</p>
    </dl>
+   <div class="example" id="example-declaring-federations">
+    <a class="self-link" href="#example-declaring-federations"></a>
+An <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp②⑥">IDP</a>’s <a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file⑤">config file</a> at <code>https://idp.example/fedcm.json</code> declares that it supports both
+IndieAuth and AT Protocol:
+
+
+<pre class="highlight language-json"><c- p>{</c->
+  <c- f>"accounts_endpoint"</c-><c- p>:</c-> <c- u>"/accounts"</c-><c- p>,</c->
+  <c- f>"id_assertion_endpoint"</c-><c- p>:</c-> <c- u>"/assertion"</c-><c- p>,</c->
+  <c- f>"login_url"</c-><c- p>:</c-> <c- u>"/login"</c-><c- p>,</c->
+  <c- f>"federations"</c-><c- p>:</c-> <c- p>[</c->
+    <c- u>"https://www.w3.org/TR/indieauth/"</c-><c- p>,</c->
+    <c- u>"https://atproto.com"</c->
+  <c- p>]</c->
+<c- p>}</c->
+</pre>
+   </div>
    <h2 class="heading settled" data-level="4" id="user-registration"><span class="secno">4. </span><span class="content">User-initiated Registration</span><a class="self-link" href="#user-registration"></a></h2>
    <p>A user whose <a data-link-type="dfn" href="#handle" id="ref-for-handle④⑨">handle</a> isn’t in the <a data-link-type="dfn" href="#handle-registry" id="ref-for-handle-registry①⑤">handle registry</a> yet can type it when signing in to an
 <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp②">RP</a> (via the <a data-link-type="dfn" href="#find-your-account-affordance" id="ref-for-find-your-account-affordance">find your account affordance</a> in <a href="#presentation">§ 5 Presentation</a>). The user agent
@@ -1632,7 +1649,7 @@ the result of <a data-link-type="dfn" href="#get-the-registered-accounts" id="re
     </ol>
    </div>
    <h2 class="heading settled" data-level="5" id="presentation"><span class="secno">5. </span><span class="content">Presentation</span><a class="self-link" href="#presentation"></a></h2>
-   <p>This section defines how the user agent presents registered <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp②⑥">IDPs</a> to the user when an <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp③">RP</a>
+   <p>This section defines how the user agent presents registered <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp②⑦">IDPs</a> to the user when an <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp③">RP</a>
 calls <code>navigator.credentials.get()</code> with a <code class="idl"><a data-link-type="idl" href="#dom-identityproviderconfig-federation" id="ref-for-dom-identityproviderconfig-federation③">federation</a></code>.</p>
    <h3 class="heading settled" data-level="5.1" id="request-by-federation"><span class="secno">5.1. </span><span class="content">Requesting by federation</span><a class="self-link" href="#request-by-federation"></a></h3>
 <pre class="def highlight idl"><c- b>partial</c-> <c- b>dictionary</c-> <a class="idl-code" data-link-type="dictionary" href="https://w3c-fedid.github.io/FedCM/#dictdef-identityproviderconfig" id="ref-for-dictdef-identityproviderconfig"><c- g>IdentityProviderConfig</c-></a> {
@@ -1643,10 +1660,10 @@ calls <code>navigator.credentials.get()</code> with a <code class="idl"><a data-
     <dt data-md><dfn class="dfn-paneled idl-code" data-dfn-for="IdentityProviderConfig" data-dfn-type="dict-member" data-export id="dom-identityproviderconfig-federation"><code>federation</code></dfn>, <span> of type <a data-link-type="idl-name" href="https://webidl.spec.whatwg.org/#idl-USVString" id="ref-for-idl-USVString⑦">USVString</a></span>
     <dd data-md>
      <p>A URL that points to the definition of a federation the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp④">RP</a> accepts: the protocol or
-profile that its <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp②⑦">IDPs</a> and <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp⑤">RPs</a> follow, for example
+profile that its <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp②⑧">IDPs</a> and <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp⑤">RPs</a> follow, for example
 <code>"https://www.w3.org/TR/indieauth/"</code> or <code>"https://atproto.com"</code>. The authority behind the
 URL defines the federation. When present, <code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dom-identityproviderconfig-configurl" id="ref-for-dom-identityproviderconfig-configurl①">configURL</a></code> is ignored,
-and the entry stands for every registered <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp②⑧">IDP</a> whose <a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file⑤">config file</a> lists this
+and the entry stands for every registered <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp②⑨">IDP</a> whose <a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file⑥">config file</a> lists this
 federation.</p>
    </dl>
    <p>An <code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dictdef-identityproviderrequestoptions" id="ref-for-dictdef-identityproviderrequestoptions②">IdentityProviderRequestOptions</a></code> whose <code class="idl"><a data-link-type="idl" href="#dom-identityproviderconfig-federation" id="ref-for-dom-identityproviderconfig-federation⑤">federation</a></code> <a data-link-type="dfn" href="https://infra.spec.whatwg.org/#map-exists" id="ref-for-map-exists④">exists</a> is a
@@ -1702,13 +1719,13 @@ In <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#fetch-an-ide
 <a data-link-type="dfn" href="https://html.spec.whatwg.org/multipage/nav-history-apis.html#concept-document-window" id="ref-for-concept-document-window②">associated Document</a>’s <a data-link-type="dfn" href="https://dom.spec.whatwg.org/#concept-document-origin" id="ref-for-concept-document-origin②">origin</a>.</p>
     </ol>
    </div>
-   <p class="issue" id="issue-1107d123"><a class="self-link" href="#issue-1107d123"></a> Is the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp⑦">RP</a>’s origin the right default <code>client_id</code> for registered <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp②⑨">IDPs</a>? It matches
+   <p class="issue" id="issue-1107d123"><a class="self-link" href="#issue-1107d123"></a> Is the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp⑦">RP</a>’s origin the right default <code>client_id</code> for registered <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp③⓪">IDPs</a>? It matches
 how IndieAuth identifies clients by URL, but other protocols may expect something else.</p>
-   <p class="note" role="note"><span class="marker">Note:</span> <code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dom-identitycredential-configurl" id="ref-for-dom-identitycredential-configurl">configURL</a></code> tells the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp⑧">RP</a> which <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp③⓪">IDP</a> issued the token, so it can
+   <p class="note" role="note"><span class="marker">Note:</span> <code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dom-identitycredential-configurl" id="ref-for-dom-identitycredential-configurl">configURL</a></code> tells the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp⑧">RP</a> which <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp③①">IDP</a> issued the token, so it can
 verify the token using the protocol named by <code class="idl"><a data-link-type="idl" href="#dom-identityproviderconfig-federation" id="ref-for-dom-identityproviderconfig-federation⑥">federation</a></code>.</p>
    <h3 class="heading settled" data-level="5.2" id="registered-providers"><span class="secno">5.2. </span><span class="content">Registered providers</span><a class="self-link" href="#registered-providers"></a></h3>
    <p>A <dfn class="dfn-paneled" data-dfn-type="dfn" data-noexport id="registered-provider">registered provider</dfn> is an <code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dictdef-identityproviderrequestoptions" id="ref-for-dictdef-identityproviderrequestoptions③">IdentityProviderRequestOptions</a></code> that the user agent
-creates for the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp③①">IDP</a> of one or more <a data-link-type="dfn" href="#handle" id="ref-for-handle⑤②">handles</a>, rather than one the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp⑨">RP</a> passed. The
+creates for the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp③②">IDP</a> of one or more <a data-link-type="dfn" href="#handle" id="ref-for-handle⑤②">handles</a>, rather than one the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp⑨">RP</a> passed. The
 user agent keeps the following associated with it:</p>
    <dl>
     <dt data-md><dfn class="dfn-paneled" data-dfn-for="registered provider" data-dfn-type="dfn" data-noexport id="registered-provider-config">config</dfn>
@@ -1716,7 +1733,7 @@ user agent keeps the following associated with it:</p>
      <p>The <code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dictdef-identityproviderapiconfig" id="ref-for-dictdef-identityproviderapiconfig②">IdentityProviderAPIConfig</a></code> from <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#fetch-the-config-file" id="ref-for-fetch-the-config-file⑥">fetch the config file</a>.</p>
     <dt data-md><dfn class="dfn-paneled" data-dfn-for="registered provider" data-dfn-type="dfn" data-noexport id="registered-provider-handles">handles</dfn>
     <dd data-md>
-     <p>A <a data-link-type="dfn" href="https://infra.spec.whatwg.org/#list" id="ref-for-list②">list</a> of <a data-link-type="dfn" href="#handle" id="ref-for-handle⑤③">handles</a> that <a data-link-type="dfn" href="#resolve-a-handle" id="ref-for-resolve-a-handle①②">resolve</a> to this <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp③②">IDP</a>: the
+     <p>A <a data-link-type="dfn" href="https://infra.spec.whatwg.org/#list" id="ref-for-list②">list</a> of <a data-link-type="dfn" href="#handle" id="ref-for-handle⑤③">handles</a> that <a data-link-type="dfn" href="#resolve-a-handle" id="ref-for-resolve-a-handle①②">resolve</a> to this <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp③③">IDP</a>: the
 ones in the <a data-link-type="dfn" href="#handle-registry" id="ref-for-handle-registry①⑧">handle registry</a>, or the single <a data-link-type="dfn" href="#handle" id="ref-for-handle⑤④">handle</a> the user typed.</p>
     <dt data-md><dfn class="dfn-paneled" data-dfn-for="registered provider" data-dfn-type="dfn" data-noexport id="registered-provider-accounts">accounts</dfn>
     <dd data-md>
@@ -1780,16 +1797,16 @@ of <a data-link-type="dfn" href="#find-matching-accounts" id="ref-for-find-match
    </div>
    <p class="note" role="note"><span class="marker">Note:</span> Only accounts whose <code class="idl"><a data-link-type="idl" href="#dom-identityprovideraccount-handle" id="ref-for-dom-identityprovideraccount-handle⑤">handle</a></code> is a registered <a data-link-type="dfn" href="#handle" id="ref-for-handle⑤⑦">handle</a> are shown
 to other <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp①⓪">RPs</a>, because those are the accounts the user agreed to (with
-<code class="idl"><a data-link-type="idl" href="#dom-identityprovider-register" id="ref-for-dom-identityprovider-register⑥">register()</a></code>, or by typing the <a data-link-type="dfn" href="#handle" id="ref-for-handle⑤⑧">handle</a>). An <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp③③">IDP</a>’s
+<code class="idl"><a data-link-type="idl" href="#dom-identityprovider-register" id="ref-for-dom-identityprovider-register⑥">register()</a></code>, or by typing the <a data-link-type="dfn" href="#handle" id="ref-for-handle⑤⑧">handle</a>). An <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp③④">IDP</a>’s
 <code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dom-identityproviderapiconfig-accounts_endpoint" id="ref-for-dom-identityproviderapiconfig-accounts_endpoint②">accounts_endpoint</a></code> can return other accounts (or push them via
 <a data-link-type="biblio" href="https://w3c-fedid.github.io/idp-registration/account-registry.html"><cite>Account Registry API</cite></a>), but they aren’t shown on a <a data-link-type="dfn" href="#federation-request" id="ref-for-federation-request③">federation request</a> until their
 <a data-link-type="dfn" href="#handle" id="ref-for-handle⑤⑨">handles</a> are registered.</p>
-   <p class="issue" id="issue-3cfcba5a"><a class="self-link" href="#issue-3cfcba5a"></a> Should other accounts from a registered <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp③④">IDP</a> also be shown, once the user has
+   <p class="issue" id="issue-3cfcba5a"><a class="self-link" href="#issue-3cfcba5a"></a> Should other accounts from a registered <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp③⑤">IDP</a> also be shown, once the user has
 registered at least one <a data-link-type="dfn" href="#handle" id="ref-for-handle⑥⓪">handle</a> with it?</p>
    <div class="algorithm" data-algorithm="group registered handles by config URL">
     
 To <dfn class="dfn-paneled" data-dfn-type="dfn" data-noexport id="group-registered-handles-by-config-url">group registered handles by config URL</dfn> given a <var>globalObject</var>, run the following steps.
-This returns an <a data-link-type="dfn" href="https://infra.spec.whatwg.org/#ordered-map" id="ref-for-ordered-map">ordered map</a> from <a data-link-type="dfn" href="https://url.spec.whatwg.org/#concept-url" id="ref-for-concept-url③">URLs</a> of <a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file⑥">config files</a> to <a data-link-type="dfn" href="https://infra.spec.whatwg.org/#list" id="ref-for-list⑧">lists</a> of
+This returns an <a data-link-type="dfn" href="https://infra.spec.whatwg.org/#ordered-map" id="ref-for-ordered-map">ordered map</a> from <a data-link-type="dfn" href="https://url.spec.whatwg.org/#concept-url" id="ref-for-concept-url③">URLs</a> of <a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file⑦">config files</a> to <a data-link-type="dfn" href="https://infra.spec.whatwg.org/#list" id="ref-for-list⑧">lists</a> of
 <a data-link-type="dfn" href="#handle" id="ref-for-handle⑥①">handles</a>.
 
 
@@ -1812,9 +1829,9 @@ empty <a data-link-type="dfn" href="https://infra.spec.whatwg.org/#list" id="ref
       <p>Return <var>groups</var>.</p>
     </ol>
    </div>
-   <p class="note" role="note"><span class="marker">Note:</span> Several <a data-link-type="dfn" href="#handle" id="ref-for-handle⑥②">handles</a> can resolve to the same <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp③⑤">IDP</a>, for example when two users of
-the same <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp③⑥">IDP</a> share a user agent. Grouping them means the user agent fetches that <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp③⑦">IDP</a>’s
-<a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file⑦">config file</a> and accounts once.</p>
+   <p class="note" role="note"><span class="marker">Note:</span> Several <a data-link-type="dfn" href="#handle" id="ref-for-handle⑥②">handles</a> can resolve to the same <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp③⑥">IDP</a>, for example when two users of
+the same <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp③⑦">IDP</a> share a user agent. Grouping them means the user agent fetches that <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp③⑧">IDP</a>’s
+<a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file⑧">config file</a> and accounts once.</p>
    <div class="algorithm" data-algorithm="gather registered providers">
     
 To <dfn class="dfn-paneled" data-dfn-type="dfn" data-noexport id="gather-registered-providers">gather registered providers</dfn> given an <code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dictdef-identityproviderrequestoptions" id="ref-for-dictdef-identityproviderrequestoptions⑧">IdentityProviderRequestOptions</a></code>
@@ -1838,8 +1855,8 @@ To <dfn class="dfn-paneled" data-dfn-type="dfn" data-noexport id="gather-registe
         <p>Let <var>origin</var> be <var>configUrl</var>’s <a data-link-type="dfn" href="https://url.spec.whatwg.org/#concept-url-origin" id="ref-for-concept-url-origin④">origin</a>.</p>
        <li data-md>
         <p>If <var>seenOrigins</var> <a data-link-type="dfn" href="https://infra.spec.whatwg.org/#list-contain" id="ref-for-list-contain②">contains</a> <var>origin</var>, <a data-link-type="dfn" href="https://infra.spec.whatwg.org/#iteration-continue" id="ref-for-iteration-continue①">continue</a>.</p>
-        <p class="note" role="note"><span class="marker">Note:</span> If the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp①①">RP</a> also lists this <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp③⑧">IDP</a> explicitly, the explicit entry is used and
-the registration is ignored, so that the same <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp③⑨">IDP</a> doesn’t appear twice.</p>
+        <p class="note" role="note"><span class="marker">Note:</span> If the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp①①">RP</a> also lists this <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp③⑨">IDP</a> explicitly, the explicit entry is used and
+the registration is ignored, so that the same <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp④⓪">IDP</a> doesn’t appear twice.</p>
        <li data-md>
         <p>Let <var>provider</var> be the result of <a data-link-type="dfn" href="#create-a-registered-provider" id="ref-for-create-a-registered-provider②">create a registered provider</a> with <var>configUrl</var> and
 <var>federationRequest</var>.</p>
@@ -1895,7 +1912,7 @@ following as the first sub-step:
         <p><a data-link-type="dfn" href="https://infra.spec.whatwg.org/#iteration-continue" id="ref-for-iteration-continue④">Continue</a>.</p>
       </ol>
       <p class="note" role="note"><span class="marker">Note:</span> For registered providers, <a data-link-type="dfn" href="#gather-registered-providers" id="ref-for-gather-registered-providers②">gather registered providers</a> has already fetched the
-<a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file⑧">config file</a> and matching accounts. If no matching account is signed in, the user agent
+<a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file⑨">config file</a> and matching accounts. If no matching account is signed in, the user agent
 shows a <a data-link-type="dfn" href="#handle-chip" id="ref-for-handle-chip②">handle chip</a> instead of mismatch UI.</p>
     </ol>
    </div>
@@ -2024,7 +2041,7 @@ set the relevant provider to <var>provider</var> and the relevant config to <var
 
     <tbody>
      <tr>
-      <td><a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp④⓪">IDP</a>
+      <td><a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp④①">IDP</a>
       <td>
     Lists the federations it supports in <code class="idl"><a data-link-type="idl" href="#dom-identityproviderapiconfig-federations" id="ref-for-dom-identityproviderapiconfig-federations⑤">federations</a></code>.
     Serves a <a data-link-type="dfn" href="https://url.spec.whatwg.org/#well-known-file" id="ref-for-well-known-file④">well-known file</a> at its <a data-link-type="dfn" href="#site-of-a-host" id="ref-for-site-of-a-host⑥">site</a> with a single
@@ -2052,7 +2069,7 @@ set the relevant provider to <var>provider</var> and the relevant config to <var
       <td>
     Passes a <code class="idl"><a data-link-type="idl" href="#dom-identityproviderconfig-federation" id="ref-for-dom-identityproviderconfig-federation①①">federation</a></code>, and verifies the returned token according to that
     federation, including checking that it was issued for the handle and by the
-    <code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dom-identitycredential-configurl" id="ref-for-dom-identitycredential-configurl①">configURL</a></code>’s <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp④①">IDP</a>.
+    <code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dom-identitycredential-configurl" id="ref-for-dom-identitycredential-configurl①">configURL</a></code>’s <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp④②">IDP</a>.
 
    </table>
    <h2 class="heading settled" data-level="7" id="privacy"><span class="secno">7. </span><span class="content">Privacy considerations</span><a class="self-link" href="#privacy"></a></h2>
@@ -2066,15 +2083,15 @@ set the relevant provider to <var>provider</var> and the relevant config to <var
 
     <tbody>
      <tr>
-      <td><a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file⑨">Config file</a> of registered <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp④②">IDPs</a>
+      <td><a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file①⓪">Config file</a> of registered <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp④③">IDPs</a>
       <td>On a <a data-link-type="dfn" href="#federation-request" id="ref-for-federation-request④">federation request</a>
       <td>No
       <td>No
 
      <tr>
-      <td><code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dom-identityproviderapiconfig-accounts_endpoint" id="ref-for-dom-identityproviderapiconfig-accounts_endpoint④">accounts_endpoint</a></code> of registered <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp④③">IDPs</a>
+      <td><code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dom-identityproviderapiconfig-accounts_endpoint" id="ref-for-dom-identityproviderapiconfig-accounts_endpoint④">accounts_endpoint</a></code> of registered <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp④④">IDPs</a>
       <td>On a
-    <a data-link-type="dfn" href="#federation-request" id="ref-for-federation-request⑤">federation request</a>, when the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp④④">IDP</a>’s login status is <a data-link-type="dfn" href="https://w3c-fedid.github.io/login-status/#logged-in" id="ref-for-logged-in④">logged-in</a>
+    <a data-link-type="dfn" href="#federation-request" id="ref-for-federation-request⑤">federation request</a>, when the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp④⑤">IDP</a>’s login status is <a data-link-type="dfn" href="https://w3c-fedid.github.io/login-status/#logged-in" id="ref-for-logged-in④">logged-in</a>
       <td>Yes
       <td>No
 
@@ -2086,10 +2103,10 @@ set the relevant provider to <var>provider</var> and the relevant config to <var
       <td>No
 
      <tr>
-      <td>DNS <code>TXT</code> lookup, <a data-link-type="dfn" href="https://url.spec.whatwg.org/#well-known-file" id="ref-for-well-known-file⑥">well-known file</a>, <a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file①⓪">config file</a>, and (when <a data-link-type="dfn" href="https://w3c-fedid.github.io/login-status/#logged-in" id="ref-for-logged-in⑤">logged-in</a>)
-    <code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dom-identityproviderapiconfig-accounts_endpoint" id="ref-for-dom-identityproviderapiconfig-accounts_endpoint⑤">accounts_endpoint</a></code> of the resolved <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp④⑤">IDP</a>
+      <td>DNS <code>TXT</code> lookup, <a data-link-type="dfn" href="https://url.spec.whatwg.org/#well-known-file" id="ref-for-well-known-file⑥">well-known file</a>, <a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file①①">config file</a>, and (when <a data-link-type="dfn" href="https://w3c-fedid.github.io/login-status/#logged-in" id="ref-for-logged-in⑤">logged-in</a>)
+    <code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dom-identityproviderapiconfig-accounts_endpoint" id="ref-for-dom-identityproviderapiconfig-accounts_endpoint⑤">accounts_endpoint</a></code> of the resolved <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp④⑥">IDP</a>
       <td>After
-    the user submits a handle, or when an <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp④⑥">IDP</a> calls <code class="idl"><a data-link-type="idl" href="#dom-identityprovider-register" id="ref-for-dom-identityprovider-register⑧">register()</a></code> or
+    the user submits a handle, or when an <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp④⑦">IDP</a> calls <code class="idl"><a data-link-type="idl" href="#dom-identityprovider-register" id="ref-for-dom-identityprovider-register⑧">register()</a></code> or
     <code class="idl"><a data-link-type="idl" href="#dom-identityprovider-unregister" id="ref-for-dom-identityprovider-unregister④">unregister()</a></code>
       <td>Only for
     <code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dom-identityproviderapiconfig-accounts_endpoint" id="ref-for-dom-identityproviderapiconfig-accounts_endpoint⑥">accounts_endpoint</a></code>
@@ -2112,14 +2129,14 @@ set the relevant provider to <var>provider</var> and the relevant config to <var
    </table>
    <ul>
     <li data-md>
-     <p>A registered <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp④⑦">IDP</a> whose login status is <a data-link-type="dfn" href="https://w3c-fedid.github.io/login-status/#logged-out" id="ref-for-logged-out">logged-out</a> receives no credentialed request
-before the user chooses to sign in with a <a data-link-type="dfn" href="#handle-chip" id="ref-for-handle-chip⑤">handle chip</a>. When the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp④⑧">IDP</a>’s login status is
+     <p>A registered <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp④⑧">IDP</a> whose login status is <a data-link-type="dfn" href="https://w3c-fedid.github.io/login-status/#logged-out" id="ref-for-logged-out">logged-out</a> receives no credentialed request
+before the user chooses to sign in with a <a data-link-type="dfn" href="#handle-chip" id="ref-for-handle-chip⑤">handle chip</a>. When the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp④⑨">IDP</a>’s login status is
 <a data-link-type="dfn" href="https://w3c-fedid.github.io/login-status/#logged-in" id="ref-for-logged-in⑥">logged-in</a>, the user agent fetches its <code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dom-identityproviderapiconfig-accounts_endpoint" id="ref-for-dom-identityproviderapiconfig-accounts_endpoint⑦">accounts_endpoint</a></code> as in
-<a data-link-type="biblio" href="https://w3c-fedid.github.io/FedCM/"><cite>Federated Credential Management API</cite></a> (unless the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp④⑨">IDP</a> and user agent use <a data-link-type="biblio" href="https://w3c-fedid.github.io/idp-registration/account-registry.html"><cite>Account Registry API</cite></a>, which avoids the
+<a data-link-type="biblio" href="https://w3c-fedid.github.io/FedCM/"><cite>Federated Credential Management API</cite></a> (unless the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp⑤⓪">IDP</a> and user agent use <a data-link-type="biblio" href="https://w3c-fedid.github.io/idp-registration/account-registry.html"><cite>Account Registry API</cite></a>, which avoids the
 credentialed fetch).</p>
     <li data-md>
-     <p>Typing a handle reveals its <a data-link-type="dfn" href="#handle-site" id="ref-for-handle-site①③">site</a> to the DNS resolver and to the resolved <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp⑤⓪">IDP</a>’s
-servers, and signing in with a <a data-link-type="dfn" href="#handle-chip" id="ref-for-handle-chip⑥">handle chip</a> sends the handle to the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp⑤①">IDP</a>, but nothing is
+     <p>Typing a handle reveals its <a data-link-type="dfn" href="#handle-site" id="ref-for-handle-site①③">site</a> to the DNS resolver and to the resolved <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp⑤①">IDP</a>’s
+servers, and signing in with a <a data-link-type="dfn" href="#handle-chip" id="ref-for-handle-chip⑥">handle chip</a> sends the handle to the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp⑤②">IDP</a>, but nothing is
 revealed to the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp①⑤">RP</a> until the user finishes signing in.</p>
     <li data-md>
      <p>Because the <a data-link-type="dfn" href="#handle-registry" id="ref-for-handle-registry②⓪">handle registry</a> stores only <a data-link-type="dfn" href="#handle" id="ref-for-handle⑥⑧">handles</a>, a <a data-link-type="dfn" href="#federation-request" id="ref-for-federation-request⑦">federation request</a> can cause
@@ -2131,14 +2148,14 @@ can reduce this by caching resolution results (see <a href="#registry">§ 2.3 
 <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp①⑦">RP</a> until the user selects an account.</p>
     <li data-md>
      <p>The <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#promise-rejection-delay" id="ref-for-promise-rejection-delay">delay before rejection</a> defined in <a data-link-type="biblio" href="https://w3c-fedid.github.io/FedCM/"><cite>Federated Credential Management API</cite></a> still applies, so an
-<a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp①⑧">RP</a> can’t tell whether the user has any registered <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp⑤②">IDPs</a>.</p>
+<a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp①⑧">RP</a> can’t tell whether the user has any registered <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp⑤③">IDPs</a>.</p>
    </ul>
    <h2 class="heading settled" data-level="8" id="security"><span class="secno">8. </span><span class="content">Security considerations</span><a class="self-link" href="#security"></a></h2>
    <ul>
     <li data-md>
      <p><strong>Resolution isn’t proof.</strong> An attacker who spoofs DNS, or controls a <a data-link-type="dfn" href="#site-of-a-host" id="ref-for-site-of-a-host⑦">site</a>’s
-<a data-link-type="dfn" href="https://url.spec.whatwg.org/#well-known-file" id="ref-for-well-known-file⑦">well-known file</a>, can make resolution end at an <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp⑤③">IDP</a> of their choosing. That gets them the typed
-handle. They don’t get the user’s credentials for the real <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp⑤④">IDP</a>, and they can’t make the
+<a data-link-type="dfn" href="https://url.spec.whatwg.org/#well-known-file" id="ref-for-well-known-file⑦">well-known file</a>, can make resolution end at an <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp⑤④">IDP</a> of their choosing. That gets them the typed
+handle. They don’t get the user’s credentials for the real <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp⑤⑤">IDP</a>, and they can’t make the
 <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp①⑨">RP</a> accept a token for someone else’s handle, as long as the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#rp" id="ref-for-rp②⓪">RP</a> verifies the token using
 its protocol (for example, atproto’s two-way check between handle and DID). This is the same
 reasoning as the Email Verification Protocol’s analysis of DNS delegation.</p>
@@ -2163,13 +2180,13 @@ declines.</p>
 <a data-link-type="dfn" href="#handle" id="ref-for-handle⑦②">handles</a>, a registered <a data-link-type="dfn" href="#handle" id="ref-for-handle⑦③">handle</a> follows its <a data-link-type="dfn" href="#handle-site" id="ref-for-handle-site①⑥">site</a>: if the site’s
 <a href="#dns-record">delegation record</a> or the <a data-link-type="dfn" href="#issuer" id="ref-for-issuer①⑦">issuer</a>’s <a data-link-type="dfn" href="https://url.spec.whatwg.org/#well-known-file" id="ref-for-well-known-file⑨">well-known file</a> changes, the
 <a data-link-type="dfn" href="#handle" id="ref-for-handle⑦④">handle</a> is offered with the new <a data-link-type="dfn" href="#issuer" id="ref-for-issuer①⑧">issuer</a>. That is how a user moves a <a data-link-type="dfn" href="#handle" id="ref-for-handle⑦⑤">handle</a> to
-another <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp⑤⑤">IDP</a>, but it also means that whoever controls the site later (for example, after the
+another <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp⑤⑥">IDP</a>, but it also means that whoever controls the site later (for example, after the
 domain expires) controls the handle’s <a data-link-type="dfn" href="#issuer" id="ref-for-issuer①⑨">issuer</a>. A user agent that caches resolution results
 MAY notice such a change and ask the user to confirm it.</p>
     <li data-md>
-     <p>**An <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp⑤⑥">IDP</a> can only register <a data-link-type="dfn" href="#handle" id="ref-for-handle⑦⑥">handles</a> it is the <a data-link-type="dfn" href="#issuer" id="ref-for-issuer②⓪">issuer</a> of.** <code class="idl"><a data-link-type="idl" href="#dom-identityprovider-register" id="ref-for-dom-identityprovider-register①⓪">register()</a></code>
-requires the <a data-link-type="dfn" href="#resolve-a-handle" id="ref-for-resolve-a-handle①⑤">resolved</a> <a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file①①">config file</a> to be <a data-link-type="dfn" href="https://html.spec.whatwg.org/multipage/browsers.html#same-site" id="ref-for-same-site②">same site</a> with the
-caller, so a site can’t register handles whose <a data-link-type="dfn" href="#issuer" id="ref-for-issuer②①">issuer</a> is another <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp⑤⑦">IDP</a>. Similarly,
+     <p>**An <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp⑤⑦">IDP</a> can only register <a data-link-type="dfn" href="#handle" id="ref-for-handle⑦⑥">handles</a> it is the <a data-link-type="dfn" href="#issuer" id="ref-for-issuer②⓪">issuer</a> of.** <code class="idl"><a data-link-type="idl" href="#dom-identityprovider-register" id="ref-for-dom-identityprovider-register①⓪">register()</a></code>
+requires the <a data-link-type="dfn" href="#resolve-a-handle" id="ref-for-resolve-a-handle①⑤">resolved</a> <a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file①②">config file</a> to be <a data-link-type="dfn" href="https://html.spec.whatwg.org/multipage/browsers.html#same-site" id="ref-for-same-site②">same site</a> with the
+caller, so a site can’t register handles whose <a data-link-type="dfn" href="#issuer" id="ref-for-issuer②①">issuer</a> is another <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp⑤⑧">IDP</a>. Similarly,
 <code class="idl"><a data-link-type="idl" href="#dom-identityprovider-unregister" id="ref-for-dom-identityprovider-unregister⑤">unregister()</a></code> only removes <a data-link-type="dfn" href="#handle" id="ref-for-handle⑦⑦">handles</a> that resolve to the caller’s
 <a data-link-type="dfn" href="#site-of-a-host" id="ref-for-site-of-a-host⑧">site</a>.</p>
    </ul>
@@ -2177,7 +2194,7 @@ caller, so a site can’t register handles whose <a data-link-type="dfn" href="#
    <p><em>This section is non-normative.</em></p>
    <div class="example" id="example-same-site">
     <a class="self-link" href="#example-same-site"></a>
-**The handle and the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp⑤⑧">IDP</a> are on the same site.** Alice runs her own atproto server at
+**The handle and the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp⑤⑨">IDP</a> are on the same site.** Alice runs her own atproto server at
 <code>pds.alice.example</code>, and her handle is <code>@alice.example</code>.
 
 
@@ -2192,7 +2209,7 @@ caller, so a site can’t register handles whose <a data-link-type="dfn" href="#
       <p><code>https://alice.example/.well-known/web-identity</code> returns
 <code>{"provider_urls": ["https://pds.alice.example/config.json"]}</code>, which is on the same site.</p>
      <li data-md>
-      <p>The <a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file①②">config file</a> lists <code>https://atproto.com</code> in <code class="idl"><a data-link-type="idl" href="#dom-identityproviderapiconfig-federations" id="ref-for-dom-identityproviderapiconfig-federations⑥">federations</a></code>.</p>
+      <p>The <a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file①③">config file</a> lists <code>https://atproto.com</code> in <code class="idl"><a data-link-type="idl" href="#dom-identityproviderapiconfig-federations" id="ref-for-dom-identityproviderapiconfig-federations⑥">federations</a></code>.</p>
      <li data-md>
       <p>Alice isn’t signed in to <code>pds.alice.example</code> yet, so the user agent shows a <a data-link-type="dfn" href="#handle-chip" id="ref-for-handle-chip⑧">handle chip</a> for
 <code>@alice.example</code>.</p>
@@ -2205,7 +2222,7 @@ caller, so a site can’t register handles whose <a data-link-type="dfn" href="#
    </div>
    <div class="example" id="example-cross-site">
     <a class="self-link" href="#example-cross-site"></a>
-**The handle and the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp⑤⑨">IDP</a> are on different sites.** Bob’s handle is <code>@bob.example</code>, and his
+**The handle and the <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp⑥⓪">IDP</a> are on different sites.** Bob’s handle is <code>@bob.example</code>, and his
 account is hosted by <code>social.example</code>.
 
 
@@ -2214,7 +2231,7 @@ account is hosted by <code>social.example</code>.
       <p>Bob publishes <code>_web-identity.bob.example TXT "iss=social.example"</code>.</p>
      <li data-md>
       <p><a data-link-type="dfn" href="#resolve-the-issuer" id="ref-for-resolve-the-issuer③">Resolve the issuer</a> returns <code>social.example</code>. The user agent fetches
-<code>https://social.example/.well-known/web-identity</code> and then its <a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file①③">config file</a>.</p>
+<code>https://social.example/.well-known/web-identity</code> and then its <a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file①④">config file</a>.</p>
      <li data-md>
       <p>The user agent shows Bob’s account with <code>handle: "@bob.example"</code> (if he is signed in to
 <code>social.example</code>), or a <a data-link-type="dfn" href="#handle-chip" id="ref-for-handle-chip⑨">handle chip</a>.</p>
@@ -2239,9 +2256,9 @@ account is hosted by <code>social.example</code>.
    </div>
    <div class="example" id="example-shared-host"><a class="self-link" href="#example-shared-host"></a>
 <strong>Many users share a host.</strong> Dave (<code>dave@social.example</code>) and Erin (<code>@erin.social.example</code>) both
-resolve to the same <a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file①④">config file</a>. The <a data-link-type="dfn" href="#handle-registry" id="ref-for-handle-registry②④">handle registry</a> has both <a data-link-type="dfn" href="#handle" id="ref-for-handle⑦⑧">handles</a>, and
+resolve to the same <a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file①⑤">config file</a>. The <a data-link-type="dfn" href="#handle-registry" id="ref-for-handle-registry②④">handle registry</a> has both <a data-link-type="dfn" href="#handle" id="ref-for-handle⑦⑧">handles</a>, and
 <a data-link-type="dfn" href="#group-registered-handles-by-config-url" id="ref-for-group-registered-handles-by-config-url①">group registered handles by config URL</a> groups them together. On a <a data-link-type="dfn" href="#federation-request" id="ref-for-federation-request⑧">federation request</a>, the
-user agent fetches that <a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file①⑤">config file</a> and <code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dom-identityproviderapiconfig-accounts_endpoint" id="ref-for-dom-identityproviderapiconfig-accounts_endpoint⑨">accounts_endpoint</a></code> once,
+user agent fetches that <a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file①⑥">config file</a> and <code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dom-identityproviderapiconfig-accounts_endpoint" id="ref-for-dom-identityproviderapiconfig-accounts_endpoint⑨">accounts_endpoint</a></code> once,
 and shows the signed-in accounts that match <code>dave@social.example</code> or <code>@erin.social.example</code>, plus a
 <a data-link-type="dfn" href="#handle-chip" id="ref-for-handle-chip①⓪">handle chip</a> for either handle that doesn’t have a matching signed-in account.
 
@@ -2834,7 +2851,7 @@ let dfnPanelData = {
 "bdbd19d1": {"dfnID":"bdbd19d1","dfnText":"Promise","external":true,"refSections":[{"refs":[{"id":"ref-for-idl-promise"},{"id":"ref-for-idl-promise\u2460"},{"id":"ref-for-idl-promise\u2461"},{"id":"ref-for-idl-promise\u2462"}],"title":"3.1. Registering a handle"}],"url":"https://webidl.spec.whatwg.org/#idl-promise"},
 "be08bdf2": {"dfnID":"be08bdf2","dfnText":"configURL (for IdentityProviderConfig)","external":true,"refSections":[{"refs":[{"id":"ref-for-dom-identityproviderconfig-configurl"}],"title":"1. Introduction"},{"refs":[{"id":"ref-for-dom-identityproviderconfig-configurl\u2460"},{"id":"ref-for-dom-identityproviderconfig-configurl\u2461"},{"id":"ref-for-dom-identityproviderconfig-configurl\u2462"}],"title":"5.1. Requesting by federation"},{"refs":[{"id":"ref-for-dom-identityproviderconfig-configurl\u2463"},{"id":"ref-for-dom-identityproviderconfig-configurl\u2464"},{"id":"ref-for-dom-identityproviderconfig-configurl\u2465"}],"title":"5.2. Registered providers"},{"refs":[{"id":"ref-for-dom-identityproviderconfig-configurl\u2466"}],"title":"5.3. Account selection"}],"url":"https://w3c-fedid.github.io/FedCM/#dom-identityproviderconfig-configurl"},
 "be2d2b4c": {"dfnID":"be2d2b4c","dfnText":"SyntaxError","external":true,"refSections":[{"refs":[{"id":"ref-for-syntaxerror"},{"id":"ref-for-syntaxerror\u2460"}],"title":"3.1. Registering a handle"}],"url":"https://webidl.spec.whatwg.org/#syntaxerror"},
-"c0307185": {"dfnID":"c0307185","dfnText":"IDP","external":true,"refSections":[{"refs":[{"id":"ref-for-idp"},{"id":"ref-for-idp\u2460"},{"id":"ref-for-idp\u2461"},{"id":"ref-for-idp\u2462"}],"title":"1. Introduction"},{"refs":[{"id":"ref-for-idp\u2463"},{"id":"ref-for-idp\u2464"}],"title":"2. Handles"},{"refs":[{"id":"ref-for-idp\u2465"}],"title":"2.1. Parsing"},{"refs":[{"id":"ref-for-idp\u2466"}],"title":"2.2. Resolution"},{"refs":[{"id":"ref-for-idp\u2467"}],"title":"2.2.1. Resolve the issuer"},{"refs":[{"id":"ref-for-idp\u2468"}],"title":"2.2.2. DNS delegation record"},{"refs":[{"id":"ref-for-idp\u2460\u24ea"},{"id":"ref-for-idp\u2460\u2460"},{"id":"ref-for-idp\u2460\u2461"},{"id":"ref-for-idp\u2460\u2462"},{"id":"ref-for-idp\u2460\u2463"},{"id":"ref-for-idp\u2460\u2464"}],"title":"2.3. The Handle Registry"},{"refs":[{"id":"ref-for-idp\u2460\u2465"}],"title":"3. IdP-initiated Registration"},{"refs":[{"id":"ref-for-idp\u2460\u2466"},{"id":"ref-for-idp\u2460\u2467"},{"id":"ref-for-idp\u2460\u2468"},{"id":"ref-for-idp\u2461\u24ea"},{"id":"ref-for-idp\u2461\u2460"},{"id":"ref-for-idp\u2461\u2461"}],"title":"3.1. Registering a handle"},{"refs":[{"id":"ref-for-idp\u2461\u2462"}],"title":"3.2. Account handles"},{"refs":[{"id":"ref-for-idp\u2461\u2463"},{"id":"ref-for-idp\u2461\u2464"}],"title":"3.3. Declaring supported federations"},{"refs":[{"id":"ref-for-idp\u2461\u2465"}],"title":"5. Presentation"},{"refs":[{"id":"ref-for-idp\u2461\u2466"},{"id":"ref-for-idp\u2461\u2467"},{"id":"ref-for-idp\u2461\u2468"},{"id":"ref-for-idp\u2462\u24ea"}],"title":"5.1. Requesting by federation"},{"refs":[{"id":"ref-for-idp\u2462\u2460"},{"id":"ref-for-idp\u2462\u2461"},{"id":"ref-for-idp\u2462\u2462"},{"id":"ref-for-idp\u2462\u2463"},{"id":"ref-for-idp\u2462\u2464"},{"id":"ref-for-idp\u2462\u2465"},{"id":"ref-for-idp\u2462\u2466"},{"id":"ref-for-idp\u2462\u2467"},{"id":"ref-for-idp\u2462\u2468"}],"title":"5.2. Registered providers"},{"refs":[{"id":"ref-for-idp\u2463\u24ea"},{"id":"ref-for-idp\u2463\u2460"}],"title":"6. Requirements on other parties"},{"refs":[{"id":"ref-for-idp\u2463\u2461"},{"id":"ref-for-idp\u2463\u2462"},{"id":"ref-for-idp\u2463\u2463"},{"id":"ref-for-idp\u2463\u2464"},{"id":"ref-for-idp\u2463\u2465"},{"id":"ref-for-idp\u2463\u2466"},{"id":"ref-for-idp\u2463\u2467"},{"id":"ref-for-idp\u2463\u2468"},{"id":"ref-for-idp\u2464\u24ea"},{"id":"ref-for-idp\u2464\u2460"},{"id":"ref-for-idp\u2464\u2461"}],"title":"7. Privacy considerations"},{"refs":[{"id":"ref-for-idp\u2464\u2462"},{"id":"ref-for-idp\u2464\u2463"},{"id":"ref-for-idp\u2464\u2464"},{"id":"ref-for-idp\u2464\u2465"},{"id":"ref-for-idp\u2464\u2466"}],"title":"8. Security considerations"},{"refs":[{"id":"ref-for-idp\u2464\u2467"},{"id":"ref-for-idp\u2464\u2468"}],"title":"9. Examples"}],"url":"https://w3c-fedid.github.io/FedCM/#idp"},
+"c0307185": {"dfnID":"c0307185","dfnText":"IDP","external":true,"refSections":[{"refs":[{"id":"ref-for-idp"},{"id":"ref-for-idp\u2460"},{"id":"ref-for-idp\u2461"},{"id":"ref-for-idp\u2462"}],"title":"1. Introduction"},{"refs":[{"id":"ref-for-idp\u2463"},{"id":"ref-for-idp\u2464"}],"title":"2. Handles"},{"refs":[{"id":"ref-for-idp\u2465"}],"title":"2.1. Parsing"},{"refs":[{"id":"ref-for-idp\u2466"}],"title":"2.2. Resolution"},{"refs":[{"id":"ref-for-idp\u2467"}],"title":"2.2.1. Resolve the issuer"},{"refs":[{"id":"ref-for-idp\u2468"}],"title":"2.2.2. DNS delegation record"},{"refs":[{"id":"ref-for-idp\u2460\u24ea"},{"id":"ref-for-idp\u2460\u2460"},{"id":"ref-for-idp\u2460\u2461"},{"id":"ref-for-idp\u2460\u2462"},{"id":"ref-for-idp\u2460\u2463"},{"id":"ref-for-idp\u2460\u2464"}],"title":"2.3. The Handle Registry"},{"refs":[{"id":"ref-for-idp\u2460\u2465"}],"title":"3. IdP-initiated Registration"},{"refs":[{"id":"ref-for-idp\u2460\u2466"},{"id":"ref-for-idp\u2460\u2467"},{"id":"ref-for-idp\u2460\u2468"},{"id":"ref-for-idp\u2461\u24ea"},{"id":"ref-for-idp\u2461\u2460"},{"id":"ref-for-idp\u2461\u2461"}],"title":"3.1. Registering a handle"},{"refs":[{"id":"ref-for-idp\u2461\u2462"}],"title":"3.2. Account handles"},{"refs":[{"id":"ref-for-idp\u2461\u2463"},{"id":"ref-for-idp\u2461\u2464"},{"id":"ref-for-idp\u2461\u2465"}],"title":"3.3. Declaring supported federations"},{"refs":[{"id":"ref-for-idp\u2461\u2466"}],"title":"5. Presentation"},{"refs":[{"id":"ref-for-idp\u2461\u2467"},{"id":"ref-for-idp\u2461\u2468"},{"id":"ref-for-idp\u2462\u24ea"},{"id":"ref-for-idp\u2462\u2460"}],"title":"5.1. Requesting by federation"},{"refs":[{"id":"ref-for-idp\u2462\u2461"},{"id":"ref-for-idp\u2462\u2462"},{"id":"ref-for-idp\u2462\u2463"},{"id":"ref-for-idp\u2462\u2464"},{"id":"ref-for-idp\u2462\u2465"},{"id":"ref-for-idp\u2462\u2466"},{"id":"ref-for-idp\u2462\u2467"},{"id":"ref-for-idp\u2462\u2468"},{"id":"ref-for-idp\u2463\u24ea"}],"title":"5.2. Registered providers"},{"refs":[{"id":"ref-for-idp\u2463\u2460"},{"id":"ref-for-idp\u2463\u2461"}],"title":"6. Requirements on other parties"},{"refs":[{"id":"ref-for-idp\u2463\u2462"},{"id":"ref-for-idp\u2463\u2463"},{"id":"ref-for-idp\u2463\u2464"},{"id":"ref-for-idp\u2463\u2465"},{"id":"ref-for-idp\u2463\u2466"},{"id":"ref-for-idp\u2463\u2467"},{"id":"ref-for-idp\u2463\u2468"},{"id":"ref-for-idp\u2464\u24ea"},{"id":"ref-for-idp\u2464\u2460"},{"id":"ref-for-idp\u2464\u2461"},{"id":"ref-for-idp\u2464\u2462"}],"title":"7. Privacy considerations"},{"refs":[{"id":"ref-for-idp\u2464\u2463"},{"id":"ref-for-idp\u2464\u2464"},{"id":"ref-for-idp\u2464\u2465"},{"id":"ref-for-idp\u2464\u2466"},{"id":"ref-for-idp\u2464\u2467"}],"title":"8. Security considerations"},{"refs":[{"id":"ref-for-idp\u2464\u2468"},{"id":"ref-for-idp\u2465\u24ea"}],"title":"9. Examples"}],"url":"https://w3c-fedid.github.io/FedCM/#idp"},
 "c0868016": {"dfnID":"c0868016","dfnText":"path","external":true,"refSections":[{"refs":[{"id":"ref-for-concept-url-path"}],"title":"2.2. Resolution"}],"url":"https://url.spec.whatwg.org/#concept-url-path"},
 "c62cd7cf": {"dfnID":"c62cd7cf","dfnText":"origin","external":true,"refSections":[{"refs":[{"id":"ref-for-concept-document-origin"},{"id":"ref-for-concept-document-origin\u2460"}],"title":"3.1. Registering a handle"},{"refs":[{"id":"ref-for-concept-document-origin\u2461"}],"title":"5.1. Requesting by federation"}],"url":"https://dom.spec.whatwg.org/#concept-document-origin"},
 "c6a1d695": {"dfnID":"c6a1d695","dfnText":"username","external":true,"refSections":[{"refs":[{"id":"ref-for-dom-identityprovideraccount-username"}],"title":"2.1. Parsing"},{"refs":[{"id":"ref-for-dom-identityprovideraccount-username\u2460"},{"id":"ref-for-dom-identityprovideraccount-username\u2461"}],"title":"3.2. Account handles"}],"url":"https://w3c-fedid.github.io/FedCM/#dom-identityprovideraccount-username"},
@@ -2842,7 +2859,7 @@ let dfnPanelData = {
 "ca3ca4ae": {"dfnID":"ca3ca4ae","dfnText":"URL parser","external":true,"refSections":[{"refs":[{"id":"ref-for-concept-url-parser"},{"id":"ref-for-concept-url-parser\u2460"},{"id":"ref-for-concept-url-parser\u2461"}],"title":"2.1. Parsing"},{"refs":[{"id":"ref-for-concept-url-parser\u2462"}],"title":"2.2. Resolution"},{"refs":[{"id":"ref-for-concept-url-parser\u2463"}],"title":"5.2. Registered providers"}],"url":"https://url.spec.whatwg.org/#concept-url-parser"},
 "ce3d2bbb": {"dfnID":"ce3d2bbb","dfnText":"current global object","external":true,"refSections":[{"refs":[{"id":"ref-for-current-global-object"},{"id":"ref-for-current-global-object\u2460"}],"title":"3.1. Registering a handle"}],"url":"https://html.spec.whatwg.org/multipage/webappapis.html#current-global-object"},
 "create-a-registered-provider": {"dfnID":"create-a-registered-provider","dfnText":"create a registered provider","external":false,"refSections":[{"refs":[{"id":"ref-for-create-a-registered-provider"}],"title":"3.1. Registering a handle"},{"refs":[{"id":"ref-for-create-a-registered-provider\u2460"}],"title":"4. User-initiated Registration"},{"refs":[{"id":"ref-for-create-a-registered-provider\u2461"}],"title":"5.2. Registered providers"}],"url":"#create-a-registered-provider"},
-"d5260602": {"dfnID":"d5260602","dfnText":"config file","external":true,"refSections":[{"refs":[{"id":"ref-for-config-file"}],"title":"1. Introduction"},{"refs":[{"id":"ref-for-config-file\u2460"},{"id":"ref-for-config-file\u2461"},{"id":"ref-for-config-file\u2462"}],"title":"2.2. Resolution"},{"refs":[{"id":"ref-for-config-file\u2463"}],"title":"2.3. The Handle Registry"},{"refs":[{"id":"ref-for-config-file\u2464"}],"title":"5.1. Requesting by federation"},{"refs":[{"id":"ref-for-config-file\u2465"},{"id":"ref-for-config-file\u2466"},{"id":"ref-for-config-file\u2467"}],"title":"5.2. Registered providers"},{"refs":[{"id":"ref-for-config-file\u2468"},{"id":"ref-for-config-file\u2460\u24ea"}],"title":"7. Privacy considerations"},{"refs":[{"id":"ref-for-config-file\u2460\u2460"}],"title":"8. Security considerations"},{"refs":[{"id":"ref-for-config-file\u2460\u2461"},{"id":"ref-for-config-file\u2460\u2462"},{"id":"ref-for-config-file\u2460\u2463"},{"id":"ref-for-config-file\u2460\u2464"}],"title":"9. Examples"}],"url":"https://url.spec.whatwg.org/#config-file"},
+"d5260602": {"dfnID":"d5260602","dfnText":"config file","external":true,"refSections":[{"refs":[{"id":"ref-for-config-file"}],"title":"1. Introduction"},{"refs":[{"id":"ref-for-config-file\u2460"},{"id":"ref-for-config-file\u2461"},{"id":"ref-for-config-file\u2462"}],"title":"2.2. Resolution"},{"refs":[{"id":"ref-for-config-file\u2463"}],"title":"2.3. The Handle Registry"},{"refs":[{"id":"ref-for-config-file\u2464"}],"title":"3.3. Declaring supported federations"},{"refs":[{"id":"ref-for-config-file\u2465"}],"title":"5.1. Requesting by federation"},{"refs":[{"id":"ref-for-config-file\u2466"},{"id":"ref-for-config-file\u2467"},{"id":"ref-for-config-file\u2468"}],"title":"5.2. Registered providers"},{"refs":[{"id":"ref-for-config-file\u2460\u24ea"},{"id":"ref-for-config-file\u2460\u2460"}],"title":"7. Privacy considerations"},{"refs":[{"id":"ref-for-config-file\u2460\u2461"}],"title":"8. Security considerations"},{"refs":[{"id":"ref-for-config-file\u2460\u2462"},{"id":"ref-for-config-file\u2460\u2463"},{"id":"ref-for-config-file\u2460\u2464"},{"id":"ref-for-config-file\u2460\u2465"}],"title":"9. Examples"}],"url":"https://url.spec.whatwg.org/#config-file"},
 "d7f3b337": {"dfnID":"d7f3b337","dfnText":"branding","external":true,"refSections":[{"refs":[{"id":"ref-for-dom-identityproviderapiconfig-branding"}],"title":"3.1. Registering a handle"}],"url":"https://w3c-fedid.github.io/FedCM/#dom-identityproviderapiconfig-branding"},
 "d8f8bd6e": {"dfnID":"d8f8bd6e","dfnText":"extend","external":true,"refSections":[{"refs":[{"id":"ref-for-list-extend"}],"title":"5.1. Requesting by federation"},{"refs":[{"id":"ref-for-list-extend\u2460"}],"title":"5.2. Registered providers"}],"url":"https://infra.spec.whatwg.org/#list-extend"},
 "dc1f14fc": {"dfnID":"dc1f14fc","dfnText":"create an IdentityCredential","external":true,"refSections":[{"refs":[{"id":"ref-for-create-an-identitycredential"},{"id":"ref-for-create-an-identitycredential\u2460"}],"title":"5.1. Requesting by federation"},{"refs":[{"id":"ref-for-create-an-identitycredential\u2461"}],"title":"5.2. Registered providers"},{"refs":[{"id":"ref-for-create-an-identitycredential\u2462"}],"title":"5.3. Account selection"}],"url":"https://w3c-fedid.github.io/FedCM/#create-an-identitycredential"},
