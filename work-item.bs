@@ -185,10 +185,19 @@ A change to an algorithm or definition in another specification.
 </div>
 
 <!-- ============================================================ -->
-# Infrastructure # {#infrastructure}
+# Handles # {#handles}
 <!-- ============================================================ -->
 
 This specification depends on the Infra Standard. [[!INFRA]]
+
+A <dfn>handle</dfn> is a globally-unique and human-readable [=string=] that identifies the user,
+that is produced by [=parse a handle=], and that is resolvable by
+[=resolve a handle|Resolution=]. A handle isn't necessarily permanent: a user can change it, or
+move it to another [=IDP=].
+
+An <dfn>issuer</dfn> is an [=IDP=] that is the authority for a [=/handle=]. The user agent identifies an
+issuer by its [=site of a host|site=], where it serves its [=well-known file=]. Each [=/handle=] has
+exactly one issuer at a time, which [=resolve a handle|Resolution=] finds.
 
 The <dfn>site of a host</dfn> |host| is |host|'s [=host/registrable domain=]. A [=host=] |host| is
 a <dfn>site host</dfn> if |host| is a [=/domain=], its [=host/registrable domain=] is non-null, and
@@ -200,19 +209,6 @@ The [=site of a host|site=] of `alice.social.example` is `social.example`, as lo
 [=site of a host|site=] of `alice.hosting.example` is `alice.hosting.example`.
 
 </div>
-
-<!-- ============================================================ -->
-# Handles # {#handles}
-<!-- ============================================================ -->
-
-A <dfn>handle</dfn> is a globally-unique and human-readable [=string=] that identifies the user,
-that is produced by [=parse a handle=], and that is resolvable by
-[=resolve a handle|Resolution=]. A handle isn't necessarily permanent: a user can change it, or
-move it to another [=IDP=].
-
-An <dfn>issuer</dfn> is an [=IDP=] that is the authority for a [=/handle=]. The user agent identifies an
-issuer by its [=site of a host|site=], where it serves its [=well-known file=]. Each [=/handle=] has
-exactly one issuer at a time, which [=resolve a handle|Resolution=] finds.
 
 This section defines how the user agent parses a [=/handle=], resolves it to its [=issuer=], and
 stores the [=/handle|handles=] the user uses. None of this requires the user agent to understand
@@ -492,7 +488,7 @@ the user back in. So an [=IDP=] calls `setStatus("logged-out")` when the user si
 example when the account is deleted.
 
 <!-- ============================================================ -->
-# Registration # {#registration}
+# IdP-initiated Registration # {#registration}
 <!-- ============================================================ -->
 
 This section defines how an [=IDP=] registers and unregisters a user's [=/handle=], and what it
@@ -507,8 +503,9 @@ partial interface IdentityProvider {
 };
 </xmp>
 
-An [=IDP=] registering a [=/handle=] and the user typing it follow the same path: both
-[=resolve a handle|resolve=] it, and both add the same [=/handle=] to the [=handle registry=].
+An [=IDP=] registering a [=/handle=] and the user typing it ([[#user-registration]]) follow the
+same path: both [=resolve a handle|resolve=] it, and both add the same [=/handle=] to the
+[=handle registry=].
 
 Note: An [=IDP=] can only register and unregister [=/handle|handles=] that it is the [=issuer=] of,
 as named by the [[#dns-record|delegation record]] on the handle's [=handle/site=].
@@ -654,6 +651,70 @@ partial dictionary IdentityProviderAPIConfig {
         doesn't list a federation is never returned for a [=federation request=] for that
         federation.
 </dl>
+
+<!-- ============================================================ -->
+# User-initiated Registration # {#user-registration}
+<!-- ============================================================ -->
+
+A user whose [=/handle=] isn't in the [=handle registry=] yet can type it when signing in to an
+[=RP=] (via the [=find your account affordance=] in [[#presentation]]). The user agent
+[=look up a typed handle|resolves=] the typed handle, checks that its [=issuer=] supports the
+requested federation, and adds the handle to the [=handle registry=] once the user selects it.
+
+<div algorithm>
+To <dfn>find your account</dfn> given an {{IdentityProviderRequestOptions}} |federationRequest| and a
+|globalObject|, run the following steps. This returns a pair (an {{IdentityProviderAccount}}, a
+[=registered provider=]), or null.
+
+1. Show UI that asks the user to type a handle. The user agent MAY offer suggestions from its own
+    local data (such as the [=/handle|handles=] in the [=handle registry=]). It MUST NOT
+    send network requests while the user types.
+1. Wait for the user to submit a [=string=] |input|, or to cancel. If the user cancels, return
+    null.
+1. Let |provider| be the result of [=look up a typed handle=] with |input|, |federationRequest|, and
+    |globalObject|.
+1. If |provider| is failure, tell the user that no account provider was found for |input|, and go
+    back to the first step.
+1. Let |handle| be |provider|'s [=registered provider/handles=][0].
+1. If |provider|'s [=registered provider/accounts=] is not empty, show each of them. Otherwise,
+    show a [=handle chip=] for |handle| and |provider|.
+1. Wait for the user to select one of them, or to cancel. If the user cancels, return null.
+1. [=Add to the handle registry=] with |handle|.
+
+    Note: Selecting the [=/handle=] has the same effect as agreeing to
+    [=ask to save a handle|save it=] after {{IdentityProvider/register()}}. The choice is stored
+    as soon as the user selects it, before sign-in, so that it's remembered even if sign-in fails
+    or the user abandons it.
+1. If the user selected an account |account|, return (|account|, |provider|).
+1. Let |account| be the result of [=sign in with a handle=] with |handle|, |provider|, and
+    |globalObject|.
+1. If |account| is failure, go back to the first step.
+1. Return (|account|, |provider|).
+
+</div>
+
+<div algorithm>
+To <dfn>look up a typed handle</dfn> given a [=string=] |input|, an
+{{IdentityProviderRequestOptions}} |federationRequest|, and a |globalObject|, run the following steps.
+This returns a [=registered provider=] or failure.
+
+1. Let |handle| be the result of [=parse a handle=] with |input|. If |handle| is failure, return
+    failure.
+1. Let |configUrl| be the result of [=resolve a handle=] with |handle| and |globalObject|. If
+    |configUrl| is failure, return failure.
+1. Let |provider| be the result of [=create a registered provider=] with |configUrl| and
+    |federationRequest|.
+1. Let |config| be the result of [=fetch the config file=] with |provider| and |globalObject|.
+    If |config| is failure, return failure.
+1. If |config|.{{IdentityProviderAPIConfig/federations}} doesn't [=map/exist=] or doesn't
+    [=list/contain=] |federationRequest|.{{IdentityProviderConfig/federation}}, return failure.
+1. Set |provider|'s [=registered provider/config=] to |config|, its
+    [=registered provider/handles=] to « |handle| », and its [=registered provider/accounts=] to
+    the result of [=get the registered accounts=] with |config|, |provider|, « |handle| », and
+    |globalObject|.
+1. Return |provider|.
+
+</div>
 
 <!-- ============================================================ -->
 # Presentation # {#presentation}
@@ -893,61 +954,6 @@ credentials and MAY cache it.
 </div>
 
 Issue(29): Define where the federation authority publishes its branding, and in which format.
-
-<div algorithm>
-To <dfn>find your account</dfn> given an {{IdentityProviderRequestOptions}} |federationRequest| and a
-|globalObject|, run the following steps. This returns a pair (an {{IdentityProviderAccount}}, a
-[=registered provider=]), or null.
-
-1. Show UI that asks the user to type a handle. The user agent MAY offer suggestions from its own
-    local data (such as the [=/handle|handles=] in the [=handle registry=]). It MUST NOT
-    send network requests while the user types.
-1. Wait for the user to submit a [=string=] |input|, or to cancel. If the user cancels, return
-    null.
-1. Let |provider| be the result of [=look up a typed handle=] with |input|, |federationRequest|, and
-    |globalObject|.
-1. If |provider| is failure, tell the user that no account provider was found for |input|, and go
-    back to the first step.
-1. Let |handle| be |provider|'s [=registered provider/handles=][0].
-1. If |provider|'s [=registered provider/accounts=] is not empty, show each of them. Otherwise,
-    show a [=handle chip=] for |handle| and |provider|.
-1. Wait for the user to select one of them, or to cancel. If the user cancels, return null.
-1. [=Add to the handle registry=] with |handle|.
-
-    Note: Selecting the [=/handle=] has the same effect as agreeing to
-    [=ask to save a handle|save it=] after {{IdentityProvider/register()}}. The choice is stored
-    as soon as the user selects it, before sign-in, so that it's remembered even if sign-in fails
-    or the user abandons it.
-1. If the user selected an account |account|, return (|account|, |provider|).
-1. Let |account| be the result of [=sign in with a handle=] with |handle|, |provider|, and
-    |globalObject|.
-1. If |account| is failure, go back to the first step.
-1. Return (|account|, |provider|).
-
-</div>
-
-<div algorithm>
-To <dfn>look up a typed handle</dfn> given a [=string=] |input|, an
-{{IdentityProviderRequestOptions}} |federationRequest|, and a |globalObject|, run the following steps.
-This returns a [=registered provider=] or failure.
-
-1. Let |handle| be the result of [=parse a handle=] with |input|. If |handle| is failure, return
-    failure.
-1. Let |configUrl| be the result of [=resolve a handle=] with |handle| and |globalObject|. If
-    |configUrl| is failure, return failure.
-1. Let |provider| be the result of [=create a registered provider=] with |configUrl| and
-    |federationRequest|.
-1. Let |config| be the result of [=fetch the config file=] with |provider| and |globalObject|.
-    If |config| is failure, return failure.
-1. If |config|.{{IdentityProviderAPIConfig/federations}} doesn't [=map/exist=] or doesn't
-    [=list/contain=] |federationRequest|.{{IdentityProviderConfig/federation}}, return failure.
-1. Set |provider|'s [=registered provider/config=] to |config|, its
-    [=registered provider/handles=] to « |handle| », and its [=registered provider/accounts=] to
-    the result of [=get the registered accounts=] with |config|, |provider|, « |handle| », and
-    |globalObject|.
-1. Return |provider|.
-
-</div>
 
 <div algorithm="sign in with a handle">
 To <dfn>sign in with a handle</dfn> given a [=/handle=] |handle|, a [=registered provider=]
