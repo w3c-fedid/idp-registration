@@ -135,8 +135,8 @@ allow-listing:
 
 1. A user whose [=/handle=] isn't registered yet can **type it**, for example `@alice.example`,
     `alice@social.example` or `https://alice.example`. The user agent
-    [=look up a typed handle|resolves it=] to its [=issuer=] and registers it
-    ([=find your account=]).
+    [=check a typed handle|resolves it=] to its [=issuer=] and registers it
+    ([=type your handle=]).
 
 Both ways of registering a [=/handle=] run the same [[#resolution|resolution]] and add the same
 [=/handle=] to the [=handle registry=].
@@ -442,7 +442,7 @@ Each [=user agent=] has a global, persistent <dfn>handle registry</dfn>, an init
 [=/handle|handles=] in the [=handle registry=] [=handles match|match=].
 
 A [=/handle=] is added to the [=handle registry=] in the same way whether the [=IDP=] registered it
-with {{IdentityProvider/register()}} or the user typed it ([=find your account=]). The user agent
+with {{IdentityProvider/register()}} or the user typed it ([=type your handle=]). The user agent
 doesn't record which one did.
 
 The [=handle registry=] stores only [=/handle|handles=]. It doesn't store which [=IDP=] a
@@ -674,65 +674,56 @@ IndieAuth and AT Protocol:
 # User-initiated Registration # {#user-registration}
 <!-- ============================================================ -->
 
-A user whose [=/handle=] isn't in the [=handle registry=] yet can type it when signing in to an
-[=RP=] (via the [=find your account affordance=] in [[#presentation]]). The user agent
-[=look up a typed handle|resolves=] the typed handle, checks that its [=issuer=] supports the
-requested federation, and adds the handle to the [=handle registry=] once the user selects it.
+A user whose [=/handle=] isn't in the [=handle registry=] yet can register it by typing it. The
+user agent decides when to allow users to [=type your handle=], for example when an [=RP=] makes a
+[=federation request=] ([[#account-selection]]). The user agent
+[=check a typed handle|checks=] that the typed handle [=resolve a handle|resolves=] to an
+[=issuer=] that supports one of the federations the caller accepts, and adds it to the
+[=handle registry=].
 
 <div algorithm>
-To <dfn>find your account</dfn> given an {{IdentityProviderRequestOptions}} |federationRequest| and a
-|globalObject|, run the following steps. This returns a pair (an {{IdentityProviderAccount}}, a
-[=registered provider=]), or null.
+To <dfn>type your handle</dfn> given a [=list=] of {{IdentityProviderConfig/federation}} URLs
+|federations| and a |globalObject|, run the following steps. This returns a [=/handle=] or null.
 
 1. Show UI that asks the user to type a handle. The user agent MAY offer suggestions from its own
     local data (such as the [=/handle|handles=] in the [=handle registry=]). It MUST NOT
     send network requests while the user types.
 1. Wait for the user to submit a [=string=] |input|, or to cancel. If the user cancels, return
     null.
-1. Let |provider| be the result of [=look up a typed handle=] with |input|, |federationRequest|, and
+1. Let |handle| be the result of [=check a typed handle=] with |input|, |federations|, and
     |globalObject|.
-1. If |provider| is failure, tell the user that no account provider was found for |input|, and go
+1. If |handle| is failure, tell the user that no account provider was found for |input|, and go
     back to the first step.
-1. Let |handle| be |provider|'s [=registered provider/handles=][0].
-1. If |provider|'s [=registered provider/accounts=] is not empty, show each of them. Otherwise,
-    show a [=handle chip=] for |handle| and |provider|.
-1. Wait for the user to select one of them, or to cancel. If the user cancels, return null.
 1. [=Add to the handle registry=] with |handle|.
 
-    Note: Selecting the [=/handle=] has the same effect as agreeing to
+    Note: Submitting the [=/handle=] has the same effect as agreeing to
     [=ask to save a handle|save it=] after {{IdentityProvider/register()}}. The choice is stored
-    as soon as the user selects it, before sign-in, so that it's remembered even if sign-in fails
-    or the user abandons it.
-1. If the user selected an account |account|, return (|account|, |provider|).
-1. Let |account| be the result of [=sign in with a handle=] with |handle|, |provider|, and
-    |globalObject|.
-1. If |account| is failure, go back to the first step.
-1. Return (|account|, |provider|).
+    before sign-in, so that it's remembered even if sign-in fails or the user abandons it.
+1. Return |handle|.
 
 </div>
 
 <div algorithm>
-To <dfn>look up a typed handle</dfn> given a [=string=] |input|, an
-{{IdentityProviderRequestOptions}} |federationRequest|, and a |globalObject|, run the following steps.
-This returns a [=registered provider=] or failure.
+To <dfn>check a typed handle</dfn> given a [=string=] |input|, a [=list=] of
+{{IdentityProviderConfig/federation}} URLs |federations|, and a |globalObject|, run the following
+steps. This returns a [=/handle=] or failure.
 
 1. Let |handle| be the result of [=parse a handle=] with |input|. If |handle| is failure, return
     failure.
 1. Let |configUrl| be the result of [=resolve a handle=] with |handle| and |globalObject|. If
     |configUrl| is failure, return failure.
-1. Let |provider| be the result of [=create a registered provider=] with |configUrl| and
-    |federationRequest|.
-1. Let |config| be the result of [=fetch the config file=] with |provider| and |globalObject|.
-    If |config| is failure, return failure.
-1. If |config|.{{IdentityProviderAPIConfig/federations}} doesn't [=map/exist=] or doesn't
-    [=list/contain=] |federationRequest|.{{IdentityProviderConfig/federation}}, return failure.
-1. Set |provider|'s [=registered provider/config=] to |config|, its
-    [=registered provider/handles=] to « |handle| », and its [=registered provider/accounts=] to
-    the result of [=get the registered accounts=] with |config|, |provider|, « |handle| », and
-    |globalObject|.
-1. Return |provider|.
+1. Let |config| be the result of [=fetch the config file=] with the result of
+    [=create a registered provider=] with |configUrl| and null, and |globalObject|. If |config| is
+    failure, return failure.
+1. If |config|.{{IdentityProviderAPIConfig/federations}} doesn't [=map/exist=], or none of its
+    [=list/items=] is [=list/contained=] in |federations|, return failure.
+1. Return |handle|.
 
 </div>
+
+Note: [=Type your handle=] doesn't deal with accounts or with the [=RP=]'s request. It only
+registers a [=/handle=]. Showing the handle's accounts and signing in with it is up to the caller
+([[#account-selection]]).
 
 <!-- ============================================================ -->
 # Presentation # {#presentation}
@@ -896,7 +887,6 @@ To <dfn>gather registered providers</dfn> given an {{IdentityProviderRequestOpti
 |federationRequest|, a [=list=] of {{IdentityProviderRequestOptions}} |explicitProviders|, and a
 |globalObject|, run the following steps. This returns a [=list=] of [=registered providers=].
 
-1. Let |federation| be |federationRequest|.{{IdentityProviderConfig/federation}}.
 1. Let |seenOrigins| be the [=ordered set=] of the [=url/origins=] of the
     {{IdentityProviderConfig/configURL}}s of |explicitProviders|.
 1. Let |result| be an empty [=list=].
@@ -907,19 +897,30 @@ To <dfn>gather registered providers</dfn> given an {{IdentityProviderRequestOpti
 
         Note: If the [=RP=] also lists this [=IDP=] explicitly, the explicit entry is used and
         the registration is ignored, so that the same [=IDP=] doesn't appear twice.
-    1. Let |provider| be the result of [=create a registered provider=] with |configUrl| and
-        |federationRequest|.
-    1. Let |config| be the result of [=fetch the config file=] with |provider| and |globalObject|.
-    1. If |config| is failure, [=iteration/continue=].
-    1. If |config|.{{IdentityProviderAPIConfig/federations}} doesn't [=map/exist=] or doesn't
-        [=list/contain=] |federation|, [=iteration/continue=].
-    1. Let |accounts| be the result of [=get the registered accounts=] with |config|, |provider|,
-        |handles|, and |globalObject|.
-    1. Set |provider|'s [=registered provider/config=] to |config|, its
-        [=registered provider/handles=] to |handles|, and its [=registered provider/accounts=] to
-        |accounts|.
+    1. Let |provider| be the result of [=load a registered provider=] with |configUrl|, |handles|,
+        |federationRequest|, and |globalObject|.
+    1. If |provider| is failure, [=iteration/continue=].
     1. [=set/Append=] |origin| to |seenOrigins|, and [=list/append=] |provider| to |result|.
 1. Return |result|.
+
+</div>
+
+<div algorithm>
+To <dfn>load a registered provider</dfn> given a [=/URL=] |configUrl|, a [=list=] of
+[=/handle|handles=] |handles|, a [=federation request=] |federationRequest|, and a |globalObject|,
+run the following steps. This returns a [=registered provider=] or failure.
+
+1. Let |provider| be the result of [=create a registered provider=] with |configUrl| and
+    |federationRequest|.
+1. Let |config| be the result of [=fetch the config file=] with |provider| and |globalObject|.
+1. If |config| is failure, return failure.
+1. If |config|.{{IdentityProviderAPIConfig/federations}} doesn't [=map/exist=] or doesn't
+    [=list/contain=] |federationRequest|.{{IdentityProviderConfig/federation}}, return failure.
+1. Set |provider|'s [=registered provider/config=] to |config|, its
+    [=registered provider/handles=] to |handles|, and its [=registered provider/accounts=] to the
+    result of [=get the registered accounts=] with |config|, |provider|, |handles|, and
+    |globalObject|.
+1. Return |provider|.
 
 </div>
 
@@ -1010,8 +1011,7 @@ Change the step "If |providerMap| [=map/is empty=], return (failure, false)" to:
 1. If |providerMap| [=map/is empty=]:
     1. If |federationRequest| is null, or <var ignore>mode</var> is not
         {{IdentityCredentialRequestOptionsMode/active}}, return (failure, false).
-    1. Otherwise, the user agent MAY continue, showing only the
-        [=find your account affordance=].
+    1. Otherwise, the user agent MAY continue, only allowing users to [=type your handle=].
 
 In the "Build UI" step, add the following for each [=registered provider=] |provider| in
 |providerList|:
@@ -1028,13 +1028,28 @@ In the "Build UI" step, add the following for each [=registered provider=] |prov
 
 After the "Build UI" step, add the following step:
 
-1. If |federationRequest| is not null, the user agent SHOULD add a
-    <dfn>find your account affordance</dfn>. If the user triggers it:
-    1. Let |result| be the result of [=find your account=] with |federationRequest| and |globalObject|.
-    1. If |result| is not null, let (|account|, |resolvedProvider|) be |result|. Set
-        |selectedAccount| to |account| and |permission| to true, set the relevant provider to
-        |resolvedProvider| and the relevant config to |resolvedProvider|'s
-        [=registered provider/config=], and close the dialog.
+1. If |federationRequest| is not null, the user agent SHOULD allow users to [=type your handle=].
+    If the user chooses to:
+    1. Let |handle| be the result of [=type your handle=] with «
+        |federationRequest|.{{IdentityProviderConfig/federation}} » and |globalObject|. If |handle|
+        is null, return to the dialog.
+    1. Let |configUrl| be the result of [=resolve a handle=] with |handle| and |globalObject|.
+    1. Let |provider| be failure if |configUrl| is failure, and otherwise the result of
+        [=load a registered provider=] with |configUrl|, « |handle| », |federationRequest|, and
+        |globalObject|. If |provider| is failure, return to the dialog.
+    1. If |provider|'s [=registered provider/accounts=] is not empty, show each of them.
+        Otherwise, show a [=handle chip=] for |handle| and |provider|.
+    1. Wait for the user to select one of them, or to cancel. If the user cancels, return to the
+        dialog.
+    1. If the user selected an account, let |account| be that account. Otherwise, let |account|
+        be the result of [=sign in with a handle=] with |handle|, |provider|, and |globalObject|,
+        and if |account| is failure, return to the dialog.
+    1. Set |selectedAccount| to |account| and |permission| to true, set the relevant provider to
+        |provider| and the relevant config to |provider|'s [=registered provider/config=], and
+        close the dialog.
+
+    Note: The user agent can reuse the results of [=resolve a handle|resolution=] and
+    [=fetch the config file=] from [=type your handle=], rather than repeating them.
 
 </div>
 
@@ -1153,16 +1168,17 @@ After the "Build UI" step, add the following step:
 **The handle and the [=IDP=] are on the same site.** Alice runs her own atproto server at
 `pds.alice.example`, and her handle is `@alice.example`.
 
-1. Alice types `@alice.example` in [=find your account=]. [=Parse a handle=] gives
+1. Alice chooses to [=type your handle=] and types `@alice.example`. [=Parse a handle=] gives
     `@alice.example`, whose [=handle/site=] is `alice.example`.
 1. `_web-identity.alice.example` has `TXT "iss=alice.example"`, so [=resolve the issuer=] returns
     `alice.example`.
 1. `https://alice.example/.well-known/web-identity` returns
     `{"provider_urls": ["https://pds.alice.example/config.json"]}`, which is on the same site.
-1. The [=config file=] lists `https://atproto.com` in {{IdentityProviderAPIConfig/federations}}.
+1. The [=config file=] lists `https://atproto.com` in {{IdentityProviderAPIConfig/federations}},
+    so the user agent adds `@alice.example` to the [=handle registry=].
 1. Alice isn't signed in to `pds.alice.example` yet, so the user agent shows a [=handle chip=] for
     `@alice.example`.
-1. When Alice selects it, the user agent adds `@alice.example` to the [=handle registry=] and opens
+1. When Alice selects it, the user agent opens
     `login_url?login_hint=%40alice.example`. Her server signs her in, its
     {{IdentityProviderAPIConfig/accounts_endpoint}} returns an account with
     `{handle: "@alice.example"}`, and the user agent requests the token.
