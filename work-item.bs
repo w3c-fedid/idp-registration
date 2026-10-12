@@ -185,6 +185,109 @@ A change to an algorithm or definition in another specification.
 </div>
 
 <!-- ============================================================ -->
+# Federations # {#federations}
+<!-- ============================================================ -->
+
+A federation, such as IndieAuth or atproto, is identified by an `https:` URL: the URL that [=RPs=]
+pass as {{IdentityProviderConfig/federation}} and that [=IDPs=] list in
+{{IdentityProviderAPIConfig/federations}}. The <dfn>federation operator</dfn> is the party that
+controls the [=url/origin=] of that URL. It is responsible for:
+
+* Defining the federation: the protocol or profile that its [=IDPs=] and [=RPs=] follow, including
+    how [=RPs=] verify the tokens that [=IDPs=] issue.
+* Publishing [=operator metadata=] about the federation, such as its
+    [=federation branding|branding=], which the user agent uses in its UI ([[#presentation]]).
+
+The user agent doesn't need to understand the federation's protocol. It only reads the
+[=operator metadata=].
+
+## Operator metadata ## {#operator-metadata-document}
+
+A [=federation operator=] serves its <dfn>operator metadata</dfn> at the path
+`/.well-known/web-identity-federation` on the [=url/origin=] of its federation's URL. For the
+federation `https://atproto.com`, this is `https://atproto.com/.well-known/web-identity-federation`.
+
+<xmp class="idl">
+dictionary IdentityFederationOperatorMetadata {
+  IdentityProviderBranding branding;
+};
+</xmp>
+
+<dl dfn-type="dict-member" dfn-for="IdentityFederationOperatorMetadata">
+    :   <dfn>branding</dfn>
+    ::  The federation's [=federation branding|branding=], in the same format as an [=IDP=]'s
+        {{IdentityProviderAPIConfig/branding}}: its {{IdentityProviderBranding/name}},
+        {{IdentityProviderBranding/icons}}, {{IdentityProviderBranding/background_color}}, and
+        {{IdentityProviderBranding/color}}.
+</dl>
+
+<div class="example" id="example-operator-metadata">
+The operator metadata at `https://atproto.com/.well-known/web-identity-federation`:
+
+```json
+{
+  "branding": {
+    "name": "Atmosphere",
+    "icons": [{"url": "https://atproto.com/icon.png", "size": 64}],
+    "background_color": "#1185fe",
+    "color": "#ffffff"
+  }
+}
+```
+
+</div>
+
+<div algorithm>
+To <dfn>fetch the operator metadata</dfn> given a [=string=] |federation| and a |globalObject|, run
+the following steps. This returns an {{IdentityFederationOperatorMetadata}} or failure.
+
+1. Let |federationUrl| be the result of running the [=URL parser=] on |federation|. If
+    |federationUrl| is failure, or its [=url/scheme=] is not "`https`", return failure.
+1. Let |url| be a new [=/URL=] with [=url/scheme=] "`https`", [=url/host=] |federationUrl|'s
+    [=url/host=], [=url/port=] |federationUrl|'s [=url/port=], and [=url/path=]
+    « "`.well-known`", "`web-identity-federation`" ».
+1. Run the steps of [=fetch the config file=] that fetch the [=config file=] and convert it to an
+    {{IdentityProviderAPIConfig}}, with |url| in place of the config URL, |globalObject|, and
+    {{IdentityFederationOperatorMetadata}} in place of {{IdentityProviderAPIConfig}}. Return the
+    result.
+
+</div>
+
+Note: Like the [=config file=], the [=operator metadata=] is fetched without credentials, without
+a referrer, and from an opaque origin, so the [=federation operator=] doesn't learn who is asking
+or which [=RP=] they are visiting. User agents MAY cache it according to HTTP caching rules.
+
+Issue: Because the [=operator metadata=] lives at a well-known path on the federation URL's
+[=url/origin=], one origin can operate only one federation. Should the federation URL point at
+the [=operator metadata=] directly instead?
+
+## Branding ## {#branding}
+
+<div algorithm>
+To <dfn>get the federation branding</dfn> given a {{IdentityProviderConfig/federation}}
+|federation| and a |globalObject|, run the following steps. This returns an
+{{IdentityProviderBranding}} or null.
+
+1. Let |metadata| be the result of [=fetch the operator metadata=] with |federation| and
+    |globalObject|.
+1. If |metadata| is failure, or |metadata|["{{IdentityFederationOperatorMetadata/branding}}"]
+    doesn't [=map/exist=], return null.
+1. Return |metadata|["{{IdentityFederationOperatorMetadata/branding}}"].
+
+</div>
+
+A federation's <dfn>federation branding</dfn> is the {{IdentityFederationOperatorMetadata/branding}}
+in its [=operator metadata=], which the user agent obtains with [=get the federation branding=]. The
+user agent uses it to show the user which federation an [=RP=] is asking for
+([[#account-selection]]), the same
+way [[FEDCM]] uses an [=IDP=]'s {{IdentityProviderAPIConfig/branding}}: it uses the
+{{IdentityProviderBranding/name}} as the federation's name, picks an icon from
+{{IdentityProviderBranding/icons}}, and MAY use {{IdentityProviderBranding/background_color}} and
+{{IdentityProviderBranding/color}}, subject to the same contrast requirements.
+
+Note: This addresses [issue 29](https://github.com/w3c-fedid/idp-registration/issues/29).
+
+<!-- ============================================================ -->
 # Handles # {#handles}
 <!-- ============================================================ -->
 
@@ -810,10 +913,17 @@ In [=create an IdentityCredential=], insert the following steps immediately afte
 1. If |federationRequests|'s [=list/size=] is greater than 1, return (failure, true).
 1. [=list/Remove=] the [=list/items=] of |federationRequests| from |providerList|.
 1. Let |federationRequest| be |federationRequests|[0] if it exists, and null otherwise.
+1. Let |federationBranding| be null.
 1. If |federationRequest| is not null:
     1. Let |registered| be the result of [=gather registered providers=] with |federationRequest|,
         |providerList|, and |globalObject|.
     1. [=list/Extend=] |providerList| with |registered|.
+    1. Set |federationBranding| to the result of [=get the federation branding=] with
+        |federationRequest|.{{IdentityProviderConfig/federation}} and |globalObject|.
+
+    Note: The user agent can fetch the [=operator metadata=] in parallel with
+    [=gather registered providers=]. |federationBranding| is used when building the UI
+    ([[#account-selection]]).
 
 </div>
 
@@ -1007,26 +1117,23 @@ following as the first sub-step:
 
 ## Account selection ## {#account-selection}
 
-A <dfn>handle chip</dfn> for a [=/handle=] |handle| and a [=registered provider=] |provider| is a
-user agent UI element that represents an account the user hasn't signed in to yet:
+A <dfn>handle chip</dfn> for a [=/handle=] |handle|, a [=registered provider=] |provider|, and an
+{{IdentityProviderBranding}} or null |federationBranding| is a user agent UI element that
+represents an account the user hasn't signed in to yet:
 
 * Its primary label is |handle|.
-* It SHOULD show the [=federation branding=] for the {{IdentityProviderConfig/federation}} requested.
-    If there isn't any, it uses a generic icon.
+* If |federationBranding| is not null, it SHOULD show it, as described in [[#branding]]: for
+    example, the federation's icon, and its {{IdentityProviderBranding/name}} as secondary text.
+    Otherwise, it uses a generic icon.
 * It MAY show the [=url/host=] of |provider|'s {{IdentityProviderConfig/configURL}} as secondary
     text, so that the user knows where they'll sign in.
 
-An account from [=find matching accounts=] is shown the same way FedCM shows accounts. The user
-agent MAY add the [=federation branding=] as a badge.
+An account from [=find matching accounts=] is shown the same way FedCM shows accounts. If
+|federationBranding| is not null, the user agent MAY add its icon as a badge.
 
-<div algorithm>
-The <dfn>federation branding</dfn> for a {{IdentityProviderConfig/federation}} |federation| is a name and an
-icon published by the authority behind |federation|, or null. The user agent obtains it without
-credentials and MAY cache it.
-
-</div>
-
-Issue(29): Define where the federation authority publishes its branding, and in which format.
+The user agent MAY also use |federationBranding| elsewhere in the dialog, for example to title it
+with the federation's {{IdentityProviderBranding/name}} ("Sign in with your Atmosphere account"),
+and in the UI that allows users to [=type your handle=].
 
 <div algorithm="sign in with a handle">
 To <dfn>sign in with a handle</dfn> given a [=/handle=] |handle|, a [=registered provider=]
@@ -1072,8 +1179,8 @@ In the "Build UI" step, add the following for each [=registered provider=] |prov
 
 1. For each [=/handle=] |handle| of |provider|'s [=registered provider/handles=] for which
     [=find matching accounts=] with |provider|'s [=registered provider/accounts=] and |handle|
-    returns an empty [=list=], add a [=handle chip=] for |handle| and |provider|. If the user
-    selects it:
+    returns an empty [=list=], add a [=handle chip=] for |handle|, |provider|, and
+    |federationBranding|. If the user selects it:
     1. Let |account| be the result of [=sign in with a handle=] with |handle|, |provider|, and
         |globalObject|.
     1. If |account| is not failure, set |selectedAccount| to |account| and |permission| to true,
@@ -1094,7 +1201,8 @@ After the "Build UI" step, add the following step:
     1. If [=load a registered provider=] with |provider|, « |handle| », |federationRequest|, and
         |globalObject| returns failure, return to the dialog.
     1. If |provider|'s [=registered provider/accounts=] is not empty, show each of them.
-        Otherwise, show a [=handle chip=] for |handle| and |provider|.
+        Otherwise, show a [=handle chip=] for |handle|, |provider|, and
+        |federationBranding|.
     1. Wait for the user to select one of them, or to cancel. If the user cancels, return to the
         dialog.
     1. If the user selected an account, let |account| be that account. Otherwise, let |account|
@@ -1131,8 +1239,10 @@ After the "Build UI" step, add the following step:
     {{IdentityProviderAPIConfig/login_url}}.
 <tr><td>Owner of a handle's [=handle/site=]<td>
     Publishes a [[#dns-record|delegation record]] naming the [=/issuer=].
-<tr><td>Federation authority<td>
-    Publishes [=federation branding=] for its {{IdentityProviderConfig/federation}}.
+<tr><td>[=Federation operator=]<td>
+    Serves [=operator metadata=] at `/.well-known/web-identity-federation` on the origin of its
+    {{IdentityProviderConfig/federation}} URL, including the federation's
+    {{IdentityFederationOperatorMetadata/branding}}.
 <tr><td>[=RP=]<td>
     Passes a {{IdentityProviderConfig/federation}}, and verifies the returned token according to that
     federation, including checking that it was issued for the handle and by the
@@ -1146,6 +1256,8 @@ After the "Build UI" step, add the following step:
 <table class="data">
 <thead><tr><th>Request<th>When<th>Credentials<th>Reveals the RP?
 <tbody>
+<tr><td>[=Operator metadata=] of the requested federation<td>On a [=federation request=], unless
+    cached<td>No<td>No
 <tr><td>[=Config file=] of registered [=IDPs=]<td>On a [=federation request=]<td>No<td>No
 <tr><td>{{IdentityProviderAPIConfig/accounts_endpoint}} of registered [=IDPs=]<td>On a
     [=federation request=], when the [=IDP=]'s login status is [=logged-in=]<td>Yes<td>No
