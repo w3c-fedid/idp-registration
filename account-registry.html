@@ -782,7 +782,7 @@ var[data-var-color="6"] { --var-vg: #FFBCF2; }
   <div class="head">
    <h1 class="no-ref p-name" id="title">Account Registry API</h1>
    <p id="w3c-state"><a href="https://www.w3.org/standards/types/#CG-DRAFT">Draft Community Group Report</a>,
-    <time class="dt-updated" datetime="2026-10-02">2 October 2026</time></p>
+    <time class="dt-updated" datetime="2026-10-13">13 October 2026</time></p>
    <div data-fill-with="spec-metadata">
     <dl>
      <dt>This version:
@@ -876,7 +876,7 @@ login status:
   <c- p>}]</c->
 <c- p>});</c->
 </pre>
-    <p>Because <code>idp.example</code> pushes its accounts, its <a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file">config file</a> does not need an
+    <p>Because <code>idp.example</code> pushes its accounts, its <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#config-file" id="ref-for-config-file">config file</a> does not need an
 <code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dom-identityproviderapiconfig-accounts_endpoint" id="ref-for-dom-identityproviderapiconfig-accounts_endpoint①">accounts_endpoint</a></code>:</p>
 <pre class="highlight language-json"><c- p>{</c->
   <c- f>"id_assertion_endpoint"</c-><c- p>:</c-> <c- u>"/assertion"</c-><c- p>,</c->
@@ -933,10 +933,8 @@ end of its algorithm:
      <li data-md>
       <p>If <var>options</var>["<code class="idl"><a data-link-type="idl" href="#dom-loginstatusoptions-accounts" id="ref-for-dom-loginstatusoptions-accounts①">accounts</a></code>"] does not <a data-link-type="dfn" href="https://infra.spec.whatwg.org/#map-exists" id="ref-for-map-exists">exist</a>, return.</p>
      <li data-md>
-      <p>For each <var>account</var> of <var>options</var>["<code class="idl"><a data-link-type="idl" href="#dom-loginstatusoptions-accounts" id="ref-for-dom-loginstatusoptions-accounts②">accounts</a></code>"]: if <var>account</var> has none of
-<code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dom-identityprovideraccount-name" id="ref-for-dom-identityprovideraccount-name">name</a></code>, <code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dom-identityprovideraccount-email" id="ref-for-dom-identityprovideraccount-email">email</a></code>,
-<code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dom-identityprovideraccount-tel" id="ref-for-dom-identityprovideraccount-tel">tel</a></code>, or <code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dom-identityprovideraccount-username" id="ref-for-dom-identityprovideraccount-username">username</a></code>, throw a
-<code class="idl"><a data-link-type="idl" href="https://webidl.spec.whatwg.org/#exceptiondef-typeerror" id="ref-for-exceptiondef-typeerror">TypeError</a></code>.</p>
+      <p>For each <var>account</var> of <var>options</var>["<code class="idl"><a data-link-type="idl" href="#dom-loginstatusoptions-accounts" id="ref-for-dom-loginstatusoptions-accounts②">accounts</a></code>"]: if <var>account</var> is not
+<a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#displayable" id="ref-for-displayable">displayable</a>, throw a <code class="idl"><a data-link-type="idl" href="https://webidl.spec.whatwg.org/#exceptiondef-typeerror" id="ref-for-exceptiondef-typeerror">TypeError</a></code>.</p>
      <li data-md>
       <p>Let <var>expiration</var> be null.</p>
      <li data-md>
@@ -986,7 +984,7 @@ In <a data-link-type="biblio" href="https://w3c-fedid.github.io/FedCM/"><cite>Fe
 <var>accounts_url</var> to null instead of computing it, and do not treat a null
 <var>accounts_url</var> as failure.</p>
     <p class="note" role="note"><span class="marker">Note:</span> An <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp⑧">IDP</a> that pushes its accounts with <code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/login-status/#dom-navigatorlogin-setstatus" id="ref-for-dom-navigatorlogin-setstatus③">setStatus()</a></code> only needs a
-<a data-link-type="dfn" href="https://url.spec.whatwg.org/#config-file" id="ref-for-config-file①">config file</a> and an <code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dom-identityproviderapiconfig-id_assertion_endpoint" id="ref-for-dom-identityproviderapiconfig-id_assertion_endpoint">id_assertion_endpoint</a></code>.</p>
+<a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#config-file" id="ref-for-config-file①">config file</a> and an <code class="idl"><a data-link-type="idl" href="https://w3c-fedid.github.io/FedCM/#dom-identityproviderapiconfig-id_assertion_endpoint" id="ref-for-dom-identityproviderapiconfig-id_assertion_endpoint">id_assertion_endpoint</a></code>.</p>
    </div>
    <div class="monkeypatch">
     
@@ -1090,16 +1088,14 @@ status to <a data-link-type="dfn" href="https://w3c-fedid.github.io/login-status
      <li><span class="dfn-paneled" id="ec64f13a">IdentityProviderAccountList</span>
      <li><span class="dfn-paneled" id="22ab0c8f">accounts</span>
      <li><span class="dfn-paneled" id="4c556807">accounts_endpoint</span>
+     <li><span class="dfn-paneled" id="f01811a4">config file</span>
      <li><span class="dfn-paneled" id="be08bdf2">configURL</span>
-     <li><span class="dfn-paneled" id="0681a451">email</span>
+     <li><span class="dfn-paneled" id="3225c69c">displayable</span>
      <li><span class="dfn-paneled" id="14a5c00d">fetch the accounts</span>
      <li><span class="dfn-paneled" id="7c3a290e">fetch the config file</span>
      <li><span class="dfn-paneled" id="166860af">id_assertion_endpoint</span>
      <li><span class="dfn-paneled" id="c0307185">IDP</span>
-     <li><span class="dfn-paneled" id="74c82f69">name</span>
      <li><span class="dfn-paneled" id="28c9264c">RP</span>
-     <li><span class="dfn-paneled" id="8b62bce1">tel</span>
-     <li><span class="dfn-paneled" id="c6a1d695">username</span>
     </ul>
    <li>
     <a data-link-type="biblio">[HTML]</a> defines the following terms:
@@ -1133,7 +1129,6 @@ status to <a data-link-type="dfn" href="https://w3c-fedid.github.io/login-status
    <li>
     <a data-link-type="biblio">[URL]</a> defines the following terms:
     <ul>
-     <li><span class="dfn-paneled" id="d5260602">config file</span>
      <li><span class="dfn-paneled" id="959ad97b">origin</span>
      <li><span class="dfn-paneled" id="ca3ca4ae">URL parser</span>
     </ul>
@@ -1372,7 +1367,6 @@ function parseHTML(markup) {
 {
 let dfnPanelData = {
 "01ae26fb": {"dfnID":"01ae26fb","dfnText":"IdentityProviderAPIConfig","external":true,"refSections":[{"refs":[{"id":"ref-for-dictdef-identityproviderapiconfig"}],"title":"4. Presentation"}],"url":"https://w3c-fedid.github.io/FedCM/#dictdef-identityproviderapiconfig"},
-"0681a451": {"dfnID":"0681a451","dfnText":"email","external":true,"refSections":[{"refs":[{"id":"ref-for-dom-identityprovideraccount-email"}],"title":"3. The Account Registry"}],"url":"https://w3c-fedid.github.io/FedCM/#dom-identityprovideraccount-email"},
 "086e3aff": {"dfnID":"086e3aff","dfnText":"origin","external":true,"refSections":[{"refs":[{"id":"ref-for-concept-origin"},{"id":"ref-for-concept-origin\u2460"}],"title":"3. The Account Registry"},{"refs":[{"id":"ref-for-concept-origin\u2461"},{"id":"ref-for-concept-origin\u2462"}],"title":"5. Privacy and security considerations"}],"url":"https://html.spec.whatwg.org/multipage/browsers.html#concept-origin"},
 "0e6b2056": {"dfnID":"0e6b2056","dfnText":"set","external":true,"refSections":[{"refs":[{"id":"ref-for-map-set"}],"title":"3. The Account Registry"}],"url":"https://infra.spec.whatwg.org/#map-set"},
 "1243a891": {"dfnID":"1243a891","dfnText":"exist","external":true,"refSections":[{"refs":[{"id":"ref-for-map-exists"},{"id":"ref-for-map-exists\u2460"},{"id":"ref-for-map-exists\u2461"}],"title":"3. The Account Registry"},{"refs":[{"id":"ref-for-map-exists\u2462"},{"id":"ref-for-map-exists\u2463"}],"title":"4. Presentation"}],"url":"https://infra.spec.whatwg.org/#map-exists"},
@@ -1383,6 +1377,7 @@ let dfnPanelData = {
 "22da450a": {"dfnID":"22da450a","dfnText":"get the login status","external":true,"refSections":[{"refs":[{"id":"ref-for-get-the-login-status"}],"title":"3. The Account Registry"}],"url":"https://w3c-fedid.github.io/login-status/#get-the-login-status"},
 "28c9264c": {"dfnID":"28c9264c","dfnText":"RP","external":true,"refSections":[{"refs":[{"id":"ref-for-rp"}],"title":"1. Introduction"},{"refs":[{"id":"ref-for-rp\u2460"}],"title":"5. Privacy and security considerations"}],"url":"https://w3c-fedid.github.io/FedCM/#rp"},
 "31db57e6": {"dfnID":"31db57e6","dfnText":"keys","external":true,"refSections":[{"refs":[{"id":"ref-for-map-getting-the-keys"}],"title":"3. The Account Registry"}],"url":"https://infra.spec.whatwg.org/#map-getting-the-keys"},
+"3225c69c": {"dfnID":"3225c69c","dfnText":"displayable","external":true,"refSections":[{"refs":[{"id":"ref-for-displayable"}],"title":"3. The Account Registry"}],"url":"https://w3c-fedid.github.io/FedCM/#displayable"},
 "39a6783f": {"dfnID":"39a6783f","dfnText":"IdentityProviderAccount","external":true,"refSections":[{"refs":[{"id":"ref-for-dictdef-identityprovideraccount"},{"id":"ref-for-dictdef-identityprovideraccount\u2460"},{"id":"ref-for-dictdef-identityprovideraccount\u2461"},{"id":"ref-for-dictdef-identityprovideraccount\u2462"},{"id":"ref-for-dictdef-identityprovideraccount\u2463"}],"title":"3. The Account Registry"}],"url":"https://w3c-fedid.github.io/FedCM/#dictdef-identityprovideraccount"},
 "3fca5a9e": {"dfnID":"3fca5a9e","dfnText":"map","external":true,"refSections":[{"refs":[{"id":"ref-for-ordered-map"}],"title":"3. The Account Registry"}],"url":"https://infra.spec.whatwg.org/#ordered-map"},
 "469be508": {"dfnID":"469be508","dfnText":"logged-in","external":true,"refSections":[{"refs":[{"id":"ref-for-logged-in"}],"title":"1. Introduction"},{"refs":[{"id":"ref-for-logged-in\u2460"}],"title":"3. The Account Registry"}],"url":"https://w3c-fedid.github.io/login-status/#logged-in"},
@@ -1393,11 +1388,9 @@ let dfnPanelData = {
 "6663aa5b": {"dfnID":"6663aa5b","dfnText":"logged-out","external":true,"refSections":[{"refs":[{"id":"ref-for-logged-out"}],"title":"3. The Account Registry"},{"refs":[{"id":"ref-for-logged-out\u2460"}],"title":"5. Privacy and security considerations"}],"url":"https://w3c-fedid.github.io/login-status/#logged-out"},
 "6b815fdd": {"dfnID":"6b815fdd","dfnText":"is empty","external":true,"refSections":[{"refs":[{"id":"ref-for-list-is-empty"}],"title":"4. Presentation"}],"url":"https://infra.spec.whatwg.org/#list-is-empty"},
 "6d19ac93": {"dfnID":"6d19ac93","dfnText":"user agent","external":true,"refSections":[{"refs":[{"id":"ref-for-user-agent"},{"id":"ref-for-user-agent\u2460"}],"title":"1. Introduction"},{"refs":[{"id":"ref-for-user-agent\u2461"}],"title":"3. The Account Registry"},{"refs":[{"id":"ref-for-user-agent\u2462"}],"title":"4. Presentation"},{"refs":[{"id":"ref-for-user-agent\u2463"}],"title":"5. Privacy and security considerations"}],"url":"https://infra.spec.whatwg.org/#user-agent"},
-"74c82f69": {"dfnID":"74c82f69","dfnText":"name","external":true,"refSections":[{"refs":[{"id":"ref-for-dom-identityprovideraccount-name"}],"title":"3. The Account Registry"}],"url":"https://w3c-fedid.github.io/FedCM/#dom-identityprovideraccount-name"},
 "7c3a290e": {"dfnID":"7c3a290e","dfnText":"fetch the config file","external":true,"refSections":[{"refs":[{"id":"ref-for-fetch-the-config-file"}],"title":"4. Presentation"}],"url":"https://w3c-fedid.github.io/FedCM/#fetch-the-config-file"},
 "7d4424b2": {"dfnID":"7d4424b2","dfnText":"remove","external":true,"refSections":[{"refs":[{"id":"ref-for-map-remove"},{"id":"ref-for-map-remove\u2460"},{"id":"ref-for-map-remove\u2461"}],"title":"3. The Account Registry"}],"url":"https://infra.spec.whatwg.org/#map-remove"},
 "82ca3efc": {"dfnID":"82ca3efc","dfnText":"TypeError","external":true,"refSections":[{"refs":[{"id":"ref-for-exceptiondef-typeerror"}],"title":"3. The Account Registry"}],"url":"https://webidl.spec.whatwg.org/#exceptiondef-typeerror"},
-"8b62bce1": {"dfnID":"8b62bce1","dfnText":"tel","external":true,"refSections":[{"refs":[{"id":"ref-for-dom-identityprovideraccount-tel"}],"title":"3. The Account Registry"}],"url":"https://w3c-fedid.github.io/FedCM/#dom-identityprovideraccount-tel"},
 "959ad97b": {"dfnID":"959ad97b","dfnText":"origin","external":true,"refSections":[{"refs":[{"id":"ref-for-concept-url-origin"}],"title":"4. Presentation"}],"url":"https://url.spec.whatwg.org/#concept-url-origin"},
 "984221ca": {"dfnID":"984221ca","dfnText":"struct","external":true,"refSections":[{"refs":[{"id":"ref-for-struct"}],"title":"3. The Account Registry"}],"url":"https://infra.spec.whatwg.org/#struct"},
 "9cce47fd": {"dfnID":"9cce47fd","dfnText":"sequence","external":true,"refSections":[{"refs":[{"id":"ref-for-idl-sequence"}],"title":"3. The Account Registry"}],"url":"https://webidl.spec.whatwg.org/#idl-sequence"},
@@ -1408,14 +1401,13 @@ let dfnPanelData = {
 "be08bdf2": {"dfnID":"be08bdf2","dfnText":"configURL","external":true,"refSections":[{"refs":[{"id":"ref-for-dom-identityproviderconfig-configurl"}],"title":"4. Presentation"}],"url":"https://w3c-fedid.github.io/FedCM/#dom-identityproviderconfig-configurl"},
 "c01cbda0": {"dfnID":"c01cbda0","dfnText":"EnforceRange","external":true,"refSections":[{"refs":[{"id":"ref-for-EnforceRange"}],"title":"3. The Account Registry"}],"url":"https://webidl.spec.whatwg.org/#EnforceRange"},
 "c0307185": {"dfnID":"c0307185","dfnText":"IDP","external":true,"refSections":[{"refs":[{"id":"ref-for-idp"},{"id":"ref-for-idp\u2460"},{"id":"ref-for-idp\u2461"},{"id":"ref-for-idp\u2462"}],"title":"1. Introduction"},{"refs":[{"id":"ref-for-idp\u2463"},{"id":"ref-for-idp\u2464"},{"id":"ref-for-idp\u2465"},{"id":"ref-for-idp\u2466"}],"title":"3. The Account Registry"},{"refs":[{"id":"ref-for-idp\u2467"}],"title":"4. Presentation"},{"refs":[{"id":"ref-for-idp\u2468"},{"id":"ref-for-idp\u2460\u24ea"},{"id":"ref-for-idp\u2460\u2460"}],"title":"5. Privacy and security considerations"}],"url":"https://w3c-fedid.github.io/FedCM/#idp"},
-"c6a1d695": {"dfnID":"c6a1d695","dfnText":"username","external":true,"refSections":[{"refs":[{"id":"ref-for-dom-identityprovideraccount-username"}],"title":"3. The Account Registry"}],"url":"https://w3c-fedid.github.io/FedCM/#dom-identityprovideraccount-username"},
 "c88f3887": {"dfnID":"c88f3887","dfnText":"item","external":true,"refSections":[{"refs":[{"id":"ref-for-struct-item"}],"title":"3. The Account Registry"}],"url":"https://infra.spec.whatwg.org/#struct-item"},
 "ca3ca4ae": {"dfnID":"ca3ca4ae","dfnText":"URL parser","external":true,"refSections":[{"refs":[{"id":"ref-for-concept-url-parser"}],"title":"4. Presentation"}],"url":"https://url.spec.whatwg.org/#concept-url-parser"},
-"d5260602": {"dfnID":"d5260602","dfnText":"config file","external":true,"refSections":[{"refs":[{"id":"ref-for-config-file"}],"title":"1. Introduction"},{"refs":[{"id":"ref-for-config-file\u2460"}],"title":"4. Presentation"}],"url":"https://url.spec.whatwg.org/#config-file"},
 "dictdef-loginstatusoptions": {"dfnID":"dictdef-loginstatusoptions","dfnText":"LoginStatusOptions","external":false,"refSections":[],"url":"#dictdef-loginstatusoptions"},
 "dom-loginstatusoptions-accounts": {"dfnID":"dom-loginstatusoptions-accounts","dfnText":"accounts","external":false,"refSections":[{"refs":[{"id":"ref-for-dom-loginstatusoptions-accounts"},{"id":"ref-for-dom-loginstatusoptions-accounts\u2460"},{"id":"ref-for-dom-loginstatusoptions-accounts\u2461"},{"id":"ref-for-dom-loginstatusoptions-accounts\u2462"}],"title":"3. The Account Registry"}],"url":"#dom-loginstatusoptions-accounts"},
 "dom-loginstatusoptions-expiration": {"dfnID":"dom-loginstatusoptions-expiration","dfnText":"expiration","external":false,"refSections":[{"refs":[{"id":"ref-for-dom-loginstatusoptions-expiration"},{"id":"ref-for-dom-loginstatusoptions-expiration\u2460"},{"id":"ref-for-dom-loginstatusoptions-expiration\u2461"}],"title":"3. The Account Registry"},{"refs":[{"id":"ref-for-dom-loginstatusoptions-expiration\u2462"}],"title":"5. Privacy and security considerations"}],"url":"#dom-loginstatusoptions-expiration"},
 "ec64f13a": {"dfnID":"ec64f13a","dfnText":"IdentityProviderAccountList","external":true,"refSections":[{"refs":[{"id":"ref-for-dictdef-identityprovideraccountlist"}],"title":"4. Presentation"}],"url":"https://w3c-fedid.github.io/FedCM/#dictdef-identityprovideraccountlist"},
+"f01811a4": {"dfnID":"f01811a4","dfnText":"config file","external":true,"refSections":[{"refs":[{"id":"ref-for-config-file"}],"title":"1. Introduction"},{"refs":[{"id":"ref-for-config-file\u2460"}],"title":"4. Presentation"}],"url":"https://w3c-fedid.github.io/FedCM/#config-file"},
 "f14b47b8": {"dfnID":"f14b47b8","dfnText":"unsigned long long","external":true,"refSections":[{"refs":[{"id":"ref-for-idl-unsigned-long-long"},{"id":"ref-for-idl-unsigned-long-long\u2460"}],"title":"3. The Account Registry"}],"url":"https://webidl.spec.whatwg.org/#idl-unsigned-long-long"},
 "get-the-pushed-accounts": {"dfnID":"get-the-pushed-accounts","dfnText":"get the pushed accounts","external":false,"refSections":[{"refs":[{"id":"ref-for-get-the-pushed-accounts"}],"title":"4. Presentation"}],"url":"#get-the-pushed-accounts"},
 };
@@ -1827,14 +1819,11 @@ let refsData = {
 "https://infra.spec.whatwg.org/#user-agent": {"displayText":"user agent","export":true,"for_":[],"level":"1","normative":true,"shortname":"infra","spec":"infra","status":"current","text":"user agent","type":"dfn","url":"https://infra.spec.whatwg.org/#user-agent"},
 "https://url.spec.whatwg.org/#concept-url-origin": {"displayText":"origin","export":true,"for_":["url"],"level":"1","normative":true,"shortname":"url","spec":"url","status":"current","text":"origin","type":"dfn","url":"https://url.spec.whatwg.org/#concept-url-origin"},
 "https://url.spec.whatwg.org/#concept-url-parser": {"displayText":"URL parser","export":true,"for_":[],"level":"1","normative":true,"shortname":"url","spec":"url","status":"current","text":"url parser","type":"dfn","url":"https://url.spec.whatwg.org/#concept-url-parser"},
-"https://url.spec.whatwg.org/#config-file": {"displayText":"config file","export":true,"for_":[],"level":"","normative":true,"shortname":"url","spec":"url","status":"anchor-block","text":"config file","type":"dfn","url":"https://url.spec.whatwg.org/#config-file"},
+"https://w3c-fedid.github.io/FedCM/#config-file": {"displayText":"config file","export":true,"for_":[],"level":"","normative":true,"shortname":"fedcm","spec":"fedcm","status":"anchor-block","text":"config file","type":"dfn","url":"https://w3c-fedid.github.io/FedCM/#config-file"},
 "https://w3c-fedid.github.io/FedCM/#dictdef-identityprovideraccount": {"displayText":"IdentityProviderAccount","export":true,"for_":[],"level":"1","normative":true,"shortname":"fedcm","spec":"fedcm-1","status":"current","text":"IdentityProviderAccount","type":"dictionary","url":"https://w3c-fedid.github.io/FedCM/#dictdef-identityprovideraccount"},
 "https://w3c-fedid.github.io/FedCM/#dictdef-identityprovideraccountlist": {"displayText":"IdentityProviderAccountList","export":true,"for_":[],"level":"1","normative":true,"shortname":"fedcm","spec":"fedcm-1","status":"current","text":"IdentityProviderAccountList","type":"dictionary","url":"https://w3c-fedid.github.io/FedCM/#dictdef-identityprovideraccountlist"},
 "https://w3c-fedid.github.io/FedCM/#dictdef-identityproviderapiconfig": {"displayText":"IdentityProviderAPIConfig","export":true,"for_":[],"level":"1","normative":true,"shortname":"fedcm","spec":"fedcm-1","status":"current","text":"IdentityProviderAPIConfig","type":"dictionary","url":"https://w3c-fedid.github.io/FedCM/#dictdef-identityproviderapiconfig"},
-"https://w3c-fedid.github.io/FedCM/#dom-identityprovideraccount-email": {"displayText":"email","export":true,"for_":["IdentityProviderAccount"],"level":"1","normative":true,"shortname":"fedcm","spec":"fedcm-1","status":"current","text":"email","type":"dict-member","url":"https://w3c-fedid.github.io/FedCM/#dom-identityprovideraccount-email"},
-"https://w3c-fedid.github.io/FedCM/#dom-identityprovideraccount-name": {"displayText":"name","export":true,"for_":["IdentityProviderAccount"],"level":"1","normative":true,"shortname":"fedcm","spec":"fedcm-1","status":"current","text":"name","type":"dict-member","url":"https://w3c-fedid.github.io/FedCM/#dom-identityprovideraccount-name"},
-"https://w3c-fedid.github.io/FedCM/#dom-identityprovideraccount-tel": {"displayText":"tel","export":true,"for_":["IdentityProviderAccount"],"level":"1","normative":true,"shortname":"fedcm","spec":"fedcm-1","status":"current","text":"tel","type":"dict-member","url":"https://w3c-fedid.github.io/FedCM/#dom-identityprovideraccount-tel"},
-"https://w3c-fedid.github.io/FedCM/#dom-identityprovideraccount-username": {"displayText":"username","export":true,"for_":["IdentityProviderAccount"],"level":"1","normative":true,"shortname":"fedcm","spec":"fedcm-1","status":"current","text":"username","type":"dict-member","url":"https://w3c-fedid.github.io/FedCM/#dom-identityprovideraccount-username"},
+"https://w3c-fedid.github.io/FedCM/#displayable": {"displayText":"displayable","export":true,"for_":[],"level":"","normative":true,"shortname":"fedcm","spec":"fedcm","status":"anchor-block","text":"displayable","type":"dfn","url":"https://w3c-fedid.github.io/FedCM/#displayable"},
 "https://w3c-fedid.github.io/FedCM/#dom-identityprovideraccountlist-accounts": {"displayText":"accounts","export":true,"for_":["IdentityProviderAccountList"],"level":"1","normative":true,"shortname":"fedcm","spec":"fedcm-1","status":"current","text":"accounts","type":"dict-member","url":"https://w3c-fedid.github.io/FedCM/#dom-identityprovideraccountlist-accounts"},
 "https://w3c-fedid.github.io/FedCM/#dom-identityproviderapiconfig-accounts_endpoint": {"displayText":"accounts_endpoint","export":true,"for_":["IdentityProviderAPIConfig"],"level":"1","normative":true,"shortname":"fedcm","spec":"fedcm-1","status":"current","text":"accounts_endpoint","type":"dict-member","url":"https://w3c-fedid.github.io/FedCM/#dom-identityproviderapiconfig-accounts_endpoint"},
 "https://w3c-fedid.github.io/FedCM/#dom-identityproviderapiconfig-id_assertion_endpoint": {"displayText":"id_assertion_endpoint","export":true,"for_":["IdentityProviderAPIConfig"],"level":"1","normative":true,"shortname":"fedcm","spec":"fedcm-1","status":"current","text":"id_assertion_endpoint","type":"dict-member","url":"https://w3c-fedid.github.io/FedCM/#dom-identityproviderapiconfig-id_assertion_endpoint"},
