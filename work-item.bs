@@ -52,11 +52,11 @@ spec: fedcm; urlPrefix: https://w3c-fedid.github.io/FedCM/
         text: fetch the account picture; url: fetch-the-account-picture
         text: queue to reject; url: queue-to-reject
         text: promise rejection delay; url: promise-rejection-delay
+        text: well-known file; url: well-known-file
+        text: config file; url: config-file
 spec: url; urlPrefix: https://url.spec.whatwg.org/
     type: dfn
         text: host serializer; url: concept-host-serializer
-        text: well-known file; url: well-known-file
-        text: config file; url: config-file
 spec: login-status; urlPrefix: https://w3c-fedid.github.io/login-status/
     type: dfn
         text: Login Status map; url: login-status-map
