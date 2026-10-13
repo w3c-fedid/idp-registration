@@ -57,6 +57,7 @@ spec: fedcm; urlPrefix: https://w3c-fedid.github.io/FedCM/
         text: fetch the well-known file; url: fetch-the-well-known-file
         text: displayable; url: displayable
         text: handle a logged-out IDP; url: handle-a-logged-out-idp
+        text: filter accounts; url: filter-accounts
 spec: url; urlPrefix: https://url.spec.whatwg.org/
     type: dfn
         text: host serializer; url: concept-host-serializer
@@ -1004,16 +1005,16 @@ To <dfn>get the registered accounts</dfn> given an {{IdentityProviderAPIConfig}}
 </div>
 
 <div class="monkeypatch">
-In [=create identity credential/fetch accounts=], add the following step after the step that
-filters the accounts by {{IdentityProviderAPIConfig/account_label}}:
+In [=filter accounts=], insert the following step before the step that returns
+<var ignore>accountList</var>:
 
-1. If |provider| is a [=registered provider=], remove from the accounts list every account whose
-    {{IdentityProviderAccount/handle}} doesn't [=map/exist=] or doesn't
+1. If |provider| is a [=registered provider=], remove from <var ignore>accountList</var> every
+    account whose {{IdentityProviderAccount/handle}} doesn't [=map/exist=] or doesn't
     [=handles match|match=] one of |provider|'s [=registered provider/handles=].
 
-Note: This filters the accounts the same way as {{IdentityProviderRequestOptions/loginHint}}, after
-the account pictures are fetched, so that the [=IDP=] can't tell from the picture fetches which
-accounts were kept.
+Note: This filters the accounts the same way as {{IdentityProviderRequestOptions/loginHint}}. Like
+the other filters, it runs after the account pictures are fetched, so that the [=IDP=] can't tell
+from the picture fetches which accounts were kept.
 
 </div>
 
