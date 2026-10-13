@@ -55,6 +55,7 @@ spec: fedcm; urlPrefix: https://w3c-fedid.github.io/FedCM/
         text: well-known file; url: well-known-file
         text: config file; url: config-file
         text: fetch the well-known file; url: fetch-the-well-known-file
+        text: displayable; url: displayable
 spec: url; urlPrefix: https://url.spec.whatwg.org/
     type: dfn
         text: host serializer; url: concept-host-serializer
@@ -752,9 +753,8 @@ and a [=/handle=] |handle|, return the [=list/items=] of |accounts| whose
 </div>
 
 <div class="monkeypatch">
-In [=fetch the accounts=], change "has neither {{IdentityProviderAccount/email}},
-{{IdentityProviderAccount/name}}, {{IdentityProviderAccount/tel}}, nor
-{{IdentityProviderAccount/username}} set" to also allow {{IdentityProviderAccount/handle}}.
+Change the definition of [=displayable=] so that an account with its
+{{IdentityProviderAccount/handle}} set is also [=displayable=].
 
 </div>
 
