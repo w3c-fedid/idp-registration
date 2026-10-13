@@ -25,8 +25,6 @@ spec: fedcm; urlPrefix: https://w3c-fedid.github.io/FedCM/
         text: fetch the config file; url: fetch-the-config-file
         text: fetch the accounts; url: fetch-the-accounts
         text: displayable; url: displayable
-spec: url; urlPrefix: https://url.spec.whatwg.org/
-    type: dfn
         text: config file; url: config-file
 spec: login-status; urlPrefix: https://w3c-fedid.github.io/login-status/
     type: dfn
