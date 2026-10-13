@@ -648,14 +648,15 @@ the following steps:
         If |metadata| is failure, [=queue to reject=] |promise| with "{{NetworkError}}" and return.
     1. If |globalObject| is not [=on the issuer's site=] of |metadata|, [=queue to reject=]
         |promise| with "{{NotAllowedError}}" and return.
-    1. Let |provider| be the result of [=create a registered provider=] with |metadata| and null.
-        If |provider| is failure, [=queue to reject=] |promise| with "{{NetworkError}}" and return.
+    1. Let |provider| be the result of [=create a registered provider=] with |metadata|,
+        « |canonical| », and null. If |provider| is failure, [=queue to reject=] |promise| with
+        "{{NetworkError}}" and return.
     1. Let |config| be the result of [=fetch the config file=] with |provider| and |globalObject|.
     1. If |config| is failure, or |config|.{{IdentityProviderAPIConfig/federations}} doesn't
         [=map/exist=] or [=list/is empty=], [=queue to reject=] |promise| with "{{NetworkError}}"
         and return.
     1. Let |accounts| be the result of [=get the registered accounts=] with |config|, |provider|,
-        « |canonical| », and |globalObject|.
+        and |globalObject|.
     1. If |accounts| [=list/is empty=], [=queue to reject=] |promise| with "{{NotAllowedError}}"
         and return.
 
@@ -833,8 +834,8 @@ steps. This returns a [=/handle=] or failure.
     failure.
 1. Let |metadata| be the result of [=resolve a handle=] with |handle| and |globalObject|. If
     |metadata| is failure, return failure.
-1. Let |provider| be the result of [=create a registered provider=] with |metadata| and null. If
-    |provider| is failure, return failure.
+1. Let |provider| be the result of [=create a registered provider=] with |metadata|, « |handle| »,
+    and null. If |provider| is failure, return failure.
 1. Let |config| be the result of [=fetch the config file=] with |provider| and |globalObject|. If
     |config| is failure, return failure.
 1. If |config|.{{IdentityProviderAPIConfig/federations}} doesn't [=map/exist=], or none of its
@@ -936,16 +937,18 @@ user agent keeps the following associated with it:
     ::  The {{IdentityProviderAPIConfig}} from [=fetch the config file=].
     :   <dfn>handles</dfn>
     ::  A [=list=] of [=/handle|handles=] that [=resolve a handle|resolve=] to this [=IDP=]: the
-        ones in the [=handle registry=], or the single [=/handle=] the user typed.
+        ones in the [=handle registry=], or the single [=/handle=] the user typed or the [=IDP=] is
+        registering.
     :   <dfn>accounts</dfn>
     ::  A [=list=] of {{IdentityProviderAccount}}s: the [=get the registered accounts|accounts=]
         that [=handles match|match=] one of its [=registered provider/handles=].
 </dl>
 
 <div algorithm>
-To <dfn>create a registered provider</dfn> given [=issuer metadata=] |metadata| and an
-{{IdentityProviderRequestOptions}} or null |federationRequest|, run the following steps. This
-returns an {{IdentityProviderRequestOptions}} or failure.
+To <dfn>create a registered provider</dfn> given [=issuer metadata=] |metadata|, a [=list=] of
+[=/handle|handles=] |handles|, and an {{IdentityProviderRequestOptions}} or null
+|federationRequest|, run the following steps. This returns an {{IdentityProviderRequestOptions}} or
+failure.
 
 1. If |metadata|["{{IdentityProviderWellKnown/provider_urls}}"] doesn't [=map/exist=] or its
     [=list/size=] is not 1, return failure.
@@ -962,7 +965,8 @@ returns an {{IdentityProviderRequestOptions}} or failure.
     {{IdentityProviderRequestOptions/fields}}, {{IdentityProviderRequestOptions/loginHint}},
     {{IdentityProviderRequestOptions/domainHint}} »: if |federationRequest|[|m|] [=map/exists=], set
     |provider|[|m|] to |federationRequest|[|m|].
-1. Mark |provider| as a [=registered provider=].
+1. Mark |provider| as a [=registered provider=], and set its [=registered provider/handles=] to
+    |handles|.
 1. Return |provider|.
 
 </div>
@@ -976,20 +980,32 @@ Issue: Because a [=registered provider=] requires exactly one
 acceptable for [=IDPs=] that have several configurations (e.g. one per product)?
 
 <div algorithm>
-To <dfn>get the registered accounts</dfn> given an {{IdentityProviderAPIConfig}} |config|, an
-{{IdentityProviderRequestOptions}} |provider|, a [=list=] of [=/handle|handles=] |handles|, and a
-|globalObject|, run the following steps. This returns a [=list=] of {{IdentityProviderAccount}}s.
+To <dfn>get the registered accounts</dfn> given an {{IdentityProviderAPIConfig}} |config|, a
+[=registered provider=] |provider|, and a |globalObject|, run the following steps. This returns a
+[=list=] of {{IdentityProviderAccount}}s.
 
 1. Let |origin| be the [=url/origin=] of the result of running the [=URL parser=] on |provider|'s
     {{IdentityProviderConfig/configURL}}.
 1. If [=get the login status=] for |origin| is not [=logged-in=], return an empty [=list=].
-1. Let |accountsList| be the result of [=create identity credential/fetch accounts=] with |config|,
-    |provider|, and |globalObject|.
-1. Let |result| be an empty [=list=].
-1. For each |handle| of |handles|: [=list/extend=] |result| with the [=list/items=] of the result
-    of [=find matching accounts=] with |accountsList| and |handle| that |result| doesn't already
-    [=list/contain=].
-1. Return |result|.
+1. Return the result of [=create identity credential/fetch accounts=] with |config|, |provider|,
+    and |globalObject|.
+
+    Note: [=create identity credential/fetch accounts=] only returns the accounts that
+    [=handles match|match=] one of |provider|'s [=registered provider/handles=] (see below).
+
+</div>
+
+<div class="monkeypatch">
+In [=create identity credential/fetch accounts=], add the following step after the step that
+filters the accounts by {{IdentityProviderAPIConfig/account_label}}:
+
+1. If |provider| is a [=registered provider=], remove from the accounts list every account whose
+    {{IdentityProviderAccount/handle}} doesn't [=map/exist=] or doesn't
+    [=handles match|match=] one of |provider|'s [=registered provider/handles=].
+
+Note: This filters the accounts the same way as {{IdentityProviderRequestOptions/loginHint}}, after
+the account pictures are fetched, so that the [=IDP=] can't tell from the picture fetches which
+accounts were kept.
 
 </div>
 
@@ -1034,34 +1050,33 @@ To <dfn>gather registered providers</dfn> given an {{IdentityProviderRequestOpti
 1. Let |result| be an empty [=list=].
 1. For each (|metadata|, |handles|) of the [=map/values=] of the result of
     [=group registered handles by issuer=] with |globalObject|:
-    1. Let |provider| be the result of [=create a registered provider=] with |metadata| and
-        |federationRequest|. If |provider| is failure, [=iteration/continue=].
+    1. Let |provider| be the result of [=create a registered provider=] with |metadata|, |handles|,
+        and |federationRequest|. If |provider| is failure, [=iteration/continue=].
     1. Let |origin| be the [=url/origin=] of the result of running the [=URL parser=] on
         |provider|.{{IdentityProviderConfig/configURL}}.
     1. If |seenOrigins| [=list/contains=] |origin|, [=iteration/continue=].
 
         Note: If the [=RP=] also lists this [=IDP=] explicitly, the explicit entry is used and
         the registration is ignored, so that the same [=IDP=] doesn't appear twice.
-    1. If [=load a registered provider=] with |provider|, |handles|, |federationRequest|, and
-        |globalObject| returns failure, [=iteration/continue=].
+    1. If [=load a registered provider=] with |provider|, |federationRequest|, and |globalObject|
+        returns failure, [=iteration/continue=].
     1. [=set/Append=] |origin| to |seenOrigins|, and [=list/append=] |provider| to |result|.
 1. Return |result|.
 
 </div>
 
 <div algorithm>
-To <dfn>load a registered provider</dfn> given a [=registered provider=] |provider|, a [=list=] of
-[=/handle|handles=] |handles|, a [=federation request=] |federationRequest|, and a |globalObject|,
-run the following steps. This returns success or failure.
+To <dfn>load a registered provider</dfn> given a [=registered provider=] |provider|, a
+[=federation request=] |federationRequest|, and a |globalObject|, run the following steps. This
+returns success or failure.
 
 1. Let |config| be the result of [=fetch the config file=] with |provider| and |globalObject|.
 1. If |config| is failure, return failure.
 1. If |config|.{{IdentityProviderAPIConfig/federations}} doesn't [=map/exist=] or doesn't
     [=list/contain=] |federationRequest|.{{IdentityProviderConfig/federation}}, return failure.
-1. Set |provider|'s [=registered provider/config=] to |config|, its
-    [=registered provider/handles=] to |handles|, and its [=registered provider/accounts=] to the
-    result of [=get the registered accounts=] with |config|, |provider|, |handles|, and
-    |globalObject|.
+1. Set |provider|'s [=registered provider/config=] to |config|, and its
+    [=registered provider/accounts=] to the result of [=get the registered accounts=] with
+    |config|, |provider|, and |globalObject|.
 1. Return success.
 
 </div>
@@ -1121,8 +1136,9 @@ To <dfn>sign in with a handle</dfn> given a [=/handle=] |handle|, a [=registered
 1. Let |result| be the result of [=show an IDP login dialog=] with |provider|'s
     [=registered provider/config=], |loginProvider|, and |globalObject|.
 1. If |result| is failure, return failure.
-1. Let |matches| be the result of [=get the registered accounts=] with |provider|'s
-    [=registered provider/config=], |provider|, « |handle| », and |globalObject|.
+1. Let |matches| be the result of [=find matching accounts=] with the result of
+    [=get the registered accounts=] with |provider|'s [=registered provider/config=], |provider|,
+    and |globalObject|, and with |handle|.
 1. If |matches|'s [=list/size=] is 1, return |matches|[0].
 1. If |matches|'s [=list/size=] is greater than 1, let the user choose one of |matches| and
     return it. If the user cancels, return failure.
@@ -1162,10 +1178,10 @@ After the "Build UI" step, add the following step:
         is null, return to the dialog.
     1. Let |metadata| be the result of [=resolve a handle=] with |handle| and |globalObject|. If
         |metadata| is failure, return to the dialog.
-    1. Let |provider| be the result of [=create a registered provider=] with |metadata| and
-        |federationRequest|. If |provider| is failure, return to the dialog.
-    1. If [=load a registered provider=] with |provider|, « |handle| », |federationRequest|, and
-        |globalObject| returns failure, return to the dialog.
+    1. Let |provider| be the result of [=create a registered provider=] with |metadata|,
+        « |handle| », and |federationRequest|. If |provider| is failure, return to the dialog.
+    1. If [=load a registered provider=] with |provider|, |federationRequest|, and |globalObject|
+        returns failure, return to the dialog.
     1. If |provider|'s [=registered provider/accounts=] is not empty, show each of them.
         Otherwise, show a [=handle chip=] for |handle|, |provider|, and
         |federationBranding|.
