@@ -24,6 +24,7 @@ spec: fedcm; urlPrefix: https://w3c-fedid.github.io/FedCM/
         text: RP; url: rp
         text: fetch the config file; url: fetch-the-config-file
         text: fetch the accounts; url: fetch-the-accounts
+        text: displayable; url: displayable
 spec: url; urlPrefix: https://url.spec.whatwg.org/
     type: dfn
         text: config file; url: config-file
@@ -155,10 +156,8 @@ end of its algorithm:
 
 1. If <var ignore>status</var> is `"logged-out"`, [=map/remove=] [=account registry=][|origin|] and return.
 1. If |options|["{{LoginStatusOptions/accounts}}"] does not [=map/exist=], return.
-1. For each |account| of |options|["{{LoginStatusOptions/accounts}}"]: if |account| has none of
-    {{IdentityProviderAccount/name}}, {{IdentityProviderAccount/email}},
-    {{IdentityProviderAccount/tel}}, or {{IdentityProviderAccount/username}}, throw a
-    {{TypeError}}.
+1. For each |account| of |options|["{{LoginStatusOptions/accounts}}"]: if |account| is not
+    [=displayable=], throw a {{TypeError}}.
 1. Let |expiration| be null.
 1. If |options|["{{LoginStatusOptions/expiration}}"] [=map/exists=], set |expiration| to the
     current time plus |options|["{{LoginStatusOptions/expiration}}"] milliseconds.
