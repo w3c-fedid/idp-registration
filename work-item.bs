@@ -54,6 +54,7 @@ spec: fedcm; urlPrefix: https://w3c-fedid.github.io/FedCM/
         text: promise rejection delay; url: promise-rejection-delay
         text: well-known file; url: well-known-file
         text: config file; url: config-file
+        text: fetch the well-known file; url: fetch-the-well-known-file
 spec: url; urlPrefix: https://url.spec.whatwg.org/
     type: dfn
         text: host serializer; url: concept-host-serializer
@@ -536,8 +537,9 @@ derives the [=config file=] from it ([=create a registered provider=]).
 To <dfn>fetch the issuer metadata</dfn> given a [=site host=] |issuer| and a |globalObject|, run the
 following steps. This returns [=issuer metadata=] or failure.
 
-1. Let |metadata| be the result of [=fetch the well-known file=] with |issuer| and |globalObject|.
-    If |metadata| is failure, return failure.
+1. Let |metadata| be the result of [=fetch the well-known file=] with a new [=/URL=] whose
+    [=url/scheme=] is "`https`", [=url/host=] is |issuer|, and [=url/path=] is « "`.well-known`",
+    "`web-identity`" », and with |globalObject|. If |metadata| is failure, return failure.
 1. Set |metadata|'s [=issuer metadata/issuer=] to |issuer|.
 1. Return |metadata|.
 
@@ -547,27 +549,6 @@ Issue: Should the [=issuer metadata=] include an `issuer` member that MUST equal
 [=site of a host|site=] it was fetched from, as in the
 [Email Verification Protocol](https://dickhardt.github.io/email-verification/draft-hardt-email-verification.html#name-issuer-metadata)
 (following [[RFC8414]])?
-
-<div class="monkeypatch">
-Add the following algorithm:
-
-<div algorithm>
-To <dfn>fetch the well-known file</dfn> given a [=site host=] |site| and a |globalObject|, run the
-steps of [=fetch the config file=] that create <var ignore>wellKnownRequest</var> and
-[=fetch request|fetch=] it, with <var ignore>rootUrl</var> set to a new [=/URL=] with
-[=url/scheme=] "`https`", [=url/host=] |site|, and [=url/path=] « "`.well-known`",
-"`web-identity`" », and with |globalObject|. Return the resulting <var ignore>wellKnown</var>, an
-{{IdentityProviderWellKnown}} or failure.
-
-</div>
-
-Then, in [=fetch the config file=], replace those steps with a call to [=fetch the well-known file=]
-with <var ignore>rootUrl</var>'s [=url/host=] and |globalObject|.
-
-Note: This only moves existing steps, so that [=fetch the issuer metadata=] can reuse them. It
-doesn't change the behavior of [=fetch the config file=].
-
-</div>
 
 ## The Handle Registry ## {#registry}
 
