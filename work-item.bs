@@ -56,6 +56,7 @@ spec: fedcm; urlPrefix: https://w3c-fedid.github.io/FedCM/
         text: config file; url: config-file
         text: fetch the well-known file; url: fetch-the-well-known-file
         text: displayable; url: displayable
+        text: handle a logged-out IDP; url: handle-a-logged-out-idp
 spec: url; urlPrefix: https://url.spec.whatwg.org/
     type: dfn
         text: host serializer; url: concept-host-serializer
@@ -598,8 +599,9 @@ Note: The [=handle registry=] is deliberately separate from the [[LOGIN-STATUS|l
 from the [[ACCOUNT-REGISTRY|account registry]], when supported). The login status records whether
 the user is signed in right now, which changes silently, while the [=handle registry=] records
 which [=/handle|handles=] the user uses, which the user approved and which outlives their session.
-After the user signs out, a registered [=/handle=] is still offered as a [=handle chip=] that signs
-the user back in. So an [=IDP=] calls `setStatus("logged-out")` when the user signs out, and
+After the user signs out, the [=IDP=] of a registered [=/handle=] is still offered, the same way
+[[FEDCM]] offers an [=IDP=] that the user is [=logged-out=] of, so the user can sign back in. So an
+[=IDP=] calls `setStatus("logged-out")` when the user signs out, and
 {{IdentityProvider/unregister()}} only when the [=/handle=] should no longer be offered, for
 example when the account is deleted.
 
@@ -900,6 +902,8 @@ In [=create an IdentityCredential=], insert the following steps immediately afte
     1. Let |registered| be the result of [=gather registered providers=] with |federationRequest|,
         |providerList|, and |globalObject|.
     1. [=list/Extend=] |providerList| with |registered|.
+    1. If |providerList|'s [=list/size=] is greater than 1, set the
+        [=registered provider/offered as a choice=] flag of each [=list/item=] of |registered|.
     1. Set |federationBranding| to the result of [=get the federation branding=] with
         |federationRequest|.{{IdentityProviderConfig/federation}} and |globalObject|.
 
@@ -942,6 +946,10 @@ user agent keeps the following associated with it:
     :   <dfn>accounts</dfn>
     ::  A [=list=] of {{IdentityProviderAccount}}s: the [=get the registered accounts|accounts=]
         that [=handles match|match=] one of its [=registered provider/handles=].
+    :   <dfn>offered as a choice</dfn>
+    ::  A flag, initially unset. It is set when the request has more than one [=IDP=], so that the
+        user chooses which [=IDP=] to sign in to, rather than the user agent opening the login
+        dialog of each [=IDP=] the user is [=logged-out=] of.
 </dl>
 
 <div algorithm>
@@ -1058,12 +1066,14 @@ To <dfn>gather registered providers</dfn> given an {{IdentityProviderRequestOpti
 
         Note: If the [=RP=] also lists this [=IDP=] explicitly, the explicit entry is used and
         the registration is ignored, so that the same [=IDP=] doesn't appear twice.
-    1. If [=load a registered provider=] with |provider|, |federationRequest|, and |globalObject|
-        returns failure, [=iteration/continue=].
     1. [=set/Append=] |origin| to |seenOrigins|, and [=list/append=] |provider| to |result|.
 1. Return |result|.
 
 </div>
+
+Note: [=Gather registered providers=] doesn't fetch anything from the [=IDPs=]. [=Create an
+IdentityCredential=] fetches each [=registered provider=]'s [=config file=] and accounts like any
+other [=IDP=]'s.
 
 <div algorithm>
 To <dfn>load a registered provider</dfn> given a [=registered provider=] |provider|, a
@@ -1089,15 +1099,35 @@ obtained the config URL from that same [=well-known file=]. The user agent can r
 
 <div class="monkeypatch">
 In [=create an IdentityCredential=], in the step "For each |provider| in |providerList|", insert the
-following as the first sub-step:
+following step immediately after the step "If <var ignore>config</var> is failure, continue":
 
-1. If |provider| is a [=registered provider=]:
-    1. Set |providerMap|[<var ignore>providerOrigin</var>] to |provider|'s [=registered provider/accounts=].
-    1. [=iteration/Continue=].
+1. If |provider| is a [=registered provider=], and
+    <var ignore>config</var>.{{IdentityProviderAPIConfig/federations}} doesn't [=map/exist=] or
+    doesn't [=list/contain=] |federationRequest|.{{IdentityProviderConfig/federation}},
+    [=iteration/continue=].
 
-    Note: For registered providers, [=gather registered providers=] has already fetched the
-    [=config file=] and matching accounts. If no matching account is signed in, the user agent
-    shows a [=handle chip=] instead of mismatch UI.
+    Note: Otherwise, a [=registered provider=] goes through these steps like any other [=IDP=]:
+    the user agent checks its login status, fetches its [=config file=] and accounts (keeping only
+    the accounts that [=handles match|match=] its [=registered provider/handles=]), and shows the
+    same UI as [[FEDCM]] does when the user is [=logged-out=] or when no account matches.
+
+</div>
+
+<div class="monkeypatch">
+In [=handle a logged-out IDP=], insert the following step at the beginning:
+
+1. If |provider| is a [=registered provider=] whose [=registered provider/offered as a choice=]
+    flag is set, return "logged-out".
+
+In [=create an IdentityCredential=], in the "Build UI" step, when the value for a
+[=registered provider=] is "logged-out" and <var ignore>mode</var> is
+{{IdentityCredentialRequestOptionsMode/active}}, the user agent MUST prompt the user whether to
+continue with this [=IDP=], rather than adding nothing or returning (failure, false).
+
+Note: When a request has more than one [=IDP=], each [=IDP=] that the user is [=logged-out=] of is
+then offered as a choice next to the accounts of the [=IDPs=] the user is signed in to, and only
+the one the user chooses opens its login dialog. With a single [=IDP=], [[FEDCM]]'s behavior is
+unchanged.
 
 </div>
 
@@ -1156,19 +1186,6 @@ Change the step "If |providerMap| [=map/is empty=], return (failure, false)" to:
         {{IdentityCredentialRequestOptionsMode/active}}, return (failure, false).
     1. Otherwise, the user agent MAY continue, only allowing users to [=type your handle=].
 
-In the "Build UI" step, add the following for each [=registered provider=] |provider| in
-|providerList|:
-
-1. For each [=/handle=] |handle| of |provider|'s [=registered provider/handles=] for which
-    [=find matching accounts=] with |provider|'s [=registered provider/accounts=] and |handle|
-    returns an empty [=list=], add a [=handle chip=] for |handle|, |provider|, and
-    |federationBranding|. If the user selects it:
-    1. Let |account| be the result of [=sign in with a handle=] with |handle|, |provider|, and
-        |globalObject|.
-    1. If |account| is not failure, set |selectedAccount| to |account| and |permission| to true,
-        set the relevant provider to |provider| and the relevant config to |provider|'s
-        [=registered provider/config=], and close the dialog.
-
 After the "Build UI" step, add the following step:
 
 1. If |federationRequest| is not null, the user agent SHOULD allow users to [=type your handle=].
@@ -1190,9 +1207,9 @@ After the "Build UI" step, add the following step:
     1. If the user selected an account, let |account| be that account. Otherwise, let |account|
         be the result of [=sign in with a handle=] with |handle|, |provider|, and |globalObject|,
         and if |account| is failure, return to the dialog.
-    1. Set |selectedAccount| to |account| and |permission| to true, set the relevant provider to
-        |provider| and the relevant config to |provider|'s [=registered provider/config=], and
-        close the dialog.
+    1. Set <var ignore>selectedAccount</var> to |account| and <var ignore>permission</var> to true,
+        set the relevant provider to |provider| and the relevant config to |provider|'s
+        [=registered provider/config=], and close the dialog.
 
     Note: The user agent can reuse the results of [=resolve a handle|resolution=] and
     [=fetch the config file=] from [=type your handle=], rather than repeating them.
@@ -1250,14 +1267,15 @@ After the "Build UI" step, add the following step:
     the user submits a handle, or when an [=IDP=] calls {{IdentityProvider/register()}} or
     {{IdentityProvider/unregister()}}<td>Only for
     {{IdentityProviderAPIConfig/accounts_endpoint}}<td>No
-<tr><td>{{IdentityProviderAPIConfig/login_url}}<td>After the user selects a [=handle chip=]<td>Yes
+<tr><td>{{IdentityProviderAPIConfig/login_url}}<td>After the user chooses to sign in to an [=IDP=]
+    they are [=logged-out=] of, or selects a [=handle chip=]<td>Yes
     (a top-level navigation)<td>No
 <tr><td>{{IdentityProviderAPIConfig/id_assertion_endpoint}}<td>After the user selects an
     account<td>Yes<td>Yes
 </table>
 
 * A registered [=IDP=] whose login status is [=logged-out=] receives no credentialed request
-    before the user chooses to sign in with a [=handle chip=]. When the [=IDP=]'s login status is
+    before the user chooses to sign in to it. When the [=IDP=]'s login status is
     [=logged-in=], the user agent fetches its {{IdentityProviderAPIConfig/accounts_endpoint}} as in
     [[FEDCM]] (unless the [=IDP=] and user agent use [[ACCOUNT-REGISTRY]], which avoids the
     credentialed fetch).
@@ -1342,8 +1360,9 @@ account is hosted by `social.example`.
 1. Bob publishes `_web-identity.bob.example TXT "iss=social.example"`.
 1. [=Resolve the issuer=] returns `social.example`. The user agent fetches
     `https://social.example/.well-known/web-identity` and then its [=config file=].
-1. The user agent shows Bob's account with `handle: "@bob.example"` (if he is signed in to
-    `social.example`), or a [=handle chip=].
+1. The user agent shows Bob's account with `handle: "@bob.example"` if he is signed in to
+    `social.example`, and otherwise offers `social.example` as [[FEDCM]] does for an [=IDP=] the
+    user is [=logged-out=] of.
 
 Because `@bob.example` resolves to `social.example`, `social.example` can also call
 `IdentityProvider.register("@bob.example")` after Bob signs in there. Another site, such as
@@ -1367,8 +1386,7 @@ resolve to the same [=/issuer=], `social.example`. The [=handle registry=] has b
 [=/handle|handles=], and [=group registered handles by issuer=] groups them together. On a
 [=federation request=], the
 user agent fetches that [=config file=] and {{IdentityProviderAPIConfig/accounts_endpoint}} once,
-and shows the signed-in accounts that match `dave@social.example` or `@erin.social.example`, plus a
-[=handle chip=] for either handle that doesn't have a matching signed-in account.
+and shows the signed-in accounts that match `dave@social.example` or `@erin.social.example`.
 
 </div>
 
@@ -1378,9 +1396,9 @@ and shows the signed-in accounts that match `dave@social.example` or `@erin.soci
 
 1. Erin signs out of `social.example`, which calls `navigator.login.setStatus("logged-out")`.
     `@erin.social.example` stays in the [=handle registry=]. On the next
-    [=federation request=], the user agent sees that `social.example` is [=logged-out=] and shows a
-    [=handle chip=] for `@erin.social.example`. Selecting it opens `social.example`'s
-    {{IdentityProviderAPIConfig/login_url}} with `login_hint=%40erin.social.example`.
+    [=federation request=], the user agent sees that `social.example` is [=logged-out=] and offers it
+    as [[FEDCM]] does for an [=IDP=] the user is [=logged-out=] of. Signing in opens
+    `social.example`'s {{IdentityProviderAPIConfig/login_url}}.
 1. Later, Erin deletes her account. `social.example` calls
     `IdentityProvider.unregister("@erin.social.example")`, and the [=/handle=] is removed from the
     [=handle registry=], so the handle is no longer offered to any [=RP=].
