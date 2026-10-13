@@ -1088,18 +1088,11 @@ run the following steps. This returns success or failure.
 
 </div>
 
-<div class="monkeypatch">
-In [=fetch the config file=], insert the following step immediately before the step "If <var ignore>rpOrigin</var>
-is not an [=opaque origin=], and ...":
-
-1. If |provider| is a [=registered provider=], set <var ignore>skipWellKnown</var> to true.
-
-Note: The [=well-known file=] exists to stop an [=RP=] from encoding tracking information in the
-config URL it passes. A [=registered provider=]'s config URL doesn't come from the [=RP=]. The user
-agent obtained it from the [=well-known file=] itself, by [=resolve a handle|resolving=] a
-[=/handle=].
-
-</div>
+Note: [=Fetch the config file=] checks a [=registered provider=]'s [=config file=] against the
+[=well-known file=], as it does for any other [=IDP=]. The check passes as long as the
+[=well-known file=] hasn't changed since [=resolve a handle|resolution=], because the user agent
+obtained the config URL from that same [=well-known file=]. The user agent can reuse the
+[=well-known file=] it fetched during [=resolve a handle|resolution=], subject to HTTP caching.
 
 <div class="monkeypatch">
 In [=create an IdentityCredential=], in the step "For each |provider| in |providerList|", insert the
