@@ -8,8 +8,7 @@ Repository: w3c-fedid/idp-registration
 URL: https://w3c-fedid.github.io/idp-registration/
 Editor: Sam Goto, w3cid 50308, Google Inc. https://google.com, goto@google.com
 Abstract: This specification extends the Federated Credential Management API [[FEDCM]] so that
-    the user agent can remember the user's handles (e.g. <code>@alice.example</code> or
-    <code>@alice@social.example</code>), and so that relying parties can request <em>any</em>
+    the user agent can remember the user's handles (e.g. <code>@alice.example</code>), and so that relying parties can request <em>any</em>
     identity provider that issues one of them and belongs to a federation they accept, instead of
     enumerating identity providers. A handle is registered either by the identity provider, with
     the user's permission, or by the user typing it. Handles are parsed and resolved, and the
@@ -159,8 +158,8 @@ allow-listing:
 
     </div>
 
-1. A user whose [=/handle=] isn't registered yet can **type it**, for example `@alice.example` or
-    `@alice@social.example`. The user agent [=check a typed handle|resolves it=] to its
+1. A user whose [=/handle=] isn't registered yet can **type it**, for example `@alice.example`. The
+    user agent [=check a typed handle|resolves it=] to its
     [=/issuer=] and registers it ([=type your handle=]).
 
 Both ways of registering a [=/handle=] run the same [=resolve a handle|resolution=] and add the same
@@ -178,10 +177,11 @@ her handle:
 
 ```js
 await navigator.login.setStatus("logged-in");
-await IdentityProvider.register("@alice@social.example");
+await IdentityProvider.register("@alice.example");
 ```
 
-The user agent resolves `@alice@social.example` to its [=/issuer=], `https://social.example`. Its
+The user agent resolves `@alice.example`, through its DID document, to its [=/issuer=],
+`https://social.example`. Its
 [=/issuer metadata=], at `https://social.example/.well-known/handle-verification`, lists the
 federations that its accounts belong to:
 
@@ -211,7 +211,7 @@ And its {{IdentityProviderAPIConfig/accounts_endpoint}} includes her [=/handle=]
   "accounts": [{
     "id": "1234",
     "name": "Alice",
-    "handle": "@alice@social.example",
+    "handle": "@alice.example",
     "picture": "https://social.example/alice.jpg"
   }]
 }
@@ -342,8 +342,8 @@ This specification depends on the Infra Standard. [[!INFRA]]
 and the [=/issuer metadata=] of the [=IDPs=] that issue them. This specification uses the following
 terms for them:
 
-* A <dfn>handle</dfn> is an [=HVP handle=]: a domain handle, such as `@alice.example`, or a
-    username handle, such as `@alice@social.example`, in its [=HVP normalized form=]. The user
+* A <dfn>handle</dfn> is an [=HVP handle=]: a domain handle, such as `@alice.example`, in its
+    [=HVP normalized form=]. The user
     agent displays it with a leading `@`. A handle isn't necessarily permanent: a user can change
     it, or move it to another [=IDP=].
 * An <dfn>issuer</dfn> is the [=IDP=] that is the [=authorized issuer=] of a [=/handle=],
@@ -368,8 +368,7 @@ terms for them:
         :   <dfn>issuer</dfn>
         ::  The [=HVP issuer identifier=] of the handle's [=/issuer=].
         :   <dfn>unique user identifier</dfn>
-        ::  The [=/unique user identifier=] that the handle resolves to: a DID, or the `self` link of
-            a username handle.
+        ::  The [=/unique user identifier=] that the handle resolves to: a DID.
     </dl>
 
 <div algorithm="resolve a handle">
@@ -456,7 +455,7 @@ same path: both [=resolve a handle|resolve=] it, and both add the same [=/handle
 
 Note: An [=IDP=] can only register and unregister [=/handle|handles=] that it is the [=/issuer=] of,
 as named by the records that [=HVP resolution=] reads: the `HandleIssuer` service of the handle's
-DID document, or the `handle-issuer` link of its WebFinger resource descriptor.
+DID document.
 
 <div algorithm>
 A |globalObject| is <dfn>on the issuer's site</dfn> of a [=resolution result=] |result| if
@@ -567,7 +566,7 @@ partial dictionary IdentityProviderAccount {
 
 <dl dfn-type="dict-member" dfn-for="IdentityProviderAccount">
     :   <dfn>handle</dfn>
-    ::  The account's [=/handle=], for example `"@alice@social.example"`. The user agent uses it
+    ::  The account's [=/handle=], for example `"@alice.example"`. The user agent uses it
         to match the account with registered and typed [=/handle|handles=]
         ([=find matching accounts=]), and uses it in the [=HVT request=] ([[#hvt-issuance]]).
 </dl>
@@ -1109,9 +1108,8 @@ asked for. The `sub` claim of the [=HVT=] carries the user's
     `setStatus("logged-out")` when the user merely signs out. Accepts `login_hint` on its
     {{IdentityProviderAPIConfig/login_url}}.
 <tr><td>Owner of a handle<td>
-    Publishes the records that [=HVP resolution=] reads, which name the [=/issuer=]: for a domain
-    handle, a DID and a DID document with a `HandleIssuer` service; for a username handle, a
-    WebFinger resource descriptor with a `handle-issuer` link.
+    Publishes the records that [=HVP resolution=] reads, which name the [=/issuer=]: a DID and a
+    DID document with a `HandleIssuer` service.
 <tr><td>[=Federation operator=]<td>
     Serves [=operator metadata=] at `/.well-known/web-identity-federation` on the origin of its
     {{IdentityProviderConfig/federation}} URL, including the federation's
@@ -1228,46 +1226,28 @@ See also the privacy considerations of [[HVP]].
 
 </div>
 
-<div class="example" id="example-username-handle">
-**A username handle on a split domain.** Bob's handle is `@bob@example.com`, and his account is
-on an ActivityPub server at `social.example.com`.
-
-1. [=HVP resolution=] fetches the WebFinger resource descriptor of `acct:bob@example.com`, whose
-    `self` link is `https://social.example.com/users/bob` and whose `handle-issuer` link names
-    `https://social.example.com`.
-1. The user agent fetches `https://social.example.com/.well-known/handle-verification` and
-    `https://example.com/.well-known/web-identity`, and shows
-    Bob's account with `handle: "@bob@example.com"` if he is signed in to `social.example.com`,
-    and otherwise offers `social.example.com` as [[FEDCM]] does for an [=IDP=] the user is
-    [=logged-out=] of.
-
-Because `@bob@example.com` resolves to `https://social.example.com`, `social.example.com` can also
-call `IdentityProvider.register("@bob@example.com")` after Bob signs in there. Another site, such
-as `evil.example`, can't: the handle doesn't resolve to it.
-
-</div>
-
 <div class="example" id="example-shared-host">
-**Many users share an issuer.** Dave (`@dave@social.example`) and Erin (`@erin.example`, whose
-DID document names `https://social.example` as its issuer) both resolve to the same [=/issuer=].
+**Many users share an issuer.** Dave (`@dave.social.example`, a handle under the server's domain)
+and Erin (`@erin.example`, her own domain), whose DID documents both name `https://social.example`
+as their issuer, both resolve to the same [=/issuer=].
 The [=handle registry=] has both [=/handle|handles=], and [=group registered handles by issuer=]
 groups them together. On a [=federation request=], the user agent fetches that [=/issuer metadata=]
 and {{IdentityProviderAPIConfig/accounts_endpoint}} once, and shows the signed-in accounts that
-match `@dave@social.example` or `@erin.example`.
+match `@dave.social.example` or `@erin.example`.
 
 </div>
 
 <div class="example" id="example-lifecycle">
-**Signing out versus deleting an account.** Erin registered `@erin@social.example` from
+**Signing out versus deleting an account.** Erin registered `@erin.social.example` from
 `social.example`.
 
 1. Erin signs out of `social.example`, which calls `navigator.login.setStatus("logged-out")`.
-    `@erin@social.example` stays in the [=handle registry=]. On the next
+    `@erin.social.example` stays in the [=handle registry=]. On the next
     [=federation request=], the user agent sees that `social.example` is [=logged-out=] and offers it
     as [[FEDCM]] does for an [=IDP=] the user is [=logged-out=] of. Signing in opens
     `social.example`'s {{IdentityProviderAPIConfig/login_url}}.
 1. Later, Erin deletes her account. `social.example` calls
-    `IdentityProvider.unregister("@erin@social.example")`, and the [=/handle=] is removed from the
+    `IdentityProvider.unregister("@erin.social.example")`, and the [=/handle=] is removed from the
     [=handle registry=], so the handle is no longer offered to any [=RP=].
 
 </div>
