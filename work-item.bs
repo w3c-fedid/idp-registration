@@ -8,12 +8,13 @@ Repository: w3c-fedid/idp-registration
 URL: https://w3c-fedid.github.io/idp-registration/
 Editor: Sam Goto, w3cid 50308, Google Inc. https://google.com, goto@google.com
 Abstract: This specification extends the Federated Credential Management API [[FEDCM]] so that
-    the user agent can remember the user's handles (e.g. <code>@alice.example</code>,
-    <code>alice@social.example</code> or <code>https://alice.example</code>), and so that relying
-    parties can request <em>any</em> identity provider that issues one of them and supports a
-    federation they accept, instead of enumerating identity providers. A handle is
-    registered either by the identity provider, with the user's permission, or by the user typing
-    it.
+    the user agent can remember the user's handles (e.g. <code>@alice.example</code> or
+    <code>@alice@social.example</code>), and so that relying parties can request <em>any</em>
+    identity provider that issues one of them and belongs to a federation they accept, instead of
+    enumerating identity providers. A handle is registered either by the identity provider, with
+    the user's permission, or by the user typing it. Handles are parsed and resolved, and the
+    relying party receives a verifiable proof that the user controls the handle, as defined by the
+    Handle Verification Protocol [[HVP]].
 Markup Shorthands: markdown yes, css no
 Default Biblio Display: inline
 Text Macro: RP Relying Party
@@ -28,6 +29,13 @@ Text Macro: IDP Identity Provider
         "authors": ["Sam Goto"],
         "status": "CG-DRAFT",
         "publisher": "W3C"
+    },
+    "HVP": {
+        "title": "Handle Verification Protocol",
+        "href": "https://samuelgoto.github.io/handle-verification/draft-goto-handle-verification.html",
+        "authors": ["Sam Goto"],
+        "status": "Internet-Draft",
+        "publisher": "IETF"
     }
 }
 </pre>
@@ -58,9 +66,24 @@ spec: fedcm; urlPrefix: https://w3c-fedid.github.io/FedCM/
         text: displayable; url: displayable
         text: handle a logged-out IDP; url: handle-a-logged-out-idp
         text: filter accounts; url: filter-accounts
-spec: url; urlPrefix: https://url.spec.whatwg.org/
+spec: hvp; urlPrefix: https://samuelgoto.github.io/handle-verification/draft-goto-handle-verification.html
     type: dfn
-        text: host serializer; url: concept-host-serializer
+        text: HVP handle; url: handles
+        text: HVP parsing; url: parsing
+        text: HVP normalized form; url: normalization
+        text: HVP resolution; url: resolution
+        text: authorized issuer; url: resolution
+        text: unique user identifier; url: resolution
+        text: HVP issuer identifier; url: issuer-identifier
+        text: HVP issuer metadata; url: issuer-metadata
+        text: federations; for: HVP issuer metadata; url: issuer-metadata
+        text: issuance_endpoint; for: HVP issuer metadata; url: issuer-metadata
+        text: HVT request; url: token-request-details
+        text: HVT error response; url: errors
+        text: HVT; url: hvt
+        text: HVT verification; url: hvt-verification
+        text: HVT+KB; url: kb
+        text: HVT+KB verification; url: verification
 spec: login-status; urlPrefix: https://w3c-fedid.github.io/login-status/
     type: dfn
         text: Login Status map; url: login-status-map
@@ -78,7 +101,6 @@ spec:html; type:dfn; for:html-origin-def; text:origin
 spec:html; type:dfn; for:/; text:same site
 spec:url; type:dfn; for:/; text:url
 spec:url; type:dfn; for:/; text:host
-spec:url; type:dfn; text:domain
 spec:html; type:dfn; for:/; text:top-level traversable
 spec:webidl; type:dfn; text:resolve
 spec:fetch; type:dfn; for:/; text:request
@@ -117,16 +139,16 @@ allow-listing:
 
 1. After the user signs in, an [=IDP=] **registers** the user's [=/handle=] by calling
     {{IdentityProvider/register()}}, with the user's permission.
-1. An [=RP=] **requests** any registered [=IDP=] that supports a federation it accepts, by passing a
-    {{IdentityProviderConfig/federation}} instead of a {{IdentityProviderConfig/configURL}}:
+1. An [=RP=] **requests** any registered [=IDP=] that belongs to a federation it accepts, by passing
+    a {{IdentityProviderConfig/federation}} instead of a {{IdentityProviderConfig/configURL}}:
 
     <div class="example" id="example-rp-request">
     ```js
     const credential = await navigator.credentials.get({
       identity: {
         providers: [{
-          federation: "https://www.w3.org/TR/indieauth/",
-          params: { nonce: "..." }
+          federation: "https://atproto.com",
+          nonce: "..."
         }, {
           configURL: "https://idp.example/fedcm.json",
           clientId: "123"
@@ -137,32 +159,48 @@ allow-listing:
 
     </div>
 
-1. A user whose [=/handle=] isn't registered yet can **type it**, for example `@alice.example`,
-    `alice@social.example` or `https://alice.example`. The user agent
-    [=check a typed handle|resolves it=] to its [=/issuer=] and registers it
-    ([=type your handle=]).
+1. A user whose [=/handle=] isn't registered yet can **type it**, for example `@alice.example` or
+    `@alice@social.example`. The user agent [=check a typed handle|resolves it=] to its
+    [=/issuer=] and registers it ([=type your handle=]).
 
-Both ways of registering a [=/handle=] run the same [[#resolution|resolution]] and add the same
+Both ways of registering a [=/handle=] run the same [=resolve a handle|resolution=] and add the same
 [=/handle=] to the [=handle registry=].
 
+This specification builds on the Handle Verification Protocol [[HVP]], which defines what a
+[=/handle=] is, how it is resolved to the [=/issuer=] that the user has authorized to vouch for it,
+and how the user agent obtains from that [=/issuer=] a proof that the user controls the
+[=/handle=], an [=HVT+KB=], which the [=RP=] verifies. The [=/issuer=] doesn't learn which [=RP=]
+the user signs in to.
+
 <div class="example" id="example-idp-register">
-After Alice signs in on `https://idp.example`, the [=IDP=] sets its login status and registers her
-handle:
+After Alice signs in on `https://social.example`, the [=IDP=] sets its login status and registers
+her handle:
 
 ```js
 await navigator.login.setStatus("logged-in");
-await IdentityProvider.register("@alice.idp.example");
+await IdentityProvider.register("@alice@social.example");
 ```
 
-The user agent resolves `@alice.idp.example` to `idp.example`'s [=config file=], which lists the
-federations it supports:
+The user agent resolves `@alice@social.example` to its [=/issuer=], `https://social.example`. Its
+[=/issuer metadata=], at `https://social.example/.well-known/handle-verification`, lists the
+federations that its accounts belong to:
+
+```json
+{
+  "issuer": "https://social.example",
+  "issuance_endpoint": "https://social.example/hvp/issuance",
+  "jwks_uri": "https://social.example/hvp/jwks",
+  "federations": ["https://atproto.com"]
+}
+```
+
+The [=well-known file=] of its site, at `https://social.example/.well-known/web-identity`, tells
+the user agent where to fetch Alice's accounts and where to let her sign in:
 
 ```json
 {
   "accounts_endpoint": "/accounts",
-  "id_assertion_endpoint": "/assertion",
-  "login_url": "/login",
-  "federations": ["https://www.w3.org/TR/indieauth/", "https://atproto.com"]
+  "login_url": "/login"
 }
 ```
 
@@ -173,8 +211,8 @@ And its {{IdentityProviderAPIConfig/accounts_endpoint}} includes her [=/handle=]
   "accounts": [{
     "id": "1234",
     "name": "Alice",
-    "handle": "@alice.idp.example",
-    "picture": "https://idp.example/alice.jpg"
+    "handle": "@alice@social.example",
+    "picture": "https://social.example/alice.jpg"
   }]
 }
 ```
@@ -192,18 +230,21 @@ A change to an algorithm or definition in another specification.
 # Federations # {#federations}
 <!-- ============================================================ -->
 
-A federation, such as IndieAuth or atproto, is identified by an `https:` URL: the URL that [=RPs=]
-pass as {{IdentityProviderConfig/federation}} and that [=IDPs=] list in
-{{IdentityProviderAPIConfig/federations}}. The <dfn>federation operator</dfn> is the party that
-controls the [=url/origin=] of that URL. It is responsible for:
+A federation, such as atproto, is identified by an `https:` URL: the URL that [=RPs=] pass as
+{{IdentityProviderConfig/federation}} and that [=/issuers=] list in the
+[=HVP issuer metadata/federations=] member of their [=/issuer metadata=]. The
+<dfn>federation operator</dfn> is the party that controls the [=url/origin=] of that URL. It is
+responsible for:
 
-* Defining the federation: the protocol or profile that its [=IDPs=] and [=RPs=] follow, including
-    how [=RPs=] verify the tokens that [=IDPs=] issue.
+* Defining the federation: which accounts belong to it, and what [=RPs=] can do with them beyond
+    verifying that the user controls their [=/handle=]. How [=RPs=] verify that is defined by
+    [[HVP]], and is the same for every federation.
 * Publishing [=operator metadata=] about the federation, such as its
     [=federation branding|branding=], which the user agent uses in its UI ([[#presentation]]).
 
-The user agent doesn't need to understand the federation's protocol. It only reads the
-[=operator metadata=].
+The user agent doesn't need to understand the federation. It only reads the [=operator metadata=],
+and matches the federation URL with the [=HVP issuer metadata/federations=] of
+[=/issuers=].
 
 ## Operator metadata ## {#operator-metadata-document}
 
@@ -292,268 +333,54 @@ way [[FEDCM]] uses an [=IDP=]'s {{IdentityProviderAPIConfig/branding}}: it uses 
 Note: This addresses [issue 29](https://github.com/w3c-fedid/idp-registration/issues/29).
 
 <!-- ============================================================ -->
-# Handles # {#handles}
+# The Handle Registry # {#registry}
 <!-- ============================================================ -->
 
 This specification depends on the Infra Standard. [[!INFRA]]
 
-A <dfn>handle</dfn> is a globally-unique and human-readable [=string=] that identifies the user,
-that is produced by [=parse a handle=], and that is resolvable by
-[=resolve a handle|Resolution=]. A handle isn't necessarily permanent: a user can change it, or
-move it to another [=IDP=].
+[[HVP]] defines the [=/handles=] that the user agent remembers, how they are parsed and resolved,
+and the [=/issuer metadata=] of the [=IDPs=] that issue them. This specification uses the following
+terms for them:
 
-An <dfn>issuer</dfn> is an [=IDP=] that is the authority for a [=/handle=]. The user agent identifies an
-issuer by its [=site of a host|site=], where it serves its [=well-known file=]. Each [=/handle=] has
-exactly one issuer at a time, which [=resolve a handle|Resolution=] finds.
+* A <dfn>handle</dfn> is an [=HVP handle=]: a domain handle, such as `@alice.example`, or a
+    username handle, such as `@alice@social.example`, in its [=HVP normalized form=]. The user
+    agent displays it with a leading `@`. A handle isn't necessarily permanent: a user can change
+    it, or move it to another [=IDP=].
+* An <dfn>issuer</dfn> is the [=IDP=] that is the [=authorized issuer=] of a [=/handle=],
+    identified by its [=HVP issuer identifier=], an `https:` [=/origin=].
+* To <dfn>parse a handle</dfn> given a [=string=] |input|, run the steps of [=HVP parsing=] on
+    |input|, and return the resulting [=/handle=], or failure if they fail.
+* Two [=strings=] <dfn lt="handles match">match as handles</dfn> if [=parse a handle|parsing=]
+    each of them succeeds and produces the same [=/handle=]. This is the only comparison used on
+    handles. It is applied to an account's {{IdentityProviderAccount/handle}}, and never to its
+    {{IdentityProviderAccount/username}} or {{IdentityProviderAccount/email}}.
+* The <dfn>issuer metadata</dfn> of an [=/issuer=] is its [=HVP issuer metadata=], served at its
+    [=HVP issuer identifier=] followed by `/.well-known/handle-verification`. It lists the
+    federations that the [=/issuer=]'s accounts belong to in its
+    [=HVP issuer metadata/federations=] member, and the endpoint that issues [=HVTs=] in its
+    [=HVP issuer metadata/issuance_endpoint=] member. To <dfn>fetch the issuer metadata</dfn> of
+    an [=/issuer=], the user agent fetches and checks it as defined by [[HVP]], without
+    credentials, without a referrer, and from an opaque origin.
+* <dfn lt="resolve a handle">Resolution</dfn> runs [=HVP resolution=] on a [=/handle=], and produces
+    a <dfn>resolution result</dfn> or failure. A [=resolution result=] has the following items:
 
-The <dfn>site of a host</dfn> |host| is |host|'s [=host/registrable domain=]. A [=host=] |host| is
-a <dfn>site host</dfn> if |host| is a [=/domain=], its [=host/registrable domain=] is non-null, and
-|host| equals its [=host/registrable domain=].
-
-<div class="example" id="example-site-of-host">
-The [=site of a host|site=] of `alice.social.example` is `social.example`, as long as
-`social.example` isn't a [=host/public suffix=]. If `hosting.example` is a public suffix, the
-[=site of a host|site=] of `alice.hosting.example` is `alice.hosting.example`.
-
-</div>
-
-This section defines how the user agent parses a [=/handle=], resolves it to its [=/issuer=], and
-stores the [=/handle|handles=] the user uses. None of this requires the user agent to understand
-any identity protocol. It only needs a small set of handle notations ([[#parsing]]) and a single,
-protocol-agnostic resolution procedure ([[#resolution]]).
-
-## Parsing ## {#parsing}
-
-[=Parse a handle=] accepts the following notations:
-
-<table class="data">
-<thead><tr><th>Notation<th>Examples<th>Used by
-<tbody>
-<tr><td>`@` + host<td>`@alice.example`, `@alice.social.example`<td>atproto
-<tr><td>local + `@` + host, optionally with a leading `@`<td>`alice@social.example`,
-    `@alice@social.example`<td>ActivityPub, Nostr (NIP-05)
-<tr><td>`https:` URL<td>`https://alice.example/`<td>IndieAuth, Solid, OpenID 2.0
-</table>
-
-<div algorithm>
-To <dfn>parse a handle</dfn> given a [=string=] |input|, run the following steps. This returns a
-[=/handle=] or failure.
-
-1. Let |s| be |input| with leading and trailing [=ASCII whitespace=] [=strip leading and
-    trailing ASCII whitespace|stripped=].
-1. If |s| starts with "`https://`":
-    1. Let |url| be the result of running the [=URL parser=] on |s|.
-    1. If |url| is failure, return failure.
-    1. Let |host| be |url|'s [=url/host=].
-    1. Let |handle| be the result of running the [=URL serializer=] on |url|.
-1. Otherwise:
-    1. If |s| starts with "`@`", remove the first code point from |s|.
-    1. If |s| contains "`@`":
-        1. Let |local| be the part of |s| before the last "`@`", and |hostString| the part after it.
-        1. If |local| is the empty string, return failure.
-    1. Otherwise, let |local| be null and |hostString| be |s|.
-    1. Let |host| be the result of running the [=host parser=] on |hostString|.
-    1. If |host| is failure, return failure.
-    1. If |local| is null, let |handle| be "`@`" followed by the [=host serializer|serialization=]
-        of |host|. Otherwise, let |handle| be |local|, followed by "`@`", followed by the
-        [=host serializer|serialization=] of |host|.
-1. If |host| is not a [=/domain=], return failure.
-1. If |host|'s [=host/registrable domain=] is null, return failure.
-1. Return |handle|.
-
-</div>
-
-<div algorithm>
-The <dfn for="handle">site</dfn> of a [=/handle=] |handle| is the result of the following steps:
-
-1. Let |host| be the [=url/host=] of the result of running the [=URL parser=] on |handle| if
-    |handle| starts with "`https://`", and the result of running the [=host parser=] on the
-    part of |handle| after the last "`@`" otherwise.
-1. Return |host|'s [=host/registrable domain=].
-
-</div>
-
-Note: Because a [=/handle=] is always in the canonical form that [=parse a handle=] produces, its
-[=handle/site=] is always a [=site host=].
-
-<div class="example" id="example-parse-a-handle">
-<table class="data">
-<thead><tr><th>Input<th>Handle<th>Its [=handle/site=]
-<tbody>
-<tr><td>`@alice.example`, `alice.example`<td>`@alice.example`<td>`alice.example`
-<tr><td>`@alice.social.example`<td>`@alice.social.example`<td>`social.example`
-<tr><td>`alice@social.example`, `@alice@social.example`<td>`alice@social.example`<td>`social.example`
-<tr><td>`https://alice.example`<td>`https://alice.example/`<td>`alice.example`
-<tr><td>`@192.0.2.1`, `@com`<td colspan=2>failure
-</table>
-</div>
-
-<div algorithm>
-Two [=strings=] |a| and |b| <dfn lt="handles match">match as handles</dfn> if the following steps
-return true:
-
-1. If |a| and |b| both start with "`https://`":
-    1. Let |urlA| and |urlB| be the results of running the [=URL parser=] on |a| and |b|.
-    1. If either is failure, return false.
-    1. Return whether |urlA| [=url/equals=] |urlB|.
-1. Let |a'| and |b'| be the [=ASCII lowercase|ASCII lowercased=] |a| and |b|.
-1. If |a'| starts with "`@`", remove its first code point. Do the same for |b'|.
-1. Return whether |a'| is |b'|.
-
-</div>
-
-Note: This is the only comparison used on handles. It is applied to an account's
-{{IdentityProviderAccount/handle}}, and never to its {{IdentityProviderAccount/username}} or
-{{IdentityProviderAccount/email}}, so that this mechanism stays separate from how an [=IDP=]
-displays accounts and from email verification.
-
-Issue: URL handles need more normalization (fragments such as `#me`, trailing slashes).
-
-## Resolution ## {#resolution}
-
-<dfn lt="resolve a handle">Resolution</dfn> turns a [=/handle=] into its [=/issuer=]'s
-[=issuer metadata|metadata=]. It has two steps: [[#resolve-issuer|resolve the issuer]] from the
-handle's [[#dns-record|delegation record]], and then [[#issuer-metadata-document|fetch the issuer's metadata]].
+    <dl dfn-for="resolution result">
+        :   <dfn>issuer</dfn>
+        ::  The [=HVP issuer identifier=] of the handle's [=/issuer=].
+        :   <dfn>unique user identifier</dfn>
+        ::  The [=/unique user identifier=] that the handle resolves to: a DID, or the `self` link of
+            a username handle.
+    </dl>
 
 <div algorithm="resolve a handle">
-To [=resolve a handle=] given a [=/handle=] |handle| and a |globalObject|, run the following steps.
-This returns [=issuer metadata=] or failure.
-
-1. Let |issuer| be the result of [=resolve the issuer=] of |handle|. If |issuer| is failure,
-    return failure.
-1. Return the result of [=fetch the issuer metadata=] with |issuer| and |globalObject|.
-
-</div>
-
-Resolution takes a [=/handle=], not arbitrary input. Callers that start from user or script input
-first run [=parse a handle=], which also normalizes it (for example, `Alice.Example` becomes
-`@alice.example`), and then resolve the result. Resolution stops at the [=issuer metadata=]: it
-doesn't fetch the [=config file=] or check its {{IdentityProviderAPIConfig/federations}}, because
-each caller needs a different check.
-
-### Resolve the issuer ### {#resolve-issuer}
-
-The first step of [=resolve a handle|resolution=] finds a [=/handle=]'s [=/issuer=] by looking up a
-[[#dns-record|delegation record]] on the handle's [=handle/site=]. Its `iss=` value names the
-[=/issuer=]'s site, whether the [=handle/site=] hosts its own [=IDP=] or delegates to another site.
-
-<div algorithm>
-To <dfn>resolve the issuer</dfn> of a [=/handle=] |handle|, run the following steps. This returns
-the [=site host=] of |handle|'s [=/issuer=], or failure.
-
-1. Let |records| be the result of [=look up the delegation records=] for |handle|'s
-    [=handle/site=].
-1. If |records| is failure or its [=list/size=] is not 1, return failure.
-1. Let |value| be |records|[0] with the leading "`iss=`" removed.
-1. Let |issuer| be the result of running the [=host parser=] on the
-    [=ASCII lowercase|ASCII lowercased=] |value|.
-1. If |issuer| is failure or is not a [=site host=], return failure.
-1. Return |issuer|.
+To [=resolve a handle=] given a [=/handle=] |handle| and a <var ignore>globalObject</var>, run the steps of
+[=HVP resolution=] on |handle|. If they fail, return failure. Otherwise, return a
+[=resolution result=] whose [=resolution result/issuer=] is the [=authorized issuer=] that they
+produced, and whose [=resolution result/unique user identifier=] is the
+[=/unique user identifier=] that they produced.
 
 </div>
 
-Note: When a provider's domain is a [=host/public suffix=] (for example, `hosting.example`, where each
-user gets their own subdomain), each subdomain is its own [=handle/site=]. The [=handle/site=] of
-`@alice.hosting.example` is `alice.hosting.example`, not `hosting.example`.
-
-<div class="example" id="example-resolve-issuer">
-<table class="data">
-<thead><tr><th>Handle<th>Its [=handle/site=]<th>Delegation record<th>[=/Issuer=]
-<tbody>
-<tr><td>`@alice.example`<td>`alice.example`<td>`iss=alice.example`<td>`alice.example`
-<tr><td>`@alice.example`<td>`alice.example`<td>`iss=social.example`<td>`social.example`
-<tr><td>`@alice.social.example`<td>`social.example`<td>`iss=social.example`<td>`social.example`
-<tr><td>`alice@social.example`<td>`social.example`<td>`iss=social.example`<td>`social.example`
-<tr><td>`https://alice.example/`<td>`alice.example`<td>`iss=alice.example`<td>`alice.example`
-<tr><td>`@alice.hosting.example` (`hosting.example` is a public suffix)<td>`alice.hosting.example`<td>`iss=alice.hosting.example`<td>`alice.hosting.example`
-<tr><td>`@alice.example`<td>`alice.example`<td>none<td>failure
-<tr><td>`@alice.example`<td>`alice.example`<td>`iss=pds.social.example`<td>failure (not a site)
-</table>
-</div>
-
-### DNS delegation record ### {#dns-record}
-
-A [=/handle=]'s [=handle/site=] names its [=/issuer=] by publishing a DNS `TXT` record [[!RFC1035]]
-at the name `_web-identity.` followed by the [=handle/site=]:
-
-<div class="example" id="example-dns-record">
-```
-_web-identity.alice.example.   TXT   "iss=social.example"
-```
-
-This record says that the [=/issuer=] of handles whose [=handle/site=] is `alice.example` is on the
-[=site of a host|site=] `social.example`. If `alice.example` is its own [=/issuer=], the record is:
-
-```
-_web-identity.alice.example.   TXT   "iss=alice.example"
-```
-
-</div>
-
-The record's value MUST be the string "`iss=`" followed by a [=site host=]. There MUST be
-exactly one such record at a name.
-
-Note: This is modeled on the DNS delegation in the
-[Email Verification Protocol](https://dickhardt.github.io/email-verification/draft-hardt-email-verification.html#name-dns-delegation).
-Unlike that record, the value here names a site rather than a host, so that resolution always
-ends at a site's [=well-known file=].
-
-Issue: Should the record name be `_web-identity` or something more specific (e.g. `_web-handle`)?
-Should it carry a `federation`, so that one domain can delegate different protocols to different
-[=IDPs=]?
-
-<div algorithm>
-To <dfn>look up the delegation records</dfn> for a [=site host=] |site|, the user agent performs a
-DNS query for `TXT` records at the name `_web-identity.` followed by |site|, using its DNS
-resolver. This returns a [=list=] of [=strings=] (the records whose contents start with "`iss=`"),
-or failure if the query failed.
-
-</div>
-
-### Issuer metadata ### {#issuer-metadata-document}
-
-Once the [=/issuer=] is known, the user agent fetches its <dfn>issuer metadata</dfn>: the
-[=well-known file=] that [[FEDCM]] already defines, an {{IdentityProviderWellKnown}}, served at
-`https://` followed by the [=/issuer=]'s [=site of a host|site=] and `/.well-known/web-identity`.
-For the [=/issuer=] `social.example`, this is `https://social.example/.well-known/web-identity`.
-
-Each [=issuer metadata=] has an associated <dfn for="issuer metadata">issuer</dfn>, the
-[=site host=] it was fetched from.
-
-<div class="example" id="example-issuer-metadata">
-The issuer metadata at `https://social.example/.well-known/web-identity`:
-
-```json
-{
-  "provider_urls": ["https://idp.social.example/fedcm.json"]
-}
-```
-
-</div>
-
-The members of the [=issuer metadata=] are defined by [[FEDCM]]. This specification requires its
-{{IdentityProviderWellKnown/provider_urls}} to contain exactly one entry: an `https:` URL, on the
-[=/issuer=]'s [=site of a host|site=], of the [=/issuer=]'s [=config file=]. [[#presentation]]
-derives the [=config file=] from it ([=create a registered provider=]).
-
-<div algorithm>
-To <dfn>fetch the issuer metadata</dfn> given a [=site host=] |issuer| and a |globalObject|, run the
-following steps. This returns [=issuer metadata=] or failure.
-
-1. Let |metadata| be the result of [=fetch the well-known file=] with a new [=/URL=] whose
-    [=url/scheme=] is "`https`", [=url/host=] is |issuer|, and [=url/path=] is « "`.well-known`",
-    "`web-identity`" », and with |globalObject|. If |metadata| is failure, return failure.
-1. Set |metadata|'s [=issuer metadata/issuer=] to |issuer|.
-1. Return |metadata|.
-
-</div>
-
-Issue: Should the [=issuer metadata=] include an `issuer` member that MUST equal the
-[=site of a host|site=] it was fetched from, as in the
-[Email Verification Protocol](https://dickhardt.github.io/email-verification/draft-hardt-email-verification.html#name-issuer-metadata)
-(following [[RFC8414]])?
-
-## The Handle Registry ## {#registry}
 
 Each [=user agent=] has a global, persistent <dfn>handle registry</dfn>, an initially empty
 [=ordered set=] of [=/handle|handles=] that the user uses to sign in. No two
@@ -564,19 +391,20 @@ with {{IdentityProvider/register()}} or the user typed it ([=type your handle=])
 doesn't record which one did.
 
 The [=handle registry=] stores only [=/handle|handles=]. It doesn't store which [=IDP=] a
-[=/handle=] resolves to, that [=IDP=]'s [=config file=], or any accounts. The user agent computes
-the [=IDP=] from the [=/handle=] by [=resolve a handle|resolving=] it whenever it needs it, and
-obtains accounts from the [=IDP=] when needed.
+[=/handle=] resolves to, that [=IDP=]'s [=/issuer metadata=], or any accounts. The user agent
+computes the [=IDP=] from the [=/handle=] by [=resolve a handle|resolving=] it whenever it needs
+it, and obtains accounts from the [=IDP=] when needed.
 
-Note: A user agent can cache the results of [=resolve a handle|resolution=] and [=fetch the config file=],
-for example to avoid DNS lookups and fetches on every [=federation request=]. That's an implementation
-choice, as long as the cache respects DNS TTLs and HTTP caching, and is cleared along with the
+Note: A user agent can cache the results of [=resolve a handle|resolution=] and the documents
+that [=create a registered provider=] fetches, for example to avoid lookups and fetches on every
+[=federation request=]. That's an implementation choice, as long as the cache respects DNS TTLs
+and HTTP caching, follows the caching rules of [[HVP]], and is cleared along with the
 [=handle registry=]. See also [[#privacy]] and [[#security]].
 
 When the user clears browsing data or site settings for an [=/origin=] |origin|, the user agent
 MUST [=list/remove=] from the [=handle registry=] every [=/handle=] whose [=/issuer=], as determined
-by [=resolve the issuer=] (or by the user agent's cached result of it), is on the same
-[=site of a host|site=] as |origin|.
+by [=resolve a handle=] (or by the user agent's cached result of it), is [=same site=] with
+|origin|.
 
 <div algorithm>
 To <dfn>add to the handle registry</dfn> given a [=/handle=] |handle|, run the following steps:
@@ -627,12 +455,13 @@ same path: both [=resolve a handle|resolve=] it, and both add the same [=/handle
 [=handle registry=].
 
 Note: An [=IDP=] can only register and unregister [=/handle|handles=] that it is the [=/issuer=] of,
-as named by the [[#dns-record|delegation record]] on the handle's [=handle/site=].
+as named by the records that [=HVP resolution=] reads: the `HandleIssuer` service of the handle's
+DID document, or the `handle-issuer` link of its WebFinger resource descriptor.
 
 <div algorithm>
-A |globalObject| is <dfn>on the issuer's site</dfn> of [=issuer metadata=] |metadata| if
-|globalObject|'s [=associated Document=]'s [=Document/origin=] is not an [=opaque origin=], and the
-[=site of a host|site=] of its [=origin/host=] is |metadata|'s [=issuer metadata/issuer=].
+A |globalObject| is <dfn>on the issuer's site</dfn> of a [=resolution result=] |result| if
+|globalObject|'s [=associated Document=]'s [=Document/origin=] is not an [=opaque origin=], and is
+[=same site=] with |result|'s [=resolution result/issuer=].
 
 </div>
 
@@ -647,19 +476,18 @@ the following steps:
 1. [=In parallel=], run the following steps:
     1. Let |canonical| be the result of [=parse a handle=] with |handle|. If |canonical| is
         failure, [=queue to reject=] |promise| with "{{SyntaxError}}" and return.
-    1. Let |metadata| be the result of [=resolve a handle=] with |canonical| and |globalObject|.
-        If |metadata| is failure, [=queue to reject=] |promise| with "{{NetworkError}}" and return.
-    1. If |globalObject| is not [=on the issuer's site=] of |metadata|, [=queue to reject=]
+    1. Let |result| be the result of [=resolve a handle=] with |canonical| and |globalObject|.
+        If |result| is failure, [=queue to reject=] |promise| with "{{NetworkError}}" and return.
+    1. If |globalObject| is not [=on the issuer's site=] of |result|, [=queue to reject=]
         |promise| with "{{NotAllowedError}}" and return.
-    1. Let |provider| be the result of [=create a registered provider=] with |metadata|,
-        « |canonical| », and null. If |provider| is failure, [=queue to reject=] |promise| with
-        "{{NetworkError}}" and return.
-    1. Let |config| be the result of [=fetch the config file=] with |provider| and |globalObject|.
-    1. If |config| is failure, or |config|.{{IdentityProviderAPIConfig/federations}} doesn't
-        [=map/exist=] or [=list/is empty=], [=queue to reject=] |promise| with "{{NetworkError}}"
-        and return.
-    1. Let |accounts| be the result of [=get the registered accounts=] with |config|, |provider|,
-        and |globalObject|.
+    1. Let |provider| be the result of [=create a registered provider=] with |result|'s
+        [=resolution result/issuer=], « |canonical| », null, and |globalObject|. If |provider| is
+        failure, [=queue to reject=] |promise| with "{{NetworkError}}" and return.
+    1. If |provider|'s [=registered provider/issuer metadata=]'s
+        [=HVP issuer metadata/federations=] doesn't [=map/exist=] or [=list/is empty=],
+        [=queue to reject=] |promise| with "{{NetworkError}}" and return.
+    1. Let |accounts| be the result of [=get the registered accounts=] with |provider|'s
+        [=registered provider/config=], |provider|, and |globalObject|.
     1. If |accounts| [=list/is empty=], [=queue to reject=] |promise| with "{{NotAllowedError}}"
         and return.
 
@@ -668,7 +496,7 @@ the following steps:
         has |canonical| as its {{IdentityProviderAccount/handle}}.
     1. If the [=handle registry=] doesn't already contain a [=/handle=] that
         [=handles match|matches=] |canonical|, the user agent MUST
-        [=ask to save a handle|ask the user to save=] |canonical| with |accounts|[0] and |config|.
+        [=ask to save a handle|ask the user to save=] |canonical| with |accounts|[0].
         If the user declines, [=queue to reject=] |promise| with "{{NotAllowedError}}" and return.
     1. [=Add to the handle registry=] with |canonical|.
     1. [=Queue a global task=] on the [=DOM manipulation task source=] given |globalObject| to
@@ -678,16 +506,14 @@ the following steps:
 </div>
 
 <div algorithm>
-To <dfn>ask to save a handle</dfn> given a [=/handle=] |handle|, an {{IdentityProviderAccount}}
-|account|, and an {{IdentityProviderAPIConfig}} |config|, the user agent shows a prompt that asks the user whether
+To <dfn>ask to save a handle</dfn> given a [=/handle=] |handle| and an {{IdentityProviderAccount}}
+|account|, the user agent shows a prompt that asks the user whether
 to save |handle| so that it's offered when websites ask them to sign in. It returns whether the
 user agreed.
 
 * The prompt SHOULD show |handle| as the account's identifier.
 * The prompt SHOULD show |account|'s {{IdentityProviderAccount/name}} and
     {{IdentityProviderAccount/picture}}.
-* The prompt SHOULD show |config|'s {{IdentityProviderAPIConfig/branding}}, for example as a badge
-    on the account's picture.
 * The user agent MAY require [=transient activation=] before showing the prompt, MAY rate-limit
     it, and MAY remember that the user declined and not ask again.
 
@@ -710,9 +536,9 @@ run the following steps:
 1. [=In parallel=], run the following steps:
     1. Let |canonical| be the result of [=parse a handle=] with |handle|. If |canonical| is
         failure, [=queue to reject=] |promise| with "{{SyntaxError}}" and return.
-    1. Let |metadata| be the result of [=resolve a handle=] with |canonical| and |globalObject|.
-        If |metadata| is failure, [=queue to reject=] |promise| with "{{NetworkError}}" and return.
-    1. If |globalObject| is not [=on the issuer's site=] of |metadata|, [=queue to reject=]
+    1. Let |result| be the result of [=resolve a handle=] with |canonical| and |globalObject|.
+        If |result| is failure, [=queue to reject=] |promise| with "{{NetworkError}}" and return.
+    1. If |globalObject| is not [=on the issuer's site=] of |result|, [=queue to reject=]
         |promise| with "{{NotAllowedError}}" and return.
     1. [=Remove from the handle registry=] with |canonical|.
     1. [=Queue a global task=] on the [=DOM manipulation task source=] given |globalObject| to
@@ -726,8 +552,8 @@ user typed it: either way, the handle's [=/issuer=] has said it should no longer
 the same way whether or not the [=/handle=] was in the [=handle registry=], so that it doesn't
 reveal whether the user had registered it.
 
-Note: If a [=/handle=] no longer resolves to the caller, for example because its
-[[#dns-record|delegation record]] was removed, the caller can't unregister it. It doesn't need to,
+Note: If a [=/handle=] no longer resolves to the caller, for example because its DID document no
+longer names the caller as its issuer, the caller can't unregister it. It doesn't need to,
 because the [=/handle=] is no longer offered with the caller as its [=/issuer=] either
 ([=gather registered providers=] resolves it again).
 
@@ -741,9 +567,9 @@ partial dictionary IdentityProviderAccount {
 
 <dl dfn-type="dict-member" dfn-for="IdentityProviderAccount">
     :   <dfn>handle</dfn>
-    ::  The account's [=/handle=], in the canonical form that [=parse a handle=] produces. The user
-        agent uses it to match the account with registered and typed [=/handle|handles=]
-        ([=find matching accounts=]).
+    ::  The account's [=/handle=], for example `"@alice@social.example"`. The user agent uses it
+        to match the account with registered and typed [=/handle|handles=]
+        ([=find matching accounts=]), and uses it in the [=HVT request=] ([[#hvt-issuance]]).
 </dl>
 
 Note: This is separate from {{IdentityProviderAccount/username}}, which an [=IDP=] can use for
@@ -762,39 +588,6 @@ Change the definition of [=displayable=] so that an account with its
 
 </div>
 
-## Declaring supported federations ## {#declaring-federations}
-
-<xmp class="idl">
-partial dictionary IdentityProviderAPIConfig {
-  sequence<USVString> federations;
-};
-</xmp>
-
-<dl dfn-type="dict-member" dfn-for="IdentityProviderAPIConfig">
-    :   <dfn>federations</dfn>
-    ::  The {{IdentityProviderConfig/federation}} URLs that the [=IDP=] supports. An [=IDP=] that
-        doesn't list a federation is never returned for a [=federation request=] for that
-        federation.
-</dl>
-
-<div class="example" id="example-declaring-federations">
-An [=IDP=]'s [=config file=] at `https://idp.example/fedcm.json` declares that it supports both
-IndieAuth and AT Protocol:
-
-```json
-{
-  "accounts_endpoint": "/accounts",
-  "id_assertion_endpoint": "/assertion",
-  "login_url": "/login",
-  "federations": [
-    "https://www.w3.org/TR/indieauth/",
-    "https://atproto.com"
-  ]
-}
-```
-
-</div>
-
 <!-- ============================================================ -->
 # User-initiated Registration # {#user-registration}
 <!-- ============================================================ -->
@@ -803,7 +596,7 @@ A user whose [=/handle=] isn't in the [=handle registry=] yet can register it by
 user agent decides when to allow users to [=type your handle=], for example when an [=RP=] makes a
 [=federation request=] ([[#account-selection]]). The user agent
 [=check a typed handle|checks=] that the typed handle [=resolve a handle|resolves=] to an
-[=/issuer=] that supports one of the federations the caller accepts, and adds it to the
+[=/issuer=] that belongs to one of the federations the caller accepts, and adds it to the
 [=handle registry=].
 
 <div algorithm>
@@ -835,13 +628,13 @@ steps. This returns a [=/handle=] or failure.
 
 1. Let |handle| be the result of [=parse a handle=] with |input|. If |handle| is failure, return
     failure.
-1. Let |metadata| be the result of [=resolve a handle=] with |handle| and |globalObject|. If
-    |metadata| is failure, return failure.
-1. Let |provider| be the result of [=create a registered provider=] with |metadata|, « |handle| »,
-    and null. If |provider| is failure, return failure.
-1. Let |config| be the result of [=fetch the config file=] with |provider| and |globalObject|. If
-    |config| is failure, return failure.
-1. If |config|.{{IdentityProviderAPIConfig/federations}} doesn't [=map/exist=], or none of its
+1. Let |result| be the result of [=resolve a handle=] with |handle| and |globalObject|. If
+    |result| is failure, return failure.
+1. Let |provider| be the result of [=create a registered provider=] with |result|'s
+    [=resolution result/issuer=], « |handle| », null, and |globalObject|. If |provider| is failure,
+    return failure.
+1. If |provider|'s [=registered provider/issuer metadata=]'s
+    [=HVP issuer metadata/federations=] doesn't [=map/exist=], or none of its
     [=list/items=] is [=list/contained=] in |federations|, return failure.
 1. Return |handle|.
 
@@ -856,7 +649,8 @@ registers a [=/handle=]. Showing the handle's accounts and signing in with it is
 <!-- ============================================================ -->
 
 This section defines how the user agent presents registered [=IDPs=] to the user when an [=RP=]
-calls `navigator.credentials.get()` with a {{IdentityProviderConfig/federation}}.
+calls `navigator.credentials.get()` with a {{IdentityProviderConfig/federation}}, and what the
+[=RP=] receives.
 
 ## Requesting by federation ## {#request-by-federation}
 
@@ -868,16 +662,15 @@ partial dictionary IdentityProviderConfig {
 
 <dl dfn-type="dict-member" dfn-for="IdentityProviderConfig">
     :   <dfn>federation</dfn>
-    ::  A URL that points to the definition of a federation the [=RP=] accepts: the protocol or
-        profile that its [=IDPs=] and [=RPs=] follow, for example
-        `"https://www.w3.org/TR/indieauth/"` or `"https://atproto.com"`. The authority behind the
-        URL defines the federation. When present, {{IdentityProviderConfig/configURL}} is ignored,
-        and the entry stands for every registered [=IDP=] whose [=config file=] lists this
-        federation.
+    ::  A URL that identifies a federation the [=RP=] accepts, for example
+        `"https://atproto.com"`. When present, {{IdentityProviderConfig/configURL}} is ignored,
+        and the entry stands for every registered [=/issuer=] whose [=/issuer metadata=] lists this
+        federation in its [=HVP issuer metadata/federations=].
 </dl>
 
 An {{IdentityProviderRequestOptions}} whose {{IdentityProviderConfig/federation}} [=map/exists=] is a
-<dfn>federation request</dfn>.
+<dfn>federation request</dfn>. The [=RP=] passes the nonce that the [=HVT+KB=] is bound to as its
+{{IdentityProviderRequestOptions/nonce}}.
 
 <div class="monkeypatch">
 In [[FEDCM]], remove the `required` keyword from the {{IdentityProviderConfig/configURL}} and
@@ -914,36 +707,26 @@ In [=create an IdentityCredential=], insert the following steps immediately afte
 
 </div>
 
-<div class="monkeypatch">
-In [=fetch an identity assertion=], change the entry ("client_id", |provider|'s
-{{IdentityProviderConfig/clientId}}) in the "Create a list" step to:
-
-1. ("client_id", |clientId|), where |clientId| is |provider|'s
-    {{IdentityProviderConfig/clientId}} if it [=map/exists=], and otherwise the
-    [=ASCII serialization of an origin|serialization=] of |globalObject|'s
-    [=associated Document=]'s [=Document/origin=].
-
-</div>
-
-Issue: Is the [=RP=]'s origin the right default `client_id` for registered [=IDPs=]? It matches
-how IndieAuth identifies clients by URL, but other protocols may expect something else.
-
-Note: {{IdentityCredential/configURL}} tells the [=RP=] which [=IDP=] issued the token, so it can
-verify the token using the protocol named by {{IdentityProviderConfig/federation}}.
-
 ## Registered providers ## {#registered-providers}
 
 A <dfn>registered provider</dfn> is an {{IdentityProviderRequestOptions}} that the user agent
-creates for the [=IDP=] of one or more [=/handle|handles=], rather than one the [=RP=] passed. The
-user agent keeps the following associated with it:
+creates for the [=/issuer=] of one or more [=/handle|handles=], rather than one the [=RP=] passed.
+It has no {{IdentityProviderConfig/configURL}}. The user agent keeps the following associated with
+it:
 
 <dl dfn-for="registered provider">
+    :   <dfn>issuer</dfn>
+    ::  The [=HVP issuer identifier=] of its [=/issuer=].
+    :   <dfn>issuer metadata</dfn>
+    ::  The [=/issuer=]'s [=/issuer metadata=], from [=fetch the issuer metadata=].
     :   <dfn>config</dfn>
-    ::  The {{IdentityProviderAPIConfig}} from [=fetch the config file=].
+    ::  The [=/issuer=]'s {{IdentityProviderAPIConfig}}, from [=fetch the issuer config=]. It has
+        only an {{IdentityProviderAPIConfig/accounts_endpoint}} and a
+        {{IdentityProviderAPIConfig/login_url}}.
     :   <dfn>handles</dfn>
-    ::  A [=list=] of [=/handle|handles=] that [=resolve a handle|resolve=] to this [=IDP=]: the
-        ones in the [=handle registry=], or the single [=/handle=] the user typed or the [=IDP=] is
-        registering.
+    ::  A [=list=] of [=/handle|handles=] that [=resolve a handle|resolve=] to this [=/issuer=]:
+        the ones in the [=handle registry=], or the single [=/handle=] the user typed or the
+        [=IDP=] is registering.
     :   <dfn>accounts</dfn>
     ::  A [=list=] of {{IdentityProviderAccount}}s: the [=get the registered accounts|accounts=]
         that [=handles match|match=] one of its [=registered provider/handles=].
@@ -953,49 +736,99 @@ user agent keeps the following associated with it:
         dialog of each [=IDP=] the user is [=logged-out=] of.
 </dl>
 
-<div algorithm>
-To <dfn>create a registered provider</dfn> given [=issuer metadata=] |metadata|, a [=list=] of
-[=/handle|handles=] |handles|, and an {{IdentityProviderRequestOptions}} or null
-|federationRequest|, run the following steps. This returns an {{IdentityProviderRequestOptions}} or
-failure.
+To show the user's accounts and to let the user sign in, the user agent needs the
+[=/issuer=]'s {{IdentityProviderAPIConfig/accounts_endpoint}} and
+{{IdentityProviderAPIConfig/login_url}}. It reads them from the [=well-known file=] of [[FEDCM]] on
+the [=/issuer=]'s site, rather than from a [=config file=]: a [=registered provider=] has no config
+URL.
 
-1. If |metadata|["{{IdentityProviderWellKnown/provider_urls}}"] doesn't [=map/exist=] or its
-    [=list/size=] is not 1, return failure.
-1. Let |configUrl| be the result of running the [=URL parser=] on
-    |metadata|["{{IdentityProviderWellKnown/provider_urls}}"][0].
-1. If |configUrl| is failure, or |configUrl|'s [=url/scheme=] is not "`https`", or |configUrl|'s
-    [=url/host=]'s [=host/registrable domain=] is not |metadata|'s [=issuer metadata/issuer=],
+<div class="example" id="example-well-known">
+The [=well-known file=] at `https://social.example/.well-known/web-identity`:
+
+```json
+{
+  "accounts_endpoint": "/accounts",
+  "login_url": "/login"
+}
+```
+
+</div>
+
+<div algorithm>
+To <dfn>fetch the issuer config</dfn> given an [=HVP issuer identifier=] |issuer| and a
+|globalObject|, run the following steps. This returns an {{IdentityProviderAPIConfig}} or failure.
+
+1. Let |site| be the [=host/registrable domain=] of |issuer|'s [=origin/host=]. If |site| is null,
     return failure.
+1. Let |wellKnownUrl| be a new [=/URL=] whose [=url/scheme=] is "`https`", [=url/host=] is |site|,
+    and [=url/path=] is « "`.well-known`", "`web-identity`" ».
+1. Let |wellKnown| be the result of [=fetch the well-known file=] with |wellKnownUrl| and
+    |globalObject|. If |wellKnown| is failure, return failure.
+1. Let |config| be a new {{IdentityProviderAPIConfig}}.
+1. For each member name |m| of « "`accounts_endpoint`", "`login_url`" »:
+    1. If |wellKnown|[|m|] doesn't [=map/exist=], return failure.
+    1. Let |url| be the result of running the [=URL parser=] on |wellKnown|[|m|], with
+        |wellKnownUrl| as the base URL.
+    1. If |url| is failure, or its [=url/scheme=] is not "`https`", or its [=url/origin=] is not
+        [=same site=] with |issuer|, return failure.
+    1. Set |config|[|m|] to the [=URL serializer|serialization=] of |url|.
+1. Return |config|.
+
+</div>
+
+<div class="monkeypatch">
+In [[FEDCM]], remove the `required` keyword from the {{IdentityProviderAPIConfig/id_assertion_endpoint}}
+member of {{IdentityProviderAPIConfig}}. A [=registered provider=] doesn't use it
+([[#hvt-issuance]]). Every algorithm in [[FEDCM]] that reads it from the [=config file=] of an
+[=IDP=] that isn't a [=registered provider=] MUST first check that the member [=map/exists=], and
+treat its absence as failure.
+
+</div>
+
+<div class="monkeypatch">
+A [=registered provider=] has no {{IdentityProviderConfig/configURL}}. In [[FEDCM]]:
+
+* In [=fetch the config file=], if |provider| is a [=registered provider=], return its
+    [=registered provider/config=], without fetching anything.
+* Wherever an algorithm uses the [=url/origin=] of a provider's
+    {{IdentityProviderConfig/configURL}}, for example to get its login status, it uses the
+    [=registered provider/issuer=] of a [=registered provider=] instead.
+* The {{IdentityCredential/configURL}} of an {{IdentityCredential}} created for a
+    [=registered provider=] is the empty string. The [=RP=] identifies the [=/issuer=] from the
+    `iss` claim of the [=HVT=].
+
+</div>
+
+<div algorithm>
+To <dfn>create a registered provider</dfn> given an [=HVP issuer identifier=] |issuer|, a [=list=]
+of [=/handle|handles=] |handles|, an {{IdentityProviderRequestOptions}} or null
+|federationRequest|, and a |globalObject|, run the following steps. This returns an
+{{IdentityProviderRequestOptions}} or failure.
+
+1. Let |metadata| be the result of [=fetch the issuer metadata=] with |issuer| and |globalObject|.
+    If |metadata| is failure, return failure.
+1. Let |config| be the result of [=fetch the issuer config=] with |issuer| and |globalObject|. If
+    |config| is failure, return failure.
 1. Let |provider| be a new {{IdentityProviderRequestOptions}}.
-1. Set |provider|.{{IdentityProviderConfig/configURL}} to the [=URL serializer|serialization=]
-    of |configUrl|.
 1. If |federationRequest| is not null, then for each member name |m| of «
-    {{IdentityProviderConfig/clientId}}, {{IdentityProviderRequestOptions/params}},
-    {{IdentityProviderRequestOptions/fields}}, {{IdentityProviderRequestOptions/loginHint}},
-    {{IdentityProviderRequestOptions/domainHint}} »: if |federationRequest|[|m|] [=map/exists=], set
-    |provider|[|m|] to |federationRequest|[|m|].
-1. Mark |provider| as a [=registered provider=], and set its [=registered provider/handles=] to
+    {{IdentityProviderRequestOptions/nonce}}, {{IdentityProviderRequestOptions/loginHint}},
+    {{IdentityProviderRequestOptions/domainHint}} »: if |federationRequest|[|m|] [=map/exists=],
+    set |provider|[|m|] to |federationRequest|[|m|].
+1. Mark |provider| as a [=registered provider=], and set its [=registered provider/issuer=] to
+    |issuer|, its [=registered provider/issuer metadata=] to |metadata|, its
+    [=registered provider/config=] to |config|, and its [=registered provider/handles=] to
     |handles|.
 1. Return |provider|.
 
 </div>
-
-Note: This is the only place where the user agent derives the [=/issuer=]'s [=config file=] from its
-[=issuer metadata=].
-
-Issue: Because a [=registered provider=] requires exactly one
-{{IdentityProviderWellKnown/provider_urls}} entry in the [=issuer metadata=], a
-[=site of a host|site=] can register [=/handle|handles=] for only one [=config file=]. Is that
-acceptable for [=IDPs=] that have several configurations (e.g. one per product)?
 
 <div algorithm>
 To <dfn>get the registered accounts</dfn> given an {{IdentityProviderAPIConfig}} |config|, a
 [=registered provider=] |provider|, and a |globalObject|, run the following steps. This returns a
 [=list=] of {{IdentityProviderAccount}}s.
 
-1. Let |origin| be the [=url/origin=] of the result of running the [=URL parser=] on |provider|'s
-    {{IdentityProviderConfig/configURL}}.
-1. If [=get the login status=] for |origin| is not [=logged-in=], return an empty [=list=].
+1. If [=get the login status=] for |provider|'s [=registered provider/issuer=] is not
+    [=logged-in=], return an empty [=list=].
 1. Return the result of [=create identity credential/fetch accounts=] with |config|, |provider|,
     and |globalObject|.
 
@@ -1030,24 +863,24 @@ registered at least one [=/handle=] with it?
 
 <div algorithm>
 To <dfn>group registered handles by issuer</dfn> given a |globalObject|, run the following steps.
-This returns an [=ordered map=] from [=site hosts=] to [=tuples=] of ([=issuer metadata=], a
-[=list=] of [=/handle|handles=]).
+This returns an [=ordered map=] from [=HVP issuer identifiers=] to [=lists=] of
+[=/handle|handles=].
 
 1. Let |groups| be an empty [=ordered map=].
 1. For each |handle| of the [=handle registry=]:
-    1. Let |metadata| be the result of [=resolve a handle=] with |handle| and |globalObject|. If
-        |metadata| is failure, [=iteration/continue=].
-    1. Let |issuer| be |metadata|'s [=issuer metadata/issuer=].
-    1. If |groups|[|issuer|] doesn't [=map/exist=], [=map/set=] |groups|[|issuer|] to
-        (|metadata|, an empty [=list=]).
-    1. [=list/Append=] |handle| to |groups|[|issuer|]'s second item.
+    1. Let |result| be the result of [=resolve a handle=] with |handle| and |globalObject|. If
+        |result| is failure, [=iteration/continue=].
+    1. Let |issuer| be |result|'s [=resolution result/issuer=].
+    1. If |groups|[|issuer|] doesn't [=map/exist=], [=map/set=] |groups|[|issuer|] to an empty
+        [=list=].
+    1. [=list/Append=] |handle| to |groups|[|issuer|].
 1. Return |groups|.
 
 </div>
 
-Note: Several [=/handle|handles=] can resolve to the same [=IDP=], for example when two users of
-the same [=IDP=] share a user agent. Grouping them means the user agent fetches that [=IDP=]'s
-[=config file=] and accounts once.
+Note: Several [=/handle|handles=] can resolve to the same [=/issuer=], for example when two users
+of the same [=IDP=] share a user agent. Grouping them means the user agent fetches that
+[=/issuer=]'s [=/issuer metadata=] and accounts once.
 
 <div algorithm>
 To <dfn>gather registered providers</dfn> given an {{IdentityProviderRequestOptions}}
@@ -1057,60 +890,41 @@ To <dfn>gather registered providers</dfn> given an {{IdentityProviderRequestOpti
 1. Let |seenOrigins| be the [=ordered set=] of the [=url/origins=] of the
     {{IdentityProviderConfig/configURL}}s of |explicitProviders|.
 1. Let |result| be an empty [=list=].
-1. For each (|metadata|, |handles|) of the [=map/values=] of the result of
-    [=group registered handles by issuer=] with |globalObject|:
-    1. Let |provider| be the result of [=create a registered provider=] with |metadata|, |handles|,
-        and |federationRequest|. If |provider| is failure, [=iteration/continue=].
-    1. Let |origin| be the [=url/origin=] of the result of running the [=URL parser=] on
-        |provider|.{{IdentityProviderConfig/configURL}}.
-    1. If |seenOrigins| [=list/contains=] |origin|, [=iteration/continue=].
+1. For each |issuer| → |handles| of the result of [=group registered handles by issuer=] with
+    |globalObject|:
+    1. If |seenOrigins| [=list/contains=] |issuer|, [=iteration/continue=].
 
         Note: If the [=RP=] also lists this [=IDP=] explicitly, the explicit entry is used and
         the registration is ignored, so that the same [=IDP=] doesn't appear twice.
-    1. [=set/Append=] |origin| to |seenOrigins|, and [=list/append=] |provider| to |result|.
+    1. Let |provider| be the result of [=create a registered provider=] with |issuer|, |handles|,
+        |federationRequest|, and |globalObject|. If |provider| is failure, [=iteration/continue=].
+    1. If |provider|'s [=registered provider/issuer metadata=]'s
+        [=HVP issuer metadata/federations=] doesn't [=map/exist=] or doesn't
+        [=list/contain=] |federationRequest|.{{IdentityProviderConfig/federation}},
+        [=iteration/continue=].
+    1. [=list/Append=] |provider| to |result|.
 1. Return |result|.
 
 </div>
 
-Note: [=Gather registered providers=] doesn't fetch anything from the [=IDPs=]. [=Create an
-IdentityCredential=] fetches each [=registered provider=]'s [=config file=] and accounts like any
-other [=IDP=]'s.
+Note: [=Gather registered providers=] fetches each [=/issuer=]'s [=/issuer metadata=] and
+[=well-known file=], without credentials, but not its accounts. [=Create an IdentityCredential=]
+then fetches each [=registered provider=]'s accounts like any other [=IDP=]'s: the user agent checks its login status, fetches its accounts (keeping only the
+accounts that [=handles match|match=] its [=registered provider/handles=]), and shows the same UI
+as [[FEDCM]] does when the user is [=logged-out=] or when no account matches.
 
 <div algorithm>
 To <dfn>load a registered provider</dfn> given a [=registered provider=] |provider|, a
 [=federation request=] |federationRequest|, and a |globalObject|, run the following steps. This
 returns success or failure.
 
-1. Let |config| be the result of [=fetch the config file=] with |provider| and |globalObject|.
-1. If |config| is failure, return failure.
-1. If |config|.{{IdentityProviderAPIConfig/federations}} doesn't [=map/exist=] or doesn't
+1. If |provider|'s [=registered provider/issuer metadata=]'s
+    [=HVP issuer metadata/federations=] doesn't [=map/exist=] or doesn't
     [=list/contain=] |federationRequest|.{{IdentityProviderConfig/federation}}, return failure.
-1. Set |provider|'s [=registered provider/config=] to |config|, and its
-    [=registered provider/accounts=] to the result of [=get the registered accounts=] with
-    |config|, |provider|, and |globalObject|.
+1. Set |provider|'s [=registered provider/accounts=] to the result of
+    [=get the registered accounts=] with |provider|'s [=registered provider/config=], |provider|,
+    and |globalObject|.
 1. Return success.
-
-</div>
-
-Note: [=Fetch the config file=] checks a [=registered provider=]'s [=config file=] against the
-[=well-known file=], as it does for any other [=IDP=]. The check passes as long as the
-[=well-known file=] hasn't changed since [=resolve a handle|resolution=], because the user agent
-obtained the config URL from that same [=well-known file=]. The user agent can reuse the
-[=well-known file=] it fetched during [=resolve a handle|resolution=], subject to HTTP caching.
-
-<div class="monkeypatch">
-In [=create an IdentityCredential=], in the step "For each |provider| in |providerList|", insert the
-following step immediately after the step "If <var ignore>config</var> is failure, continue":
-
-1. If |provider| is a [=registered provider=], and
-    <var ignore>config</var>.{{IdentityProviderAPIConfig/federations}} doesn't [=map/exist=] or
-    doesn't [=list/contain=] |federationRequest|.{{IdentityProviderConfig/federation}},
-    [=iteration/continue=].
-
-    Note: Otherwise, a [=registered provider=] goes through these steps like any other [=IDP=]:
-    the user agent checks its login status, fetches its [=config file=] and accounts (keeping only
-    the accounts that [=handles match|match=] its [=registered provider/handles=]), and shows the
-    same UI as [[FEDCM]] does when the user is [=logged-out=] or when no account matches.
 
 </div>
 
@@ -1138,11 +952,11 @@ A <dfn>handle chip</dfn> for a [=/handle=] |handle|, a [=registered provider=] |
 {{IdentityProviderBranding}} or null |federationBranding| is a user agent UI element that
 represents an account the user hasn't signed in to yet:
 
-* Its primary label is |handle|.
+* Its primary label is |handle|, displayed with a leading `@`.
 * If |federationBranding| is not null, it SHOULD show it, as described in [[#branding]]: for
     example, the federation's icon, and its {{IdentityProviderBranding/name}} as secondary text.
     Otherwise, it uses a generic icon.
-* It MAY show the [=url/host=] of |provider|'s {{IdentityProviderConfig/configURL}} as secondary
+* It MAY show the [=origin/host=] of |provider|'s [=registered provider/issuer=] as secondary
     text, so that the user knows where they'll sign in.
 
 An account from [=find matching accounts=] is shown the same way FedCM shows accounts. If
@@ -1194,10 +1008,10 @@ After the "Build UI" step, add the following step:
     1. Let |handle| be the result of [=type your handle=] with «
         |federationRequest|.{{IdentityProviderConfig/federation}} » and |globalObject|. If |handle|
         is null, return to the dialog.
-    1. Let |metadata| be the result of [=resolve a handle=] with |handle| and |globalObject|. If
-        |metadata| is failure, return to the dialog.
-    1. Let |provider| be the result of [=create a registered provider=] with |metadata|,
-        « |handle| », and |federationRequest|. If |provider| is failure, return to the dialog.
+    1. Let |result| be the result of [=resolve a handle=] with |handle| and |globalObject|. If
+        |result| is failure, return to the dialog.
+    1. Let |provider| be the result of [=create a registered provider=] with |result|'s
+        [=resolution result/issuer=], « |handle| », and |federationRequest|.
     1. If [=load a registered provider=] with |provider|, |federationRequest|, and |globalObject|
         returns failure, return to the dialog.
     1. If |provider|'s [=registered provider/accounts=] is not empty, show each of them.
@@ -1213,9 +1027,63 @@ After the "Build UI" step, add the following step:
         [=registered provider/config=], and close the dialog.
 
     Note: The user agent can reuse the results of [=resolve a handle|resolution=] and
-    [=fetch the config file=] from [=type your handle=], rather than repeating them.
+    [=create a registered provider=] from [=type your handle=], rather than repeating them.
 
 </div>
+
+## Issuing the HVT+KB ## {#hvt-issuance}
+
+When the user selects an account of a [=registered provider=], the [=RP=] receives an [=HVT+KB=]
+[[HVP]], rather than the token of [[FEDCM]]'s {{IdentityProviderAPIConfig/id_assertion_endpoint}}.
+The user agent obtains an [=HVT=] from the [=/issuer=] with an [=HVT request=], which doesn't
+reveal the [=RP=] to the [=/issuer=], and binds it to the [=RP=] itself.
+
+<div class="monkeypatch">
+In [=fetch an identity assertion=], insert the following step at the beginning:
+
+1. If |provider| is a [=registered provider=], return the result of [=request an HVT+KB=] with
+    |provider|, the account that the user selected, and |globalObject|, as the token.
+
+</div>
+
+<div algorithm>
+To <dfn>request an HVT+KB</dfn> given a [=registered provider=] |provider|, an
+{{IdentityProviderAccount}} |account|, and a |globalObject|, run the following steps. This returns
+a [=string=] or failure.
+
+1. Let |handle| be the result of [=parse a handle=] with |account|'s
+    {{IdentityProviderAccount/handle}}. If |handle| is failure, return failure.
+1. Let |result| be the result of [=resolve a handle=] with |handle| and |globalObject|. The user
+    agent MAY reuse the result of an earlier resolution of |handle|. If |result| is failure, or
+    its [=resolution result/issuer=] isn't |provider|'s [=registered provider/issuer=], return
+    failure.
+1. Let |nonce| be |provider|'s {{IdentityProviderRequestOptions/nonce}}. If it doesn't
+    [=map/exist=], return failure.
+1. Generate a new key pair.
+1. Send an [=HVT request=] to |provider|'s [=registered provider/issuer metadata=]'s
+    [=HVP issuer metadata/issuance_endpoint=], as defined by [[HVP]], with |handle| and
+    |result|'s [=resolution result/unique user identifier=], signed with the key pair. The request
+    includes the [=/issuer=]'s cookies, and doesn't include a referrer or reveal
+    |globalObject|'s [=/origin=].
+1. If the response is an [=HVT error response=], return failure.
+
+    Note: The user agent sends an [=HVT request=] only for an account that it obtained from the
+    [=/issuer=]'s {{IdentityProviderAPIConfig/accounts_endpoint}}, which it fetches only when the
+    user is [=logged-in=] to the [=/issuer=]. An `authentication_required` error is therefore
+    unexpected, and the user agent treats it, like any other error, as failure.
+1. Let |hvt| be the [=HVT=] in the response. If it fails [=HVT verification=], including the
+    checks that the browser performs, return failure.
+1. Return the [=HVT+KB=] formed from |hvt| and a KB-JWT, signed with the key pair, whose `aud` is
+    the [=ASCII serialization of an origin|serialization=] of |globalObject|'s
+    [=associated Document=]'s [=Document/origin=] and whose `nonce` is |nonce|, as defined by
+    [[HVP]].
+
+</div>
+
+Note: The [=RP=] verifies the [=HVT+KB=] as described in [=HVT+KB verification=], including
+resolving the [=/handle=] itself. The verification is the same whichever federation the [=RP=]
+asked for. The `sub` claim of the [=HVT=] carries the user's
+[=resolution result/unique user identifier=], which the [=RP=] uses to identify the account.
 
 <!-- ============================================================ -->
 # Requirements on other parties # {#requirements}
@@ -1227,26 +1095,30 @@ After the "Build UI" step, add the following step:
 <thead><tr><th>Party<th>What it does
 <tbody>
 <tr><td>[=IDP=]<td>
-    Lists the federations it supports in {{IdentityProviderAPIConfig/federations}}.
-    Serves a [=well-known file=] at its [=site of a host|site=] with a single
-    {{IdentityProviderWellKnown/provider_urls}} entry. Sets each account's
-    {{IdentityProviderAccount/handle}} to the user's handle in its
+    Is the [=authorized issuer=] of its users' [=/handle|handles=], as defined by [[HVP]]. Serves
+    its [=/issuer metadata=] at `/.well-known/handle-verification`, including the
+    [=HVP issuer metadata/federations=] its accounts belong to. Serves a
+    [=well-known file=] at its site that names its {{IdentityProviderAPIConfig/accounts_endpoint}}
+    and {{IdentityProviderAPIConfig/login_url}}.
+    Answers [=HVT requests=] at its [=HVP issuer metadata/issuance_endpoint=]. Sets each
+    account's {{IdentityProviderAccount/handle}} to the user's handle in its
     {{IdentityProviderAPIConfig/accounts_endpoint}} response (or when pushing accounts with
     [[ACCOUNT-REGISTRY]]). After the user signs in, sets its login status to [=logged-in=] and calls
     {{IdentityProvider/register()}} with that handle. Calls {{IdentityProvider/unregister()}} when
     the handle stops existing (e.g. the account is deleted or renamed), and
     `setStatus("logged-out")` when the user merely signs out. Accepts `login_hint` on its
     {{IdentityProviderAPIConfig/login_url}}.
-<tr><td>Owner of a handle's [=handle/site=]<td>
-    Publishes a [[#dns-record|delegation record]] naming the [=/issuer=].
+<tr><td>Owner of a handle<td>
+    Publishes the records that [=HVP resolution=] reads, which name the [=/issuer=]: for a domain
+    handle, a DID and a DID document with a `HandleIssuer` service; for a username handle, a
+    WebFinger resource descriptor with a `handle-issuer` link.
 <tr><td>[=Federation operator=]<td>
     Serves [=operator metadata=] at `/.well-known/web-identity-federation` on the origin of its
     {{IdentityProviderConfig/federation}} URL, including the federation's
     {{IdentityFederationOperatorMetadata/branding}}.
 <tr><td>[=RP=]<td>
-    Passes a {{IdentityProviderConfig/federation}}, and verifies the returned token according to that
-    federation, including checking that it was issued for the handle and by the
-    {{IdentityCredential/configURL}}'s [=IDP=].
+    Passes a {{IdentityProviderConfig/federation}} and a nonce, and verifies the returned
+    [=HVT+KB=] as described in [=HVT+KB verification=].
 </table>
 
 <!-- ============================================================ -->
@@ -1258,74 +1130,75 @@ After the "Build UI" step, add the following step:
 <tbody>
 <tr><td>[=Operator metadata=] of the requested federation<td>On a [=federation request=], unless
     cached<td>No<td>No
-<tr><td>[=Config file=] of registered [=IDPs=]<td>On a [=federation request=]<td>No<td>No
-<tr><td>{{IdentityProviderAPIConfig/accounts_endpoint}} of registered [=IDPs=]<td>On a
+<tr><td>[=HVP resolution=] of each registered [=/handle=]<td>On a [=federation request=], unless
+    cached<td>No<td>No
+<tr><td>[=/Issuer metadata=] and [=well-known file=] of registered
+    [=/issuers=]<td>On a [=federation request=], unless cached<td>No<td>No
+<tr><td>{{IdentityProviderAPIConfig/accounts_endpoint}} of registered [=/issuers=]<td>On a
     [=federation request=], when the [=IDP=]'s login status is [=logged-in=]<td>Yes<td>No
-<tr><td>DNS `TXT` lookup and [=well-known file=], for each registered [=/handle=]<td>On a
-    [=federation request=], unless cached<td>No<td>No
-<tr><td>DNS `TXT` lookup, [=well-known file=], [=config file=], and (when [=logged-in=])
-    {{IdentityProviderAPIConfig/accounts_endpoint}} of the resolved [=IDP=]<td>After
+<tr><td>[=HVP resolution=], [=/issuer metadata=], [=well-known file=], and (when [=logged-in=])
+    {{IdentityProviderAPIConfig/accounts_endpoint}} of the resolved [=/issuer=]<td>After
     the user submits a handle, or when an [=IDP=] calls {{IdentityProvider/register()}} or
     {{IdentityProvider/unregister()}}<td>Only for
     {{IdentityProviderAPIConfig/accounts_endpoint}}<td>No
 <tr><td>{{IdentityProviderAPIConfig/login_url}}<td>After the user chooses to sign in to an [=IDP=]
     they are [=logged-out=] of, or selects a [=handle chip=]<td>Yes
     (a top-level navigation)<td>No
-<tr><td>{{IdentityProviderAPIConfig/id_assertion_endpoint}}<td>After the user selects an
-    account<td>Yes<td>Yes
+<tr><td>[=HVT request=] to the [=HVP issuer metadata/issuance_endpoint=]<td>After the user
+    selects an account<td>Yes<td>No
 </table>
 
+* Unlike [[FEDCM]]'s {{IdentityProviderAPIConfig/id_assertion_endpoint}}, the [=HVT request=]
+    doesn't reveal the [=RP=] to the [=/issuer=]: the user agent binds the [=HVT=] to the [=RP=]'s
+    origin and nonce itself, in the KB-JWT, as described in [[HVP]].
 * A registered [=IDP=] whose login status is [=logged-out=] receives no credentialed request
     before the user chooses to sign in to it. When the [=IDP=]'s login status is
     [=logged-in=], the user agent fetches its {{IdentityProviderAPIConfig/accounts_endpoint}} as in
     [[FEDCM]] (unless the [=IDP=] and user agent use [[ACCOUNT-REGISTRY]], which avoids the
     credentialed fetch).
-* Typing a handle reveals its [=handle/site=] to the DNS resolver and to the resolved [=IDP=]'s
-    servers, and signing in with a [=handle chip=] sends the handle to the [=IDP=], but nothing is
-    revealed to the [=RP=] until the user finishes signing in.
+* Typing a handle reveals it to the DNS resolver and to the servers involved in its
+    [=HVP resolution=], and signing in with a [=handle chip=] sends the handle to the [=IDP=], but
+    nothing is revealed to the [=RP=] until the user finishes signing in.
 * Because the [=handle registry=] stores only [=/handle|handles=], a [=federation request=] can cause
-    DNS lookups for the [=handle/sites=] of the user's registered [=/handle|handles=], which the DNS
-    resolver can observe. The requests don't carry credentials or reveal the [=RP=]. User agents
-    can reduce this by caching resolution results (see [[#registry]]).
+    [=HVP resolution=] of the user's registered [=/handle|handles=], which the DNS resolver and the
+    servers involved can observe. The requests don't carry credentials or reveal the [=RP=]. User
+    agents can reduce this by caching resolution results (see [[#registry]]).
 * The [=handle registry=] is global. It is used only in user agent UI, and is never exposed to the
     [=RP=] until the user selects an account.
 * The [=promise rejection delay|delay before rejection=] defined in [[FEDCM]] still applies, so an
     [=RP=] can't tell whether the user has any registered [=IDPs=].
 
+See also the privacy considerations of [[HVP]].
+
 <!-- ============================================================ -->
 # Security considerations # {#security}
 <!-- ============================================================ -->
 
-* **Resolution isn't proof.** An attacker who spoofs DNS, or controls a [=site of a host|site=]'s
-    [=well-known file=], can make resolution end at an [=IDP=] of their choosing. That gets them the typed
-    handle. They don't get the user's credentials for the real [=IDP=], and they can't make the
-    [=RP=] accept a token for someone else's handle, as long as the [=RP=] verifies the token using
-    its protocol (for example, atproto's two-way check between handle and DID). This is the same
-    reasoning as the Email Verification Protocol's analysis of DNS delegation.
-* **A site speaks for its subdomains.** A [=/handle=]'s [=handle/site=] is its
-    [=host/registrable domain=], just as for cookies and the FedCM [=well-known file=]. Hosts that
-    give independent users their own subdomains need to be on the Public Suffix List to keep them
-    separate.
-* **Handles that are mistyped or don't exist** still resolve to the provider. However,
-    [=find matching accounts=] returns nothing, and the [=handle chip=] shows the handle exactly as
-    typed.
+* **Resolution isn't proof, verification is.** An attacker who manipulates the user agent's
+    resolution can make it end at an [=IDP=] of their choosing. That gets them the typed handle.
+    They don't get the user's credentials for the real [=IDP=], and they can't make the [=RP=]
+    accept an [=HVT+KB=] for someone else's handle, because the [=RP=] resolves the handle itself
+    during [=HVT+KB verification=]. See the security considerations of [[HVP]].
+* **Handles that are mistyped or don't exist** either fail to resolve, or resolve to a provider
+    that has no matching account: [=find matching accounts=] returns nothing, and the
+    [=handle chip=] shows the handle exactly as typed.
 * **An account that doesn't match** isn't used: [=sign in with a handle=] fails if the account the
-    user signs in with doesn't match the handle.
+    user signs in with doesn't match the handle, and the [=/issuer=] doesn't issue an [=HVT=] for a
+    handle that the signed-in user doesn't control.
 * **Registration prompts** can be abused for spam. User agents can rate-limit
     {{IdentityProvider/register()}}, require [=transient activation=], and remember when the user
     declines.
 * **A [=/handle=]'s [=/issuer=] can change.** Because the [=handle registry=] stores only
-    [=/handle|handles=], a registered [=/handle=] follows its [=handle/site=]: if the site's
-    [[#dns-record|delegation record]] or the [=/issuer=]'s [=well-known file=] changes, the
-    [=/handle=] is offered with the new [=/issuer=]. That is how a user moves a [=/handle=] to
-    another [=IDP=], but it also means that whoever controls the site later (for example, after the
-    domain expires) controls the handle's [=/issuer=]. A user agent that caches resolution results
-    MAY notice such a change and ask the user to confirm it.
-* **An [=IDP=] can only register [=/handle|handles=] it is the [=/issuer=] of.** {{IdentityProvider/register()}}
-    requires the [=resolve a handle|resolved=] [=config file=] to be [=same site=] with the
-    caller, so a site can't register handles whose [=/issuer=] is another [=IDP=]. Similarly,
-    {{IdentityProvider/unregister()}} only removes [=/handle|handles=] that resolve to the caller's
-    [=site of a host|site=].
+    [=/handle|handles=], a registered [=/handle=] follows the records that [=HVP resolution=] reads:
+    if they change, the [=/handle=] is offered with the new [=/issuer=]. That is how a user moves a
+    [=/handle=] to another [=IDP=], but it also means that whoever controls the handle's domain
+    later (for example, after the domain expires) controls the handle's [=/issuer=]. A user agent
+    that caches resolution results MAY notice such a change and ask the user to confirm it.
+* **An [=IDP=] can only register [=/handle|handles=] it is the [=/issuer=] of.**
+    {{IdentityProvider/register()}} requires the caller to be [=on the issuer's site=] of the
+    handle's [=resolution result=], so a site can't register handles whose [=/issuer=] is another
+    [=IDP=]. Similarly, {{IdentityProvider/unregister()}} only removes [=/handle|handles=] that
+    resolve to the caller's site.
 
 <!-- ============================================================ -->
 # Examples # {#examples}
@@ -1333,75 +1206,68 @@ After the "Build UI" step, add the following step:
 
 *This section is non-normative.*
 
-<div class="example" id="example-same-site">
-**The handle and the [=IDP=] are on the same site.** Alice runs her own atproto server at
+<div class="example" id="example-domain-handle">
+**A domain handle on a self-hosted server.** Alice runs her own atproto server at
 `pds.alice.example`, and her handle is `@alice.example`.
 
-1. Alice chooses to [=type your handle=] and types `@alice.example`. [=Parse a handle=] gives
-    `@alice.example`, whose [=handle/site=] is `alice.example`.
-1. `_web-identity.alice.example` has `TXT "iss=alice.example"`, so [=resolve the issuer=] returns
-    `alice.example`.
-1. `https://alice.example/.well-known/web-identity` returns
-    `{"provider_urls": ["https://pds.alice.example/config.json"]}`, which is on the same site.
-1. The [=config file=] lists `https://atproto.com` in {{IdentityProviderAPIConfig/federations}},
-    so the user agent adds `@alice.example` to the [=handle registry=].
+1. Alice chooses to [=type your handle=] and types `@alice.example`. [=Parse a handle=] gives the
+    domain handle `alice.example`.
+1. [=HVP resolution=] finds the DID that `alice.example` publishes, `did:plc:...`, whose DID
+    document claims `at://alice.example` back and names `https://pds.alice.example` in its
+    `HandleIssuer` service.
+1. `https://pds.alice.example/.well-known/handle-verification` lists `https://atproto.com` in its
+    [=HVP issuer metadata/federations=], and `https://alice.example/.well-known/web-identity`
+    names its accounts endpoint and login URL, so the user agent adds `@alice.example` to the [=handle registry=].
 1. Alice isn't signed in to `pds.alice.example` yet, so the user agent shows a [=handle chip=] for
     `@alice.example`.
-1. When Alice selects it, the user agent opens
-    `login_url?login_hint=%40alice.example`. Her server signs her in, its
-    {{IdentityProviderAPIConfig/accounts_endpoint}} returns an account with
-    `{handle: "@alice.example"}`, and the user agent requests the token.
+1. When Alice selects it, the user agent opens `login_url?login_hint=alice.example`. Her server
+    signs her in, and its {{IdentityProviderAPIConfig/accounts_endpoint}} returns an account with
+    `{handle: "@alice.example"}`.
+1. The user agent sends an [=HVT request=] for `alice.example` and `did:plc:...` to the
+    [=HVP issuer metadata/issuance_endpoint=], and returns the [=HVT+KB=] to the [=RP=].
 
 </div>
 
-<div class="example" id="example-cross-site">
-**The handle and the [=IDP=] are on different sites.** Bob's handle is `@bob.example`, and his
-account is hosted by `social.example`.
+<div class="example" id="example-username-handle">
+**A username handle on a split domain.** Bob's handle is `@bob@example.com`, and his account is
+on an ActivityPub server at `social.example.com`.
 
-1. Bob publishes `_web-identity.bob.example TXT "iss=social.example"`.
-1. [=Resolve the issuer=] returns `social.example`. The user agent fetches
-    `https://social.example/.well-known/web-identity` and then its [=config file=].
-1. The user agent shows Bob's account with `handle: "@bob.example"` if he is signed in to
-    `social.example`, and otherwise offers `social.example` as [[FEDCM]] does for an [=IDP=] the
-    user is [=logged-out=] of.
+1. [=HVP resolution=] fetches the WebFinger resource descriptor of `acct:bob@example.com`, whose
+    `self` link is `https://social.example.com/users/bob` and whose `handle-issuer` link names
+    `https://social.example.com`.
+1. The user agent fetches `https://social.example.com/.well-known/handle-verification` and
+    `https://example.com/.well-known/web-identity`, and shows
+    Bob's account with `handle: "@bob@example.com"` if he is signed in to `social.example.com`,
+    and otherwise offers `social.example.com` as [[FEDCM]] does for an [=IDP=] the user is
+    [=logged-out=] of.
 
-Because `@bob.example` resolves to `social.example`, `social.example` can also call
-`IdentityProvider.register("@bob.example")` after Bob signs in there. Another site, such as
-`evil.example`, can't: the handle doesn't resolve to it.
-
-</div>
-
-<div class="example" id="example-subdomain">
-**The handle is a subdomain of the provider.** Carol's handle is `@carol.social.example`.
-
-1. Its [=handle/site=] is `social.example`, which publishes
-    `_web-identity.social.example TXT "iss=social.example"`, so [=resolve the issuer=] returns
-    `social.example`.
-1. Resolution continues as in the previous example.
+Because `@bob@example.com` resolves to `https://social.example.com`, `social.example.com` can also
+call `IdentityProvider.register("@bob@example.com")` after Bob signs in there. Another site, such
+as `evil.example`, can't: the handle doesn't resolve to it.
 
 </div>
 
 <div class="example" id="example-shared-host">
-**Many users share a host.** Dave (`dave@social.example`) and Erin (`@erin.social.example`) both
-resolve to the same [=/issuer=], `social.example`. The [=handle registry=] has both
-[=/handle|handles=], and [=group registered handles by issuer=] groups them together. On a
-[=federation request=], the
-user agent fetches that [=config file=] and {{IdentityProviderAPIConfig/accounts_endpoint}} once,
-and shows the signed-in accounts that match `dave@social.example` or `@erin.social.example`.
+**Many users share an issuer.** Dave (`@dave@social.example`) and Erin (`@erin.example`, whose
+DID document names `https://social.example` as its issuer) both resolve to the same [=/issuer=].
+The [=handle registry=] has both [=/handle|handles=], and [=group registered handles by issuer=]
+groups them together. On a [=federation request=], the user agent fetches that [=/issuer metadata=]
+and {{IdentityProviderAPIConfig/accounts_endpoint}} once, and shows the signed-in accounts that
+match `@dave@social.example` or `@erin.example`.
 
 </div>
 
 <div class="example" id="example-lifecycle">
-**Signing out versus deleting an account.** Erin registered `@erin.social.example` from
+**Signing out versus deleting an account.** Erin registered `@erin@social.example` from
 `social.example`.
 
 1. Erin signs out of `social.example`, which calls `navigator.login.setStatus("logged-out")`.
-    `@erin.social.example` stays in the [=handle registry=]. On the next
+    `@erin@social.example` stays in the [=handle registry=]. On the next
     [=federation request=], the user agent sees that `social.example` is [=logged-out=] and offers it
     as [[FEDCM]] does for an [=IDP=] the user is [=logged-out=] of. Signing in opens
     `social.example`'s {{IdentityProviderAPIConfig/login_url}}.
 1. Later, Erin deletes her account. `social.example` calls
-    `IdentityProvider.unregister("@erin.social.example")`, and the [=/handle=] is removed from the
+    `IdentityProvider.unregister("@erin@social.example")`, and the [=/handle=] is removed from the
     [=handle registry=], so the handle is no longer offered to any [=RP=].
 
 </div>
