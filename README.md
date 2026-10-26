@@ -83,7 +83,7 @@ The browser shows the accounts for the registered handles whose issuer lists tha
 
 <img width="784" height="745" alt="IdP-2" src="https://github.com/user-attachments/assets/6ad59a1d-5b7b-497b-bc38-3100daa515b3" />
 
-A handle's IdP is its issuer, as resolved by HVP: through the handle's DID document, which names it with a `HandleIssuer` service. The browser does not need protocol-specific logic. See [Handles](https://w3c-fedid.github.io/idp-registration/#handles) in the spec.
+A handle's IdP is its issuer, as resolved by HVP: through the handle's DID document, which names it with a `HandleVerification` service. The browser does not need protocol-specific logic. See [Handles](https://w3c-fedid.github.io/idp-registration/#handles) in the spec.
 
 **4. The RP receives an HVT+KB.** When the user selects an account, the browser obtains a Handle Verification Token from the issuer, binds it to the RP's origin and nonce, and returns it to the RP, which verifies it as defined by HVP. Unlike FedCM's identity assertion endpoint, this doesn't reveal the RP to the issuer.
 

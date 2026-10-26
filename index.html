@@ -781,7 +781,7 @@ var[data-var-color="6"] { --var-vg: #FFBCF2; }
   <div class="head">
    <h1 class="no-ref p-name" id="title">IdP Registration API</h1>
    <p id="w3c-state"><a href="https://www.w3.org/standards/types/#CG-DRAFT">Draft Community Group Report</a>,
-    <time class="dt-updated" datetime="2026-10-24">24 October 2026</time></p>
+    <time class="dt-updated" datetime="2026-10-26">26 October 2026</time></p>
    <div data-fill-with="spec-metadata">
     <dl>
      <dt>This version:
@@ -1181,7 +1181,7 @@ declares so that the user agent can present it to <a data-link-type="dfn" href="
 same path: both <a data-link-type="dfn" href="#resolve-a-handle" id="ref-for-resolve-a-handle⑤">resolve</a> it, and both add the same <a data-link-type="dfn" href="#handle" id="ref-for-handle③①">handle</a> to the
 <a data-link-type="dfn" href="#handle-registry" id="ref-for-handle-registry①②">handle registry</a>.</p>
    <p class="note" role="note"><span class="marker">Note:</span> An <a data-link-type="dfn" href="https://w3c-fedid.github.io/FedCM/#idp" id="ref-for-idp①⑨">IDP</a> can only register and unregister <a data-link-type="dfn" href="#handle" id="ref-for-handle③②">handles</a> that it is the <a data-link-type="dfn" href="#issuer" id="ref-for-issuer①②">issuer</a> of,
-as named by the records that <a data-link-type="dfn" data-refhint-key="028fbbd6" href="https://samuelgoto.github.io/handle-verification/draft-goto-handle-verification.html#resolution" id="ref-for-resolution⑥">HVP resolution</a> reads: the <code>HandleIssuer</code> service of the handle’s
+as named by the records that <a data-link-type="dfn" data-refhint-key="028fbbd6" href="https://samuelgoto.github.io/handle-verification/draft-goto-handle-verification.html#resolution" id="ref-for-resolution⑥">HVP resolution</a> reads: the <code>HandleVerification</code> service of the handle’s
 DID document.</p>
    <div class="algorithm" data-algorithm="on the issuer’s site">
 A <var>globalObject</var> is <dfn class="dfn-paneled" data-dfn-type="dfn" data-noexport id="on-the-issuers-site">on the issuer’s site</dfn> of a <a data-link-type="dfn" href="#resolution-result" id="ref-for-resolution-result②">resolution result</a> <var>result</var> if
@@ -1968,7 +1968,7 @@ asked for. The <code>sub</code> claim of the <a data-link-type="dfn" href="https
       <td>Owner of a handle
       <td>
     Publishes the records that <a data-link-type="dfn" data-refhint-key="028fbbd6" href="https://samuelgoto.github.io/handle-verification/draft-goto-handle-verification.html#resolution" id="ref-for-resolution⑧">HVP resolution</a> reads, which name the <a data-link-type="dfn" href="#issuer" id="ref-for-issuer③③">issuer</a>: a DID and a
-    DID document with a <code>HandleIssuer</code> service.
+    DID document with a <code>HandleVerification</code> service.
 
      <tr>
       <td><a data-link-type="dfn" href="#federation-operator" id="ref-for-federation-operator②">Federation operator</a>
@@ -2125,7 +2125,7 @@ domain handle <code>alice.example</code>.</p>
      <li data-md>
       <p><a data-link-type="dfn" data-refhint-key="028fbbd6" href="https://samuelgoto.github.io/handle-verification/draft-goto-handle-verification.html#resolution" id="ref-for-resolution①④">HVP resolution</a> finds the DID that <code>alice.example</code> publishes, <code>did:plc:...</code>, whose DID
 document claims <code>at://alice.example</code> back and names <code>https://pds.alice.example</code> in its
-<code>HandleIssuer</code> service.</p>
+<code>HandleVerification</code> service.</p>
      <li data-md>
       <p><code>https://pds.alice.example/.well-known/handle-verification</code> lists <code>https://atproto.com</code> in its
 <a data-link-type="dfn" href="https://samuelgoto.github.io/handle-verification/draft-goto-handle-verification.html#issuer-metadata" id="ref-for-issuer-metadata②⑤">federations</a>, and <code>https://alice.example/.well-known/web-identity</code>

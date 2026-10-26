@@ -454,7 +454,7 @@ same path: both [=resolve a handle|resolve=] it, and both add the same [=/handle
 [=handle registry=].
 
 Note: An [=IDP=] can only register and unregister [=/handle|handles=] that it is the [=/issuer=] of,
-as named by the records that [=HVP resolution=] reads: the `HandleIssuer` service of the handle's
+as named by the records that [=HVP resolution=] reads: the `HandleVerification` service of the handle's
 DID document.
 
 <div algorithm>
@@ -1109,7 +1109,7 @@ asked for. The `sub` claim of the [=HVT=] carries the user's
     {{IdentityProviderAPIConfig/login_url}}.
 <tr><td>Owner of a handle<td>
     Publishes the records that [=HVP resolution=] reads, which name the [=/issuer=]: a DID and a
-    DID document with a `HandleIssuer` service.
+    DID document with a `HandleVerification` service.
 <tr><td>[=Federation operator=]<td>
     Serves [=operator metadata=] at `/.well-known/web-identity-federation` on the origin of its
     {{IdentityProviderConfig/federation}} URL, including the federation's
@@ -1212,7 +1212,7 @@ See also the privacy considerations of [[HVP]].
     domain handle `alice.example`.
 1. [=HVP resolution=] finds the DID that `alice.example` publishes, `did:plc:...`, whose DID
     document claims `at://alice.example` back and names `https://pds.alice.example` in its
-    `HandleIssuer` service.
+    `HandleVerification` service.
 1. `https://pds.alice.example/.well-known/handle-verification` lists `https://atproto.com` in its
     [=HVP issuer metadata/federations=], and `https://alice.example/.well-known/web-identity`
     names its accounts endpoint and login URL, so the user agent adds `@alice.example` to the [=handle registry=].
